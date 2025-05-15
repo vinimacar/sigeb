@@ -139,6 +139,7 @@
       <div class="col-md-8 text-center" data-aos="fade-up">
         <h1 class="hero-title">SIGEB</h1>
         <p class="hero-subtitle">Sistema de Gestão de Biblioteca - Uma solução moderna para gerenciamento de bibliotecas</p>
+        <div id="errorMessage" class="alert alert-danger" style="display: none; max-width: 400px; margin: 0 auto 20px;"></div>
         <button onclick="signInWithGoogle()" class="google-button">
           <img src="https://www.google.com/favicon.ico" alt="Google logo">
           Entrar com Google
@@ -199,26 +200,72 @@
     function signInWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
       
+      // Show loading state
+      const button = document.querySelector('.google-button');
+      const originalText = button.innerHTML;
+      button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Carregando...`;
+      button.disabled = true;
+
       auth.signInWithPopup(provider)
         .then((result) => {
-          // Create or update user document in Firestore
           const user = result.user;
-          return db.collection('users').doc(user.uid).set({
-            email: user.email,
-            name: user.displayName,
-            photoURL: user.photoURL,
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'active'
-          }, { merge: true });
+          
+          // Check if user is allowed in the system
+          return db.collection('allowed_users')
+            .where('email', '==', user.email)
+            .get()
+            .then((snapshot) => {
+              if (snapshot.empty) {
+                // User not allowed, sign out and throw error
+                return auth.signOut().then(() => {
+                  throw new Error('unauthorized_user');
+                });
+              }
+              
+              // User is allowed, create/update user document
+              return db.collection('users').doc(user.uid).set({
+                email: user.email,
+                name: user.displayName,
+                photoURL: user.photoURL,
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'active'
+              }, { merge: true });
+            });
         })
         .then(() => {
           window.location.href = 'dashboard.html';
         })
         .catch((error) => {
           console.error("Erro no login:", error);
-          const errorMessage = document.getElementById('errorMessage');
-          errorMessage.style.display = 'block';
-          errorMessage.textContent = 'Erro ao fazer login: ' + error.message;
+          let errorMessage = 'Erro ao fazer login: ';
+          
+          // Handle specific error cases
+          switch (error.message) {
+            case 'unauthorized_user':
+              errorMessage += 'Usuário não autorizado. Entre em contato com o administrador do sistema para solicitar acesso.';
+              break;
+            case 'auth/configuration-not-found':
+              errorMessage += 'O provedor de autenticação Google não está configurado corretamente. Por favor, contate o administrador do sistema.';
+              break;
+            case 'auth/popup-blocked':
+              errorMessage += 'O popup de login foi bloqueado pelo navegador. Por favor, permita popups para este site.';
+              break;
+            case 'auth/popup-closed-by-user':
+              errorMessage += 'O processo de login foi cancelado.';
+              break;
+            default:
+              errorMessage += error.message;
+          }
+          
+          // Show error message
+          const errorDiv = document.getElementById('errorMessage');
+          errorDiv.style.display = 'block';
+          errorDiv.className = 'alert alert-danger';
+          errorDiv.textContent = errorMessage;
+          
+          // Reset button state
+          button.innerHTML = originalText;
+          button.disabled = false;
         });
     }
 
@@ -231,3 +278,4 @@
   </script>
 </body>
 </html>
+
