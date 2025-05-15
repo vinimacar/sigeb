@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SIGEB - Biblioteca</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -113,13 +113,25 @@
       color: rgba(255, 255, 255, 0.6);
     }
     .alert {
-      display: none;
       margin-top: 1rem;
       background: rgba(255, 255, 255, 0.1);
       border: none;
       color: white;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+    }
+    .tech-button {
+      background: #00f2fe;
+      border: none;
+      color: #000;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      border-radius: 30px;
+      transition: all 0.3s ease;
+    }
+    .tech-button:hover {
+      background: #4facfe;
+      color: #fff;
     }
     @media (max-width: 768px) {
       .hero-title {
@@ -146,7 +158,6 @@
         </button>
         
         <div id="loginForm" class="login-form">
-          <div class="alert alert-danger" id="errorMessage"></div>
           <div class="mb-3">
             <input type="email" class="form-control" id="email" placeholder="Email">
           </div>
@@ -164,41 +175,37 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
-  
+
   <!-- Other Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
       databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
       projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      storageBucket: "sigeb-ccd3f.appspot.com",
       messagingSenderId: "209689711066",
       appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
       measurementId: "G-VJBDW2B7HZ"
     };
 
-    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const analytics = firebase.analytics();
 
-    // Initialize AOS
-    document.addEventListener('DOMContentLoaded', function() {
-      AOS.init({
-        duration: 1000,
-        once: true,
-        offset: 100
-      });
+    document.addEventListener('DOMContentLoaded', function () {
+      AOS.init({ duration: 1000, once: true, offset: 100 });
     });
 
     function signInWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       
       // Show loading state
       const button = document.querySelector('.google-button');
@@ -206,11 +213,20 @@
       button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Carregando...`;
       button.disabled = true;
 
+      // Add error message div if it doesn't exist
+      let errorDiv = document.getElementById('errorMessage');
+      if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'errorMessage';
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.style.display = 'none';
+        button.parentElement.insertBefore(errorDiv, button);
+      }
+
       auth.signInWithPopup(provider)
         .then((result) => {
+          // Create or update user document in Firestore
           const user = result.user;
-          
-          // Check if user is allowed in the system
           return db.collection('allowed_users')
             .where('email', '==', user.email)
             .get()
@@ -240,27 +256,38 @@
           let errorMessage = 'Erro ao fazer login: ';
           
           // Handle specific error cases
-          switch (error.message) {
-            case 'unauthorized_user':
-              errorMessage += 'Usuário não autorizado. Entre em contato com o administrador do sistema para solicitar acesso.';
+          switch (error.code || error.message) {
+            case 'auth/unauthorized-domain':
+              errorMessage = `Este domínio não está autorizado para operações OAuth. 
+                            Por favor, adicione "${window.location.hostname}" à lista de domínios autorizados no Firebase Console:
+                            1. Acesse o Firebase Console
+                            2. Vá para Authentication > Settings
+                            3. Em "Authorized domains", adicione "${window.location.hostname}"
+                            Entre em contato com o administrador do sistema.`;
               break;
             case 'auth/configuration-not-found':
-              errorMessage += 'O provedor de autenticação Google não está configurado corretamente. Por favor, contate o administrador do sistema.';
+              errorMessage = `O provedor de autenticação Google não está configurado corretamente. 
+                            Por favor, verifique se você:
+                            1. Habilitou a autenticação Google no Firebase Console
+                            2. Configurou o OAuth consent screen
+                            3. Adicionou os domínios autorizados
+                            Entre em contato com o administrador do sistema.`;
               break;
             case 'auth/popup-blocked':
-              errorMessage += 'O popup de login foi bloqueado pelo navegador. Por favor, permita popups para este site.';
+              errorMessage = 'O popup de login foi bloqueado pelo navegador. Por favor, permita popups para este site.';
               break;
             case 'auth/popup-closed-by-user':
-              errorMessage += 'O processo de login foi cancelado.';
+              errorMessage = 'O processo de login foi cancelado.';
+              break;
+            case 'unauthorized_user':
+              errorMessage = 'Usuário não autorizado. Entre em contato com o administrador do sistema para solicitar acesso.';
               break;
             default:
-              errorMessage += error.message;
+              errorMessage += `${error.message} (${error.code})`;
           }
           
           // Show error message
-          const errorDiv = document.getElementById('errorMessage');
           errorDiv.style.display = 'block';
-          errorDiv.className = 'alert alert-danger';
           errorDiv.textContent = errorMessage;
           
           // Reset button state
@@ -269,13 +296,9 @@
         });
     }
 
-    // Check if user is already logged in
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        window.location.href = 'dashboard.html';
-      }
+    auth.onAuthStateChanged(user => {
+      if (user) window.location.href = 'dashboard.html';
     });
   </script>
 </body>
 </html>
-
