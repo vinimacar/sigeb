@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIGEB - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f5f5f5;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 20px;
+      color: white;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    .sidebar-logo {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 30px;
+      background: linear-gradient(90deg, #00f2fe, #4facfe);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.8);
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      transition: all 0.3s;
+    }
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    .nav-link.active {
+      background: rgba(79, 172, 254, 0.2);
+      color: #4facfe;
+    }
+    .card {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .stats-card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+    }
+    .stats-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+    .book-list {
+      margin-top: 20px;
+    }
+    .book-item {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s;
+    }
+    .book-item:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-logo">SIGEB</div>
+    <nav class="nav flex-column">
+      <a class="nav-link active" href="#dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a class="nav-link" href="books.html"><i class="bi bi-book"></i> Livros</a>
+      <a class="nav-link" href="users.html"><i class="bi bi-people"></i> Usuários</a>
+      <a class="nav-link" href="loans.html"><i class="bi bi-arrow-left-right"></i> Empréstimos</a>
+      <a class="nav-link" href="reports.html"><i class="bi bi-graph-up"></i> Relatórios</a>
+      <a class="nav-link" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Sair</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="container-fluid">
+      <h2 class="mb-4">Dashboard</h2>
+      
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon bg-primary text-white">
+              <i class="bi bi-book"></i>
+            </div>
+            <h3 class="stats-number" id="totalBooks">0</h3>
+            <p class="stats-label">Total de Livros</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon bg-success text-white">
+              <i class="bi bi-person"></i>
+            </div>
+            <h3 class="stats-number" id="totalUsers">0</h3>
+            <p class="stats-label">Usuários Ativos</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon bg-warning text-white">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <h3 class="stats-number" id="activeLoans">0</h3>
+            <p class="stats-label">Empréstimos Ativos</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon bg-danger text-white">
+              <i class="bi bi-clock"></i>
+            </div>
+            <h3 class="stats-number" id="lateReturns">0</h3>
+            <p class="stats-label">Devoluções Atrasadas</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Últimos Empréstimos</h5>
+              <div class="book-list" id="recentLoans">
+                <!-- Recent loans will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Livros Mais Populares</h5>
+              <div class="book-list" id="popularBooks">
+                <!-- Popular books will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  
+  <!-- Other Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const analytics = firebase.analytics();
+
+    // Check authentication
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+      } else {
+        loadDashboardData();
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = 'index.html';
+      });
+    }
+
+    function loadDashboardData() {
+      // Load total books
+      db.collection('books').get().then((snapshot) => {
+        document.getElementById('totalBooks').textContent = snapshot.size;
+      }).catch(error => {
+        console.error("Error loading books:", error);
+      });
+
+      // Load total users
+      db.collection('users').where('status', '==', 'active').get().then((snapshot) => {
+        document.getElementById('totalUsers').textContent = snapshot.size;
+      }).catch(error => {
+        console.error("Error loading users:", error);
+      });
+
+      // Load active loans
+      db.collection('loans')
+        .where('status', '==', 'active')
+        .get()
+        .then((snapshot) => {
+          document.getElementById('activeLoans').textContent = snapshot.size;
+        }).catch(error => {
+          console.error("Error loading loans:", error);
+        });
+
+      // Load late returns
+      const today = new Date();
+      db.collection('loans')
+        .where('status', '==', 'active')
+        .where('dueDate', '<', today)
+        .get()
+        .then((snapshot) => {
+          document.getElementById('lateReturns').textContent = snapshot.size;
+        }).catch(error => {
+          console.error("Error loading late returns:", error);
+        });
+
+      // Load recent loans
+      db.collection('loans')
+        .orderBy('loanDate', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const loansHtml = snapshot.docs.map(doc => {
+            const loan = doc.data();
+            return `
+              <div class="book-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6>${loan.bookTitle || 'Sem título'}</h6>
+                    <small>Emprestado para: ${loan.userName || 'Usuário não especificado'}</small>
+                  </div>
+                  <small class="text-muted">
+                    ${loan.loanDate ? new Date(loan.loanDate.toDate()).toLocaleDateString() : 'Data não disponível'}
+                  </small>
+                </div>
+              </div>
+            `;
+          }).join('');
+          document.getElementById('recentLoans').innerHTML = loansHtml || '<p class="text-muted">Nenhum empréstimo recente</p>';
+        }).catch(error => {
+          console.error("Error loading recent loans:", error);
+          document.getElementById('recentLoans').innerHTML = '<p class="text-danger">Erro ao carregar empréstimos recentes</p>';
+        });
+
+      // Load popular books
+      db.collection('books')
+        .orderBy('loanCount', 'desc')
+        .limit(5)
+        .get()
+        .then((snapshot) => {
+          const booksHtml = snapshot.docs.map(doc => {
+            const book = doc.data();
+            return `
+              <div class="book-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6>${book.title || 'Sem título'}</h6>
+                    <small>${book.author || 'Autor desconhecido'}</small>
+                  </div>
+                  <span class="badge bg-primary">${book.loanCount || 0} empréstimos</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+          document.getElementById('popularBooks').innerHTML = booksHtml || '<p class="text-muted">Nenhum livro disponível</p>';
+        }).catch(error => {
+          console.error("Error loading popular books:", error);
+          document.getElementById('popularBooks').innerHTML = '<p class="text-danger">Erro ao carregar livros populares</p>';
+        });
+    }
+  </script>
+</body>
+</html>
