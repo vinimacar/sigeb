@@ -279,7 +279,7 @@
         function loadBooks() {
             const tableBody = document.getElementById('booksTableBody');
             
-            db.collection('books').orderBy('title').onSnapshot((snapshot) => {
+            db.collection('livros').orderBy('titulo').onSnapshot((snapshot) => {
                 tableBody.innerHTML = '';
                 if (snapshot.empty) {
                     tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhum livro cadastrado</td></tr>';
@@ -289,13 +289,13 @@
                     const book = doc.data();
                     const row = `
                         <tr>
-                            <td>${book.title || 'Sem título'}</td>
-                            <td>${book.author || 'Autor desconhecido'}</td>
+                            <td>${book.titulo || 'Sem título'}</td>
+                            <td>${book.autores || 'Autor desconhecido'}</td>
                             <td>${book.isbn || 'N/A'}</td>
-                            <td>${book.category || 'Sem categoria'}</td>
+                            <td>${book.genero || 'Sem categoria'}</td>
                             <td>
-                                <span class="badge bg-${book.available ? 'success' : 'warning'}">
-                                    ${book.available ? 'Disponível' : 'Emprestado'}
+                                <span class="badge bg-${book.quantidade > 0 ? 'success' : 'warning'}">
+                                    ${book.quantidade > 0 ? 'Disponível' : 'Emprestado'}
                                 </span>
                             </td>
                             <td class="action-buttons">
@@ -328,19 +328,24 @@
                 return;
             }
 
-            db.collection('books').add({
-                title: title,
-                author: author,
+            db.collection('livros').add({
+                titulo: title,
+                autores: author,
                 isbn: isbn,
-                category: category,
-                quantity: quantity,
-                available: true,
-                loanCount: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                genero: category,
+                quantidade: quantity,
+                disponivel: quantity > 0,
+                emprestimos: 0,
+                editora: '',
+                ano: new Date().getFullYear(),
+                edicao: '1',
+                descricao: '',
+                dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
                 modal.hide();
                 document.getElementById('addBookForm').reset();
+                alert('Livro adicionado com sucesso!');
             }).catch((error) => {
                 console.error("Erro ao adicionar livro:", error);
                 alert('Erro ao adicionar livro: ' + error.message);
@@ -349,9 +354,10 @@
 
         function deleteBook(bookId) {
             if (confirm('Tem certeza que deseja excluir este livro?')) {
-                db.collection('books').doc(bookId).delete()
+                db.collection('livros').doc(bookId).delete()
                     .then(() => {
                         console.log("Livro excluído com sucesso!");
+                        alert('Livro excluído com sucesso!');
                     })
                     .catch((error) => {
                         console.error("Erro ao excluir livro:", error);
@@ -361,21 +367,21 @@
         }
 
         function editBook(bookId) {
-            db.collection('books').doc(bookId).get()
+            db.collection('livros').doc(bookId).get()
                 .then((doc) => {
                     if (doc.exists) {
                         const book = doc.data();
                         // Populate the edit form with book data
                         document.getElementById('editBookId').value = bookId;
-                        document.getElementById('editTitulo').value = book.title || '';
-                        document.getElementById('editAutores').value = book.author || '';
+                        document.getElementById('editTitulo').value = book.titulo || '';
+                        document.getElementById('editAutores').value = book.autores || '';
                         document.getElementById('editISBN').value = book.isbn || '';
-                        document.getElementById('editEditora').value = book.publisher || '';
-                        document.getElementById('editAno').value = book.year || '';
-                        document.getElementById('editEdicao').value = book.edition || '';
-                        document.getElementById('editGenero').value = book.category || '';
-                        document.getElementById('editQuantidade').value = book.quantity || 0;
-                        document.getElementById('editDescricao').value = book.description || '';
+                        document.getElementById('editEditora').value = book.editora || '';
+                        document.getElementById('editAno').value = book.ano || '';
+                        document.getElementById('editEdicao').value = book.edicao || '';
+                        document.getElementById('editGenero').value = book.genero || '';
+                        document.getElementById('editQuantidade').value = book.quantidade || 0;
+                        document.getElementById('editDescricao').value = book.descricao || '';
                         
                         // Show the edit modal
                         const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
@@ -397,26 +403,27 @@
             
             const bookId = document.getElementById('editBookId').value;
             const bookData = {
-                title: document.getElementById('editTitulo').value.trim(),
-                author: document.getElementById('editAutores').value.trim(),
+                titulo: document.getElementById('editTitulo').value.trim(),
+                autores: document.getElementById('editAutores').value.trim(),
                 isbn: document.getElementById('editISBN').value.trim(),
-                publisher: document.getElementById('editEditora').value.trim(),
-                year: parseInt(document.getElementById('editAno').value),
-                edition: document.getElementById('editEdicao').value.trim(),
-                category: document.getElementById('editGenero').value,
-                quantity: parseInt(document.getElementById('editQuantidade').value),
-                description: document.getElementById('editDescricao').value.trim(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                editora: document.getElementById('editEditora').value.trim(),
+                ano: parseInt(document.getElementById('editAno').value),
+                edicao: document.getElementById('editEdicao').value.trim(),
+                genero: document.getElementById('editGenero').value,
+                quantidade: parseInt(document.getElementById('editQuantidade').value),
+                descricao: document.getElementById('editDescricao').value.trim(),
+                disponivel: parseInt(document.getElementById('editQuantidade').value) > 0,
+                dataAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             // Validate required fields
-            if (!bookData.title || !bookData.author || !bookData.isbn || !bookData.category || isNaN(bookData.quantity)) {
+            if (!bookData.titulo || !bookData.autores || !bookData.isbn || !bookData.genero || isNaN(bookData.quantidade)) {
                 alert('Por favor, preencha todos os campos obrigatórios corretamente.');
                 return;
             }
 
             // Update book in Firebase
-            db.collection('books').doc(bookId).update(bookData)
+            db.collection('livros').doc(bookId).update(bookData)
                 .then(() => {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('editBookModal'));
                     modal.hide();
