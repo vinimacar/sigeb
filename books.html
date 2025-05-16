@@ -172,6 +172,62 @@
         </div>
     </div>
 
+    <!-- Edit Book Modal -->
+    <div class="modal fade" id="editBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Livro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBookForm">
+                        <div class="mb-3">
+                            <label class="form-label">Título</label>
+                            <input type="text" class="form-control" id="editTitulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Autor</label>
+                            <input type="text" class="form-control" id="editAutores" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ISBN</label>
+                            <input type="text" class="form-control" id="editISBN" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Editora</label>
+                            <input type="text" class="form-control" id="editEditora" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ano</label>
+                            <input type="number" class="form-control" id="editAno" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Edição</label>
+                            <input type="text" class="form-control" id="editEdicao" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Gênero</label>
+                            <input type="text" class="form-control" id="editGenero" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="editQuantidade" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" id="editDescricao" required rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" form="editBookForm">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -305,9 +361,72 @@
         }
 
         function editBook(bookId) {
-            // Implement edit functionality
-            alert('Função de edição será implementada em breve!');
+            db.collection('books').doc(bookId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const book = doc.data();
+                        // Populate the edit form with book data
+                        document.getElementById('editBookId').value = bookId;
+                        document.getElementById('editTitulo').value = book.title || '';
+                        document.getElementById('editAutores').value = book.author || '';
+                        document.getElementById('editISBN').value = book.isbn || '';
+                        document.getElementById('editEditora').value = book.publisher || '';
+                        document.getElementById('editAno').value = book.year || '';
+                        document.getElementById('editEdicao').value = book.edition || '';
+                        document.getElementById('editGenero').value = book.category || '';
+                        document.getElementById('editQuantidade').value = book.quantity || 0;
+                        document.getElementById('editDescricao').value = book.description || '';
+                        
+                        // Show the edit modal
+                        const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
+                        editModal.show();
+                    } else {
+                        console.error("Livro não encontrado!");
+                        alert('Erro: Livro não encontrado!');
+                    }
+                })
+                .catch((error) => {
+                    console.error("Erro ao carregar dados do livro:", error);
+                    alert('Erro ao carregar dados do livro: ' + error.message);
+                });
         }
+
+        // Handle edit form submission
+        document.getElementById('editBookForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const bookId = document.getElementById('editBookId').value;
+            const bookData = {
+                title: document.getElementById('editTitulo').value.trim(),
+                author: document.getElementById('editAutores').value.trim(),
+                isbn: document.getElementById('editISBN').value.trim(),
+                publisher: document.getElementById('editEditora').value.trim(),
+                year: parseInt(document.getElementById('editAno').value),
+                edition: document.getElementById('editEdicao').value.trim(),
+                category: document.getElementById('editGenero').value,
+                quantity: parseInt(document.getElementById('editQuantidade').value),
+                description: document.getElementById('editDescricao').value.trim(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Validate required fields
+            if (!bookData.title || !bookData.author || !bookData.isbn || !bookData.category || isNaN(bookData.quantity)) {
+                alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+                return;
+            }
+
+            // Update book in Firebase
+            db.collection('books').doc(bookId).update(bookData)
+                .then(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editBookModal'));
+                    modal.hide();
+                    alert('Livro atualizado com sucesso!');
+                })
+                .catch((error) => {
+                    console.error("Erro ao atualizar livro:", error);
+                    alert('Erro ao atualizar livro: ' + error.message);
+                });
+        });
     </script>
 </body>
 </html> 
