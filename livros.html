@@ -7,6 +7,29 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <!-- Firebase Initialization -->
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+  </script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -494,238 +517,304 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Editar Livro -->
+    <div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editBookModalLabel">Editar Livro</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editBookForm" class="needs-validation" novalidate>
+              <input type="hidden" id="editBookId">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label for="editTitulo" class="form-label">Título*</label>
+                    <input type="text" class="form-control" id="editTitulo" required>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="editISBN" class="form-label">ISBN</label>
+                    <input type="text" class="form-control" id="editISBN">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="editAutores" class="form-label">Autor(es)*</label>
+                    <input type="text" class="form-control" id="editAutores" required>
+                    <div class="form-text">Separe múltiplos autores com vírgula</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="editEditora" class="form-label">Editora*</label>
+                    <input type="text" class="form-control" id="editEditora" required>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label for="editAno" class="form-label">Ano*</label>
+                    <input type="number" class="form-control" id="editAno" required min="1800" max="2024">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-3">
+                    <label for="editEdicao" class="form-label">Edição</label>
+                    <input type="text" class="form-control" id="editEdicao">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="editGenero" class="form-label">Gênero*</label>
+                    <select class="form-select" id="editGenero" required>
+                      <option value="">Selecione...</option>
+                      <option value="LITERATURA">Literatura</option>
+                      <option value="FICCAO">Ficção</option>
+                      <option value="NAO_FICCAO">Não Ficção</option>
+                      <option value="INFANTIL">Infantil</option>
+                      <option value="JUVENIL">Juvenil</option>
+                      <option value="ACADEMICO">Acadêmico</option>
+                      <option value="TECNICO">Técnico</option>
+                      <option value="BIOGRAFIA">Biografia</option>
+                      <option value="HISTORIA">História</option>
+                      <option value="CIENCIAS">Ciências</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="editQuantidade" class="form-label">Quantidade*</label>
+                    <input type="number" class="form-control" id="editQuantidade" required min="0">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="editDescricao" class="form-label">Descrição</label>
+                    <textarea class="form-control" id="editDescricao" rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label class="form-label">Capa do Livro</label>
+                    <div class="cover-preview-container" onclick="document.getElementById('editImagemCapa').click()">
+                      <img id="editCapaPreview" src="img/capa-padrao.jpg" alt="Capa do Livro" style="width: 100%; height: 200px; object-fit: cover;">
+                      <div class="cover-upload-overlay">
+                        <i class='bx bx-upload'></i>
+                        <span>Clique para alterar a capa</span>
+                      </div>
+                    </div>
+                    <input type="file" class="form-control" id="editImagemCapa" accept="image/*" style="display: none;">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" form="editBookForm" class="btn btn-primary">Salvar Alterações</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-
   <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-      authDomain: "sigeb-ccd3f.firebaseapp.com",
-      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-      projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
-      messagingSenderId: "209689711066",
-      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-      measurementId: "G-VJBDW2B7HZ"
-    };
+    // Função para carregar livros do Firebase
+    async function loadBooks() {
+      try {
+        const snapshot = await db.collection('livros').get();
+        const bookGrid = document.querySelector('.book-grid');
+        bookGrid.innerHTML = '';
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+        snapshot.forEach(doc => {
+          const book = doc.data();
+          const card = createBookCard(doc.id, book);
+          bookGrid.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar livros:', error);
+        showAlert('danger', 'Erro ao carregar livros');
+      }
+    }
 
-    // Function to handle book submission
-    async function handleBookSubmission(event) {
+    // Função para criar card do livro
+    function createBookCard(id, book) {
+      const card = document.createElement('div');
+      card.className = 'book-card';
+      card.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5>${book.titulo}</h5>
+            <p class="text-muted mb-1">${book.autores}</p>
+            <p class="text-muted mb-2">${book.editora}, ${book.ano}</p>
+            <span class="book-status ${book.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
+              ${book.quantidade > 0 ? `${book.quantidade} disponíveis` : 'Indisponível'}
+            </span>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
+              <i class='bx bx-dots-vertical-rounded'></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="editBook('${id}')">Editar</a></li>
+              <li><a class="dropdown-item text-danger" href="#" onclick="deleteBook('${id}')">Excluir</a></li>
+            </ul>
+          </div>
+        </div>
+      `;
+      return card;
+    }
+
+    // Função para editar livro
+    async function editBook(id) {
+      try {
+        const doc = await db.collection('livros').doc(id).get();
+        if (!doc.exists) {
+          showAlert('danger', 'Livro não encontrado');
+          return;
+        }
+
+        const book = doc.data();
+        document.getElementById('editBookId').value = id;
+        document.getElementById('editTitulo').value = book.titulo;
+        document.getElementById('editISBN').value = book.isbn || '';
+        document.getElementById('editAutores').value = book.autores;
+        document.getElementById('editEditora').value = book.editora;
+        document.getElementById('editAno').value = book.ano;
+        document.getElementById('editEdicao').value = book.edicao || '';
+        document.getElementById('editGenero').value = book.genero;
+        document.getElementById('editQuantidade').value = book.quantidade;
+        document.getElementById('editDescricao').value = book.descricao || '';
+        
+        if (book.capaUrl) {
+          document.getElementById('editCapaPreview').src = book.capaUrl;
+        }
+
+        const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
+        editModal.show();
+      } catch (error) {
+        console.error('Erro ao carregar dados do livro:', error);
+        showAlert('danger', 'Erro ao carregar dados do livro');
+      }
+    }
+
+    // Função para salvar edições
+    async function handleEditSubmission(event) {
       event.preventDefault();
       
-      const form = document.getElementById('addBookForm');
+      const form = document.getElementById('editBookForm');
       if (!form.checkValidity()) {
         form.classList.add('was-validated');
         return;
       }
 
       try {
-        // Show loading state
-        const submitButton = document.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-        submitButton.disabled = true;
-
-        // Get form data
+        const id = document.getElementById('editBookId').value;
+        const imageFile = document.getElementById('editImagemCapa').files[0];
+        
         const bookData = {
-          titulo: document.getElementById('titulo').value,
-          autores: document.getElementById('autores').value.split(';').map(autor => autor.trim()),
-          editora: document.getElementById('editora').value,
-          anoPublicacao: parseInt(document.getElementById('anoPublicacao').value),
-          isbn: document.getElementById('isbn').value,
-          idioma: document.getElementById('idioma').value,
-          edicao: document.getElementById('edicao').value || null,
-          quantidade: parseInt(document.getElementById('quantidade').value),
-          generos: Array.from(document.getElementById('generos').selectedOptions).map(option => option.value),
-          dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+          titulo: document.getElementById('editTitulo').value,
+          isbn: document.getElementById('editISBN').value,
+          autores: document.getElementById('editAutores').value,
+          editora: document.getElementById('editEditora').value,
+          ano: parseInt(document.getElementById('editAno').value),
+          edicao: document.getElementById('editEdicao').value,
+          genero: document.getElementById('editGenero').value,
+          quantidade: parseInt(document.getElementById('editQuantidade').value),
+          descricao: document.getElementById('editDescricao').value,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // Handle image upload if present
-        const imageFile = document.getElementById('imagemCapa').files[0];
+        // Upload da nova imagem se houver
         if (imageFile) {
-          const imageRef = storage.ref().child(`capas/${bookData.isbn}_${Date.now()}`);
-          await imageRef.put(imageFile);
-          bookData.imagemUrl = await imageRef.getDownloadURL();
+          const storageRef = storage.ref(`capas/${id}_${imageFile.name}`);
+          await storageRef.put(imageFile);
+          bookData.capaUrl = await storageRef.getDownloadURL();
         }
 
-        // Save to Firestore
-        await db.collection('livros').add(bookData);
+        // Atualizar no Firestore
+        await db.collection('livros').doc(id).update(bookData);
 
-        // Show success message
-        showAlert('success', 'Livro adicionado com sucesso!');
-        
-        // Reset form and close modal
-        form.reset();
-        document.getElementById('coverPreview').src = 'https://via.placeholder.com/200x300?text=Capa+do+Livro';
-        bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
-        
-        // Refresh book list
+        showAlert('success', 'Livro atualizado com sucesso!');
+        bootstrap.Modal.getInstance(document.getElementById('editBookModal')).hide();
         loadBooks();
 
       } catch (error) {
-        console.error('Erro ao salvar livro:', error);
-        showAlert('danger', 'Erro ao salvar o livro. Por favor, tente novamente.');
-      } finally {
-        // Reset button state
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
+        console.error('Erro ao atualizar livro:', error);
+        showAlert('danger', 'Erro ao atualizar livro');
       }
     }
 
-    // Function to load books from Firebase
-    async function loadBooks() {
+    // Função para excluir livro
+    async function deleteBook(id) {
+      if (!confirm('Tem certeza que deseja excluir este livro?')) return;
+
       try {
-        const bookGrid = document.querySelector('.book-grid');
-        bookGrid.innerHTML = '<div class="loading-spinner">Carregando...</div>';
-
-        let query = db.collection('livros').orderBy('dataCadastro', 'desc');
-        
-        // Apply genre filter if selected
-        const selectedGenre = document.getElementById('genreFilter').value;
-        if (selectedGenre) {
-          query = query.where('generos', 'array-contains', selectedGenre);
-        }
-
-        const snapshot = await query.get();
-        
-        if (snapshot.empty) {
-          bookGrid.innerHTML = '<p class="text-center">Nenhum livro encontrado.</p>';
-          return;
-        }
-
-        bookGrid.innerHTML = '';
-        snapshot.forEach(doc => {
-          const book = doc.data();
-          const bookCard = document.createElement('div');
-          bookCard.className = 'book-card';
-          bookCard.innerHTML = `
-            <div class="book-cover">
-              <img src="${book.imagemUrl || 'https://via.placeholder.com/200x300?text=Sem+Capa'}" 
-                   alt="Capa do livro ${book.titulo}" class="img-fluid">
-            </div>
-            <h4>${book.titulo}</h4>
-            <p>${book.autores.join(', ')}</p>
-            <p><small>ISBN: ${book.isbn}</small></p>
-            <p><small>Ano: ${book.anoPublicacao}</small></p>
-            <div class="genre-badges">
-              ${book.generos.map(genre => `<span class="genre-badge">${formatGenre(genre)}</span>`).join('')}
-            </div>
-            <span class="book-status ${book.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
-              ${book.quantidade > 0 ? `${book.quantidade} disponível(is)` : 'Indisponível'}
-            </span>
-          `;
-          bookGrid.appendChild(bookCard);
-        });
-
+        await db.collection('livros').doc(id).delete();
+        showAlert('success', 'Livro excluído com sucesso!');
+        loadBooks();
       } catch (error) {
-        console.error('Erro ao carregar livros:', error);
-        showAlert('danger', 'Erro ao carregar os livros. Por favor, recarregue a página.');
+        console.error('Erro ao excluir livro:', error);
+        showAlert('danger', 'Erro ao excluir livro');
       }
     }
 
-    // Function to show alerts
+    // Preview da imagem
+    document.getElementById('editImagemCapa').addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('editCapaPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+
+    // Mostrar alertas
     function showAlert(type, message) {
       const alertDiv = document.createElement('div');
-      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+      alertDiv.role = 'alert';
       alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       `;
-      document.body.appendChild(alertDiv);
-      setTimeout(() => alertDiv.remove(), 5000);
+      
+      document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.search-box'));
+      
+      setTimeout(() => {
+        alertDiv.remove();
+      }, 5000);
     }
 
-    // Initialize the page
+    // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize AOS
-      AOS.init({
-        duration: 800,
-        once: true,
-        offset: 50
-      });
-
-      // Mobile sidebar toggle
-      const toggleSidebar = () => {
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        if (window.innerWidth <= 768) {
-          sidebar.classList.toggle('active');
-          mainContent.style.marginLeft = sidebar.classList.contains('active') ? '250px' : '0';
-        }
-      };
-
-      if (window.innerWidth <= 768) {
-        const header = document.querySelector('.page-header');
-        const hamburger = document.createElement('button');
-        hamburger.className = 'btn btn-primary d-md-none mb-3';
-        hamburger.innerHTML = '<i class="bx bx-menu"></i>';
-        hamburger.onclick = toggleSidebar;
-        header.prepend(hamburger);
-      }
-
-      // Form submission handler
-      const form = document.getElementById('addBookForm');
-      form.addEventListener('submit', handleBookSubmission);
-
-      // Cover preview handler
-      const coverContainer = document.querySelector('.cover-preview-container');
-      const fileInput = document.getElementById('imagemCapa');
-      coverContainer.addEventListener('click', () => fileInput.click());
-
-      // Load initial books
       loadBooks();
-
-      // Add genre filter change handler
-      document.getElementById('genreFilter').addEventListener('change', loadBooks);
+      const form = document.getElementById('editBookForm');
+      form.addEventListener('submit', handleEditSubmission);
     });
-
-    // Cover preview function
-    function previewCover(input) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('coverPreview').src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
-
-    // Add helper function to format genre names
-    function formatGenre(genre) {
-      const genreMap = {
-        'ROMANCE': 'Romance',
-        'FICCAO_CIENTIFICA': 'Ficção Científica',
-        'FANTASIA': 'Fantasia',
-        'MISTERIO': 'Mistério',
-        'TERROR': 'Terror',
-        'DRAMA': 'Drama',
-        'AVENTURA': 'Aventura',
-        'BIOGRAFIA': 'Biografia',
-        'HISTORIA': 'História',
-        'CIENCIAS': 'Ciências',
-        'TECNOLOGIA': 'Tecnologia',
-        'AUTOAJUDA': 'Autoajuda',
-        'EDUCACAO': 'Educação',
-        'INFANTIL': 'Infantil',
-        'POESIA': 'Poesia',
-        'OUTROS': 'Outros'
-      };
-      return genreMap[genre] || genre;
-    }
   </script>
 </body>
 </html> 
