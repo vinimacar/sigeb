@@ -11,126 +11,145 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <!-- Firebase Initialization -->
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-      authDomain: "sigeb-ccd3f.firebaseapp.com",
-      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-      projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
-      messagingSenderId: "209689711066",
-      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-      measurementId: "G-VJBDW2B7HZ"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      --accent-gradient: linear-gradient(90deg, #00f2fe, #4facfe);
+      --transition: all 0.3s ease;
+      --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
     body {
       font-family: 'Poppins', sans-serif;
       background: #f0f2f5;
       margin: 0;
       padding: 0;
     }
+    
     .sidebar {
       position: fixed;
       top: 0;
       left: 0;
       height: 100%;
       width: 250px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: var(--primary-gradient);
       color: white;
       padding: 20px;
-      transition: all 0.3s ease;
+      transition: var(--transition);
       z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
+    
     .sidebar-header {
       padding: 20px 0;
       text-align: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
+    
     .sidebar-header h3 {
-      background: linear-gradient(90deg, #00f2fe, #4facfe);
+      background: var(--accent-gradient);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       margin: 0;
       font-weight: 600;
     }
+    
     .menu-items {
       padding: 20px 0;
     }
+    
     .menu-item {
       padding: 12px 20px;
       color: white;
       text-decoration: none;
       display: flex;
       align-items: center;
-      transition: all 0.3s ease;
+      transition: var(--transition);
       border-radius: 8px;
       margin-bottom: 5px;
     }
+    
     .menu-item:hover, .menu-item.active {
       background: rgba(255, 255, 255, 0.1);
       color: #4facfe;
     }
+    
     .menu-item i {
       margin-right: 10px;
       font-size: 1.2rem;
     }
+    
     .main-content {
       margin-left: 250px;
       padding: 20px;
-      transition: all 0.3s ease;
+      transition: var(--transition);
     }
+    
     .page-header {
       background: white;
       padding: 20px;
       border-radius: 15px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
       margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+    
     .book-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
       margin-top: 20px;
     }
+    
     .book-card {
       background: white;
       border-radius: 15px;
       padding: 20px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
+    
     .book-card:hover {
       transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
     }
+    
+    .book-card .book-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
     .book-status {
       display: inline-block;
       padding: 5px 10px;
       border-radius: 20px;
       font-size: 0.8rem;
       margin-top: 10px;
+      font-weight: 500;
     }
+    
     .status-disponivel {
       background: #e8f5e9;
       color: #2e7d32;
     }
+    
     .status-emprestado {
       background: #ffebee;
       color: #c62828;
     }
+    
     .add-button {
-      background: linear-gradient(90deg, #00f2fe, #4facfe);
+      background: var(--accent-gradient);
       color: white;
       border: none;
       padding: 10px 20px;
@@ -138,42 +157,215 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.3s ease;
+      transition: var(--transition);
+      font-weight: 500;
     }
+    
     .add-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
     }
+    
+    .search-container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+    }
+    
     .search-box {
       display: grid;
       grid-template-columns: 1fr auto auto;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
-    .search-box input {
-      flex: 1;
+    
+    .search-box input, .search-box select {
       padding: 10px 15px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 0.9rem;
+      transition: var(--transition);
     }
+    
+    .search-box input:focus, .search-box select:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    }
+    
     .genre-filter {
       max-width: 200px;
       background-color: white;
     }
+    
     .genre-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
       margin-top: 10px;
     }
+    
     .genre-badge {
       background: var(--accent-gradient);
       color: white;
       padding: 3px 10px;
       border-radius: 15px;
       font-size: 0.8rem;
+      font-weight: 500;
     }
+    
+    .modal-content {
+      border: none;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    
+    .modal-header {
+      background: var(--primary-gradient);
+      color: white;
+      border-bottom: none;
+      padding: 20px;
+    }
+    
+    .modal-header .btn-close {
+      filter: brightness(0) invert(1);
+    }
+    
+    .modal-title {
+      font-weight: 600;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 15px;
+      transition: var(--transition);
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    }
+    
+    .cover-preview-container {
+      position: relative;
+      cursor: pointer;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px dashed #ddd;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f9f9f9;
+    }
+    
+    .cover-preview-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .cover-upload-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      opacity: 0;
+      transition: var(--transition);
+    }
+    
+    .cover-preview-container:hover .cover-upload-overlay {
+      opacity: 1;
+    }
+    
+    .cover-upload-overlay i {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    #imagemCapa, #editImagemCapa {
+      display: none;
+    }
+    
+    .btn-primary {
+      background: var(--accent-gradient);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .text-muted {
+      font-size: 0.8rem;
+      color: #6c757d !important;
+    }
+    
+    .dropdown-menu {
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      border: none;
+    }
+    
+    .dropdown-item {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+    
+    .dropdown-item i {
+      margin-right: 8px;
+    }
+    
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      display: none;
+    }
+    
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+    }
+    
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -194,84 +386,29 @@
         max-width: 100%;
       }
     }
-    .modal-content {
-      border: none;
-      border-radius: 15px;
-    }
-    .modal-header {
-      background: var(--primary-gradient);
-      color: white;
-      border-radius: 15px 15px 0 0;
-      border-bottom: none;
-    }
-    .modal-header .btn-close {
-      filter: brightness(0) invert(1);
-    }
-    .modal-title {
-      font-weight: 600;
-    }
-    .form-label {
-      font-weight: 500;
-      color: #1a1a2e;
-    }
-    .form-control, .form-select {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px 15px;
-      transition: var(--transition);
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: #4facfe;
-      box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
-    }
-    .cover-preview-container {
-      position: relative;
-      cursor: pointer;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-    .cover-upload-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      opacity: 0;
-      transition: var(--transition);
-    }
-    .cover-preview-container:hover .cover-upload-overlay {
-      opacity: 1;
-    }
-    .cover-upload-overlay i {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-    #imagemCapa {
-      display: none;
-    }
-    .btn-primary {
-      background: var(--accent-gradient);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-    }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
-    }
-    .text-muted {
-      font-size: 0.8rem;
-    }
   </style>
 </head>
 <body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay">
+    <div class="spinner-border text-light" role="status">
+      <span class="visually-hidden">Carregando...</span>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto" id="toastTitle">Notificação</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastMessage">
+        Mensagem de notificação
+      </div>
+    </div>
+  </div>
+
   <div class="sidebar">
     <div class="sidebar-header">
       <h3>SIGEB</h3>
@@ -297,7 +434,7 @@
         <i class='bx bxs-cog'></i>
         Configurações
       </a>
-      <a href="index.html" class="menu-item">
+      <a href="#" class="menu-item" id="logoutBtn">
         <i class='bx bxs-log-out'></i>
         Sair
       </a>
@@ -308,7 +445,7 @@
     <div class="page-header">
       <div>
         <h2>Gerenciamento de Livros</h2>
-        <p>Gerencie o acervo da biblioteca</p>
+        <p class="text-muted mb-0">Gerencie o acervo da biblioteca</p>
       </div>
       <button class="add-button" data-bs-toggle="modal" data-bs-target="#addBookModal">
         <i class='bx bx-plus'></i>
@@ -316,56 +453,48 @@
       </button>
     </div>
 
-    <div class="search-box">
-      <input type="text" placeholder="Pesquisar por título, autor ou ISBN...">
-      <select class="form-select genre-filter" id="genreFilter">
-        <option value="">Todos os Gêneros</option>
-        <option value="ROMANCE">Romance</option>
-        <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
-        <option value="FANTASIA">Fantasia</option>
-        <option value="MISTERIO">Mistério</option>
-        <option value="TERROR">Terror</option>
-        <option value="DRAMA">Drama</option>
-        <option value="AVENTURA">Aventura</option>
-        <option value="BIOGRAFIA">Biografia</option>
-        <option value="HISTORIA">História</option>
-        <option value="CIENCIAS">Ciências</option>
-        <option value="TECNOLOGIA">Tecnologia</option>
-        <option value="AUTOAJUDA">Autoajuda</option>
-        <option value="EDUCACAO">Educação</option>
-        <option value="INFANTIL">Infantil</option>
-        <option value="POESIA">Poesia</option>
-        <option value="OUTROS">Outros</option>
-      </select>
-      <button class="add-button">
-        <i class='bx bx-search'></i>
-      </button>
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Pesquisar por título, autor ou ISBN...">
+        <select class="form-select genre-filter" id="genreFilter">
+          <option value="">Todos os Gêneros</option>
+          <option value="ROMANCE">Romance</option>
+          <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
+          <option value="FANTASIA">Fantasia</option>
+          <option value="MISTERIO">Mistério</option>
+          <option value="TERROR">Terror</option>
+          <option value="DRAMA">Drama</option>
+          <option value="AVENTURA">Aventura</option>
+          <option value="BIOGRAFIA">Biografia</option>
+          <option value="HISTORIA">História</option>
+          <option value="CIENCIAS">Ciências</option>
+          <option value="TECNOLOGIA">Tecnologia</option>
+          <option value="AUTOAJUDA">Autoajuda</option>
+          <option value="EDUCACAO">Educação</option>
+          <option value="INFANTIL">Infantil</option>
+          <option value="POESIA">Poesia</option>
+          <option value="OUTROS">Outros</option>
+        </select>
+        <button class="add-button" id="searchBtn">
+          <i class='bx bx-search'></i>
+          Pesquisar
+        </button>
+      </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted" id="totalBooks">Carregando...</small>
+        <button class="btn btn-sm btn-outline-secondary" id="resetFiltersBtn">
+          <i class='bx bx-reset'></i>
+          Limpar Filtros
+        </button>
+      </div>
     </div>
 
-    <div class="book-grid">
-      <div class="book-card">
-        <h4>Dom Casmurro</h4>
-        <p>Machado de Assis</p>
-        <p><small>ISBN: 9788535910682</small></p>
-        <span class="book-status status-disponivel">Disponível</span>
-      </div>
-      <div class="book-card">
-        <h4>O Pequeno Príncipe</h4>
-        <p>Antoine de Saint-Exupéry</p>
-        <p><small>ISBN: 9788574123745</small></p>
-        <span class="book-status status-emprestado">Emprestado</span>
-      </div>
-      <div class="book-card">
-        <h4>1984</h4>
-        <p>George Orwell</p>
-        <p><small>ISBN: 9788535914849</small></p>
-        <span class="book-status status-disponivel">Disponível</span>
-      </div>
-      <div class="book-card">
-        <h4>Memórias Póstumas de Brás Cubas</h4>
-        <p>Machado de Assis</p>
-        <p><small>ISBN: 9788535911121</small></p>
-        <span class="book-status status-disponivel">Disponível</span>
+    <div class="book-grid" id="bookGrid">
+      <!-- Livros serão carregados dinamicamente aqui -->
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
       </div>
     </div>
 
@@ -489,14 +618,19 @@
                       Por favor, selecione o idioma.
                     </div>
                   </div>
+
+                  <div class="mb-3">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <textarea class="form-control" id="descricao" rows="3"></textarea>
+                  </div>
                 </div>
 
                 <div class="col-md-4">
                   <div class="mb-3">
                     <label for="imagemCapa" class="form-label">Imagem da Capa</label>
-                    <div class="cover-preview-container">
-                      <img id="coverPreview" src="https://via.placeholder.com/200x300?text=Capa+do+Livro" 
-                           class="img-fluid mb-2 rounded" alt="Preview da capa">
+                    <div class="cover-preview-container" onclick="document.getElementById('imagemCapa').click()">
+                      <img id="coverPreview" src="https://via.placeholder.com/300x450?text=Selecione+uma+imagem" 
+                           class="img-fluid mb-2" alt="Preview da capa">
                       <div class="cover-upload-overlay">
                         <i class='bx bx-upload'></i>
                         <span>Clique para upload</span>
@@ -504,7 +638,7 @@
                     </div>
                     <input type="file" class="form-control" id="imagemCapa" accept="image/*" 
                            onchange="previewCover(this)">
-                    <small class="text-muted">Formato: JPG, PNG. Tamanho máx: 2MB</small>
+                    <small class="text-muted">Formatos: JPG, PNG, WEBP. Tamanho máx: 2MB</small>
                   </div>
                 </div>
               </div>
@@ -512,7 +646,10 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" form="addBookForm" class="btn btn-primary">Salvar Livro</button>
+            <button type="submit" form="addBookForm" class="btn btn-primary" id="saveBookBtn">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              Salvar Livro
+            </button>
           </div>
         </div>
       </div>
@@ -534,95 +671,136 @@
                   <div class="mb-3">
                     <label for="editTitulo" class="form-label">Título*</label>
                     <input type="text" class="form-control" id="editTitulo" required>
+                    <div class="invalid-feedback">
+                      Por favor, insira o título do livro.
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="editISBN" class="form-label">ISBN</label>
-                    <input type="text" class="form-control" id="editISBN">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-12">
+                  
                   <div class="mb-3">
                     <label for="editAutores" class="form-label">Autor(es)*</label>
                     <input type="text" class="form-control" id="editAutores" required>
-                    <div class="form-text">Separe múltiplos autores com vírgula</div>
+                    <small class="text-muted">Separe múltiplos autores com ponto e vírgula (;)</small>
+                    <div class="invalid-feedback">
+                      Por favor, insira pelo menos um autor.
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <div class="row">
-                <div class="col-md-6">
                   <div class="mb-3">
                     <label for="editEditora" class="form-label">Editora*</label>
                     <input type="text" class="form-control" id="editEditora" required>
+                    <div class="invalid-feedback">
+                      Por favor, insira a editora.
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label for="editAno" class="form-label">Ano*</label>
-                    <input type="number" class="form-control" id="editAno" required min="1800" max="2024">
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label for="editEdicao" class="form-label">Edição</label>
-                    <input type="text" class="form-control" id="editEdicao">
-                  </div>
-                </div>
-              </div>
 
-              <div class="row">
-                <div class="col-md-6">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="editAnoPublicacao" class="form-label">Ano de Publicação*</label>
+                        <input type="number" class="form-control" id="editAnoPublicacao" 
+                               min="1800" max="2024" required>
+                        <div class="invalid-feedback">
+                          Por favor, insira um ano válido (1800-2024).
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="editEdicao" class="form-label">Edição</label>
+                        <input type="number" class="form-control" id="editEdicao" min="1">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="editIsbn" class="form-label">ISBN*</label>
+                        <input type="text" class="form-control" id="editIsbn" required 
+                               pattern="^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$">
+                        <div class="invalid-feedback">
+                          Por favor, insira um ISBN válido.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="editQuantidade" class="form-label">Quantidade*</label>
+                        <input type="number" class="form-control" id="editQuantidade" min="0" required>
+                        <div class="invalid-feedback">
+                          Por favor, insira a quantidade.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="mb-3">
-                    <label for="editGenero" class="form-label">Gênero*</label>
-                    <select class="form-select" id="editGenero" required>
-                      <option value="">Selecione...</option>
-                      <option value="LITERATURA">Literatura</option>
-                      <option value="FICCAO">Ficção</option>
-                      <option value="NAO_FICCAO">Não Ficção</option>
-                      <option value="INFANTIL">Infantil</option>
-                      <option value="JUVENIL">Juvenil</option>
-                      <option value="ACADEMICO">Acadêmico</option>
-                      <option value="TECNICO">Técnico</option>
+                    <label for="editGeneros" class="form-label">Gêneros*</label>
+                    <select class="form-select" id="editGeneros" multiple required>
+                      <option value="ROMANCE">Romance</option>
+                      <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
+                      <option value="FANTASIA">Fantasia</option>
+                      <option value="MISTERIO">Mistério</option>
+                      <option value="TERROR">Terror</option>
+                      <option value="DRAMA">Drama</option>
+                      <option value="AVENTURA">Aventura</option>
                       <option value="BIOGRAFIA">Biografia</option>
                       <option value="HISTORIA">História</option>
                       <option value="CIENCIAS">Ciências</option>
+                      <option value="TECNOLOGIA">Tecnologia</option>
+                      <option value="AUTOAJUDA">Autoajuda</option>
+                      <option value="EDUCACAO">Educação</option>
+                      <option value="INFANTIL">Infantil</option>
+                      <option value="POESIA">Poesia</option>
+                      <option value="OUTROS">Outros</option>
                     </select>
+                    <small class="text-muted">Pressione Ctrl (Cmd no Mac) para selecionar múltiplos gêneros</small>
+                    <div class="invalid-feedback">
+                      Por favor, selecione pelo menos um gênero.
+                    </div>
                   </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="editQuantidade" class="form-label">Quantidade*</label>
-                    <input type="number" class="form-control" id="editQuantidade" required min="0">
-                  </div>
-                </div>
-              </div>
 
-              <div class="row">
-                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="editIdioma" class="form-label">Idioma*</label>
+                    <select class="form-select" id="editIdioma" required>
+                      <option value="">Selecione o idioma</option>
+                      <option value="pt-BR">Português (Brasil)</option>
+                      <option value="en">Inglês</option>
+                      <option value="es">Espanhol</option>
+                      <option value="fr">Francês</option>
+                      <option value="de">Alemão</option>
+                      <option value="it">Italiano</option>
+                    </select>
+                    <div class="invalid-feedback">
+                      Por favor, selecione o idioma.
+                    </div>
+                  </div>
+
                   <div class="mb-3">
                     <label for="editDescricao" class="form-label">Descrição</label>
                     <textarea class="form-control" id="editDescricao" rows="3"></textarea>
                   </div>
                 </div>
-              </div>
 
-              <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label">Capa do Livro</label>
+                    <label for="editImagemCapa" class="form-label">Imagem da Capa</label>
                     <div class="cover-preview-container" onclick="document.getElementById('editImagemCapa').click()">
-                      <img id="editCapaPreview" src="img/capa-padrao.jpg" alt="Capa do Livro" style="width: 100%; height: 200px; object-fit: cover;">
+                      <img id="editCapaPreview" src="https://via.placeholder.com/300x450?text=Capa+do+Livro" 
+                           class="img-fluid mb-2" alt="Preview da capa">
                       <div class="cover-upload-overlay">
                         <i class='bx bx-upload'></i>
-                        <span>Clique para alterar a capa</span>
+                        <span>Clique para alterar</span>
                       </div>
                     </div>
-                    <input type="file" class="form-control" id="editImagemCapa" accept="image/*" style="display: none;">
+                    <input type="file" class="form-control" id="editImagemCapa" accept="image/*">
+                    <small class="text-muted">Formatos: JPG, PNG, WEBP. Tamanho máx: 2MB</small>
+                    <div class="form-check mt-2">
+                      <input class="form-check-input" type="checkbox" id="removeCover">
+                      <label class="form-check-label" for="removeCover">
+                        Remover capa atual
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -630,7 +808,33 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" form="editBookForm" class="btn btn-primary">Salvar Alterações</button>
+            <button type="submit" form="editBookForm" class="btn btn-primary" id="updateBookBtn">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              Salvar Alterações
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Confirmar Exclusão -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">Confirmar Exclusão</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Tem certeza que deseja excluir este livro? Esta ação não pode ser desfeita.</p>
+            <p class="fw-bold" id="bookToDeleteTitle"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              Excluir
+            </button>
           </div>
         </div>
       </div>
@@ -638,183 +842,30 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
   <script>
-    // Função para carregar livros do Firebase
-    async function loadBooks() {
-      try {
-        const snapshot = await db.collection('livros').get();
-        const bookGrid = document.querySelector('.book-grid');
-        bookGrid.innerHTML = '';
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.appspot.com",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
 
-        snapshot.forEach(doc => {
-          const book = doc.data();
-          const card = createBookCard(doc.id, book);
-          bookGrid.appendChild(card);
-        });
-      } catch (error) {
-        console.error('Erro ao carregar livros:', error);
-        showAlert('danger', 'Erro ao carregar livros');
-      }
-    }
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const auth = firebase.auth();
 
-    // Função para criar card do livro
-    function createBookCard(id, book) {
-      const card = document.createElement('div');
-      card.className = 'book-card';
-      card.innerHTML = `
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <h5>${book.titulo}</h5>
-            <p class="text-muted mb-1">${book.autores}</p>
-            <p class="text-muted mb-2">${book.editora}, ${book.ano}</p>
-            <span class="book-status ${book.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
-              ${book.quantidade > 0 ? `${book.quantidade} disponíveis` : 'Indisponível'}
-            </span>
-          </div>
-          <div class="dropdown">
-            <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
-              <i class='bx bx-dots-vertical-rounded'></i>
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" onclick="editBook('${id}')">Editar</a></li>
-              <li><a class="dropdown-item text-danger" href="#" onclick="deleteBook('${id}')">Excluir</a></li>
-            </ul>
-          </div>
-        </div>
-      `;
-      return card;
-    }
+    // Variáveis globais
+    let currentUser = null;
+    let books = [];
+    let selectedBookId = null;
 
-    // Função para editar livro
-    async function editBook(id) {
-      try {
-        const doc = await db.collection('livros').doc(id).get();
-        if (!doc.exists) {
-          showAlert('danger', 'Livro não encontrado');
-          return;
-        }
-
-        const book = doc.data();
-        document.getElementById('editBookId').value = id;
-        document.getElementById('editTitulo').value = book.titulo;
-        document.getElementById('editISBN').value = book.isbn || '';
-        document.getElementById('editAutores').value = book.autores;
-        document.getElementById('editEditora').value = book.editora;
-        document.getElementById('editAno').value = book.ano;
-        document.getElementById('editEdicao').value = book.edicao || '';
-        document.getElementById('editGenero').value = book.genero;
-        document.getElementById('editQuantidade').value = book.quantidade;
-        document.getElementById('editDescricao').value = book.descricao || '';
-        
-        if (book.capaUrl) {
-          document.getElementById('editCapaPreview').src = book.capaUrl;
-        }
-
-        const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
-        editModal.show();
-      } catch (error) {
-        console.error('Erro ao carregar dados do livro:', error);
-        showAlert('danger', 'Erro ao carregar dados do livro');
-      }
-    }
-
-    // Função para salvar edições
-    async function handleEditSubmission(event) {
-      event.preventDefault();
-      
-      const form = document.getElementById('editBookForm');
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        return;
-      }
-
-      try {
-        const id = document.getElementById('editBookId').value;
-        const imageFile = document.getElementById('editImagemCapa').files[0];
-        
-        const bookData = {
-          titulo: document.getElementById('editTitulo').value,
-          isbn: document.getElementById('editISBN').value,
-          autores: document.getElementById('editAutores').value,
-          editora: document.getElementById('editEditora').value,
-          ano: parseInt(document.getElementById('editAno').value),
-          edicao: document.getElementById('editEdicao').value,
-          genero: document.getElementById('editGenero').value,
-          quantidade: parseInt(document.getElementById('editQuantidade').value),
-          descricao: document.getElementById('editDescricao').value,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        // Upload da nova imagem se houver
-        if (imageFile) {
-          const storageRef = storage.ref(`capas/${id}_${imageFile.name}`);
-          await storageRef.put(imageFile);
-          bookData.capaUrl = await storageRef.getDownloadURL();
-        }
-
-        // Atualizar no Firestore
-        await db.collection('livros').doc(id).update(bookData);
-
-        showAlert('success', 'Livro atualizado com sucesso!');
-        bootstrap.Modal.getInstance(document.getElementById('editBookModal')).hide();
-        loadBooks();
-
-      } catch (error) {
-        console.error('Erro ao atualizar livro:', error);
-        showAlert('danger', 'Erro ao atualizar livro');
-      }
-    }
-
-    // Função para excluir livro
-    async function deleteBook(id) {
-      if (!confirm('Tem certeza que deseja excluir este livro?')) return;
-
-      try {
-        await db.collection('livros').doc(id).delete();
-        showAlert('success', 'Livro excluído com sucesso!');
-        loadBooks();
-      } catch (error) {
-        console.error('Erro ao excluir livro:', error);
-        showAlert('danger', 'Erro ao excluir livro');
-      }
-    }
-
-    // Preview da imagem
-    document.getElementById('editImagemCapa').addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('editCapaPreview').src = e.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
-      }
-    });
-
-    // Mostrar alertas
-    function showAlert(type, message) {
-      const alertDiv = document.createElement('div');
-      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-      alertDiv.role = 'alert';
-      alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
-      
-      document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.search-box'));
-      
-      setTimeout(() => {
-        alertDiv.remove();
-      }, 5000);
-    }
-
-    // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
-      loadBooks();
-      const form = document.getElementById('editBookForm');
-      form.addEventListener('submit', handleEditSubmission);
-    });
-  </script>
-</body>
-</html> 
+    // Elementos do DOM
+    const bookGrid = document.getElementById('bookGrid');
