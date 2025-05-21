@@ -382,6 +382,14 @@
               <div class="row">
                 <div class="col-md-8">
                   <div class="mb-3">
+                    <label for="isbn" class="form-label">ISBN*</label>
+                    <input type="text" class="form-control" id="isbn" required
+                           pattern="^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$">
+                    <div class="invalid-feedback">
+                      Por favor, insira um ISBN válido.
+                    </div>
+                  </div>
+                  <div class="mb-3">
                     <label for="titulo" class="form-label">Título*</label>
                     <input type="text" class="form-control" id="titulo" required>
                     <div class="invalid-feedback">
@@ -426,25 +434,11 @@
                     </div>
                   </div>
 
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="mb-3">
-                        <label for="isbn" class="form-label">ISBN*</label>
-                        <input type="text" class="form-control" id="isbn" required 
-                               pattern="^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$">
-                        <div class="invalid-feedback">
-                          Por favor, insira um ISBN válido.
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="mb-3">
-                        <label for="quantidade" class="form-label">Quantidade*</label>
-                        <input type="number" class="form-control" id="quantidade" min="1" required>
-                        <div class="invalid-feedback">
-                          Por favor, insira a quantidade.
-                        </div>
-                      </div>
+                  <div class="mb-3">
+                    <label for="quantidade" class="form-label">Quantidade*</label>
+                    <input type="number" class="form-control" id="quantidade" min="1" required>
+                    <div class="invalid-feedback">
+                      Por favor, insira a quantidade.
                     </div>
                   </div>
 
