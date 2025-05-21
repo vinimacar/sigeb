@@ -818,9 +818,11 @@
         return;
       }
 
-      const addBookButton = form.querySelector('button[type="submit"]');
-      addBookButton.disabled = true;
-      addBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+      const addBookButton = document.querySelector('button[form="addBookForm"][type="submit"]');
+      if (addBookButton) {
+        addBookButton.disabled = true;
+        addBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+      }
 
       try {
         const titulo = document.getElementById('titulo').value;
@@ -871,8 +873,10 @@
         console.error('Erro ao adicionar livro:', error);
         showAlert('danger', `Erro ao adicionar livro: ${error.message}`);
       } finally {
-        addBookButton.disabled = false;
-        addBookButton.innerHTML = 'Salvar Livro';
+        if (addBookButton) {
+          addBookButton.disabled = false;
+          addBookButton.innerHTML = 'Salvar Livro';
+        }
       }
     }
 
