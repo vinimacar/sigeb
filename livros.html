@@ -635,21 +635,47 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
   <script>
-    // Função para carregar livros do Firebase
-    async function loadBooks() {
+    // Função para carregar livros do Firebase com filtros e busca
+    async function loadBooks(searchTerm = '', selectedGenre = '') {
+      const bookGrid = document.querySelector('.book-grid');
       try {
-        const snapshot = await db.collection('livros').get();
-        const bookGrid = document.querySelector('.book-grid');
-        bookGrid.innerHTML = '';
+        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>'; // Feedback de carregamento
 
-        snapshot.forEach(doc => {
-          const book = doc.data();
-          const card = createBookCard(doc.id, book);
-          bookGrid.appendChild(card);
-        });
+        let query = db.collection('livros').orderBy('titulo'); // Ordenar por título como base
+
+        if (selectedGenre) {
+          query = query.where('generos', 'array-contains', selectedGenre);
+        }
+
+        const snapshot = await query.get();
+        
+        let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (searchTerm.trim()) {
+          const lowerSearchTerm = searchTerm.toLowerCase().trim();
+          booksToDisplay = booksToDisplay.filter(book => {
+            const titleMatch = book.titulo && book.titulo.toLowerCase().includes(lowerSearchTerm);
+            const authorMatch = book.autores && Array.isArray(book.autores) &&
+                                book.autores.some(author => author.toLowerCase().includes(lowerSearchTerm));
+            const isbnMatch = book.isbn && book.isbn.toLowerCase().includes(lowerSearchTerm);
+            return titleMatch || authorMatch || isbnMatch;
+          });
+        }
+
+        bookGrid.innerHTML = ''; // Limpar antes de adicionar novos cards ou mensagem
+
+        if (booksToDisplay.length === 0) {
+          bookGrid.innerHTML = '<p class="text-center p-4">Nenhum livro encontrado com os critérios selecionados.</p>';
+        } else {
+          booksToDisplay.forEach(bookData => { // Renomeado para evitar conflito com a variável 'book' no escopo superior se houvesse
+            const card = createBookCard(bookData.id, bookData);
+            bookGrid.appendChild(card);
+          });
+        }
       } catch (error) {
         console.error('Erro ao carregar livros:', error);
-        showAlert('danger', 'Erro ao carregar livros');
+        bookGrid.innerHTML = '<p class="text-center text-danger p-4">Erro ao carregar livros. Tente novamente mais tarde.</p>';
+        showAlert('danger', 'Erro ao carregar livros: ' + error.message);
       }
     }
 
@@ -887,15 +913,55 @@
       }
     }
 
-    // Inicialização
+    // Inicialização e Event Listeners para busca
     document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.querySelector('.search-box input[type="text"]');
+      const genreFilter = document.getElementById('genreFilter');
+      const searchButton = document.querySelector('.search-box button.add-button'); // Botão de busca com ícone
+
+      let searchDebounceTimer;
+
+      function performSearch() {
+        const searchTerm = searchInput ? searchInput.value : '';
+        const selectedGenre = genreFilter ? genreFilter.value : '';
+        loadBooks(searchTerm, selectedGenre);
+      }
+
+      if (searchButton) {
+        searchButton.addEventListener('click', performSearch);
+      }
+
+      if (genreFilter) {
+        genreFilter.addEventListener('change', performSearch);
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = setTimeout(() => {
+            performSearch();
+          }, 500); // Debounce de 500ms para evitar buscas excessivas ao digitar
+        });
+        searchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevenir submissão de formulário se o input estiver em um
+                performSearch();
+            }
+        });
+      }
+      
+      // Carregar livros iniciais (sem filtros)
       loadBooks();
       
       const addBookForm = document.getElementById('addBookForm');
-      addBookForm.addEventListener('submit', handleAddBookSubmission);
+      if (addBookForm) {
+        addBookForm.addEventListener('submit', handleAddBookSubmission);
+      }
 
       const editBookForm = document.getElementById('editBookForm');
-      editBookForm.addEventListener('submit', handleEditSubmission);
+      if (editBookForm) {
+        editBookForm.addEventListener('submit', handleEditSubmission);
+      }
     });
   </script>
 </body>
