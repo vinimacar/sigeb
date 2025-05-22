@@ -13,24 +13,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-analytics-compat.js"></script>
-  <!-- Firebase Config -->
-  <script>
-    // Se já existir firebaseConfig no firebase-config.js, remova daqui
-    // Caso não, adicione suas credenciais abaixo:
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-      authDomain: "sigeb-ccd3f.firebaseapp.com",
-      projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.appspot.com",
-      messagingSenderId: "209689711066",
-      appId: "1:209689711066:web:5a99505e60bd34f29b70e3"
-    };
-    // Inicialização segura (evita erro de duplo init)
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-  </script>
+  <!-- Inclua o arquivo de configuração do Firebase -->
+  <script src="firebase-config.js"></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
