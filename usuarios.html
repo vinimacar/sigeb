@@ -594,9 +594,11 @@
           return;
         }
 
+        // Corrigido: buscar o botão de submit apenas dentro do formulário do modal
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+
         try {
-          const submitButton = document.querySelector('button[type="submit"]');
-          const originalText = submitButton.innerHTML;
           submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
           submitButton.disabled = true;
 
@@ -630,7 +632,7 @@
           showAlert('success', 'Usuário cadastrado com sucesso!');
           form.reset();
           bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-          loadUsers();
+          if (typeof loadUsers === 'function') loadUsers();
 
         } catch (error) {
           console.error('Erro ao salvar usuário:', error);
