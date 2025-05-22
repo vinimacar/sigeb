@@ -146,7 +146,7 @@
     }
     .search-box {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr 1fr 1fr auto auto; /* Ajustado para 3 campos de texto, 1 select, 1 botão */
       gap: 10px;
       margin-bottom: 20px;
     }
@@ -317,7 +317,9 @@
     </div>
 
     <div class="search-box">
-      <input type="text" placeholder="Pesquisar por título, autor ou ISBN...">
+      <input type="text" class="form-control" id="filterTitulo" placeholder="Filtrar por Título...">
+      <input type="text" class="form-control" id="filterAutor" placeholder="Filtrar por Autor...">
+      <input type="text" class="form-control" id="filterEditora" placeholder="Filtrar por Editora...">
       <select class="form-select genre-filter" id="genreFilter">
         <option value="">Todos os Gêneros</option>
         <option value="ROMANCE">Romance</option>
@@ -337,7 +339,7 @@
         <option value="POESIA">Poesia</option>
         <option value="OUTROS">Outros</option>
       </select>
-      <button class="add-button">
+      <button class="add-button" id="searchButton">
         <i class='bx bx-search'></i>
       </button>
     </div>
@@ -636,30 +638,42 @@
   
   <script>
     // Função para carregar livros do Firebase com filtros e busca
-    async function loadBooks(searchTerm = '', selectedGenre = '') {
+    async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
       const bookGrid = document.querySelector('.book-grid');
       try {
         bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>'; // Feedback de carregamento
 
         let query = db.collection('livros').orderBy('titulo'); // Ordenar por título como base
 
+        // Aplicar filtro de gênero na consulta do Firestore, se existir
         if (selectedGenre) {
           query = query.where('generos', 'array-contains', selectedGenre);
         }
-
-        const snapshot = await query.get();
         
+        const snapshot = await query.get();
         let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        if (searchTerm.trim()) {
-          const lowerSearchTerm = searchTerm.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book => {
-            const titleMatch = book.titulo && book.titulo.toLowerCase().includes(lowerSearchTerm);
-            const authorMatch = book.autores && Array.isArray(book.autores) &&
-                                book.autores.some(author => author.toLowerCase().includes(lowerSearchTerm));
-            const isbnMatch = book.isbn && book.isbn.toLowerCase().includes(lowerSearchTerm);
-            return titleMatch || authorMatch || isbnMatch;
-          });
+        // Filtragem no lado do cliente para título, autor e editora
+        if (filterTitulo.trim()) {
+          const lowerTitulo = filterTitulo.toLowerCase().trim();
+          booksToDisplay = booksToDisplay.filter(book =>
+            book.titulo && book.titulo.toLowerCase().includes(lowerTitulo)
+          );
+        }
+
+        if (filterAutor.trim()) {
+          const lowerAutor = filterAutor.toLowerCase().trim();
+          booksToDisplay = booksToDisplay.filter(book =>
+            book.autores && Array.isArray(book.autores) &&
+            book.autores.some(author => author.toLowerCase().includes(lowerAutor))
+          );
+        }
+
+        if (filterEditora.trim()) {
+          const lowerEditora = filterEditora.toLowerCase().trim();
+          booksToDisplay = booksToDisplay.filter(book =>
+            book.editora && book.editora.toLowerCase().includes(lowerEditora)
+          );
         }
 
         bookGrid.innerHTML = ''; // Limpar antes de adicionar novos cards ou mensagem
@@ -667,7 +681,7 @@
         if (booksToDisplay.length === 0) {
           bookGrid.innerHTML = '<p class="text-center p-4">Nenhum livro encontrado com os critérios selecionados.</p>';
         } else {
-          booksToDisplay.forEach(bookData => { // Renomeado para evitar conflito com a variável 'book' no escopo superior se houvesse
+          booksToDisplay.forEach(bookData => {
             const card = createBookCard(bookData.id, bookData);
             bookGrid.appendChild(card);
           });
@@ -915,16 +929,20 @@
 
     // Inicialização e Event Listeners para busca
     document.addEventListener('DOMContentLoaded', function() {
-      const searchInput = document.querySelector('.search-box input[type="text"]');
+      const filterTituloInput = document.getElementById('filterTitulo');
+      const filterAutorInput = document.getElementById('filterAutor');
+      const filterEditoraInput = document.getElementById('filterEditora');
       const genreFilter = document.getElementById('genreFilter');
-      const searchButton = document.querySelector('.search-box button.add-button'); // Botão de busca com ícone
+      const searchButton = document.getElementById('searchButton');
 
       let searchDebounceTimer;
 
       function performSearch() {
-        const searchTerm = searchInput ? searchInput.value : '';
+        const titulo = filterTituloInput ? filterTituloInput.value : '';
+        const autor = filterAutorInput ? filterAutorInput.value : '';
+        const editora = filterEditoraInput ? filterEditoraInput.value : '';
         const selectedGenre = genreFilter ? genreFilter.value : '';
-        loadBooks(searchTerm, selectedGenre);
+        loadBooks(titulo, autor, editora, selectedGenre);
       }
 
       if (searchButton) {
@@ -935,20 +953,22 @@
         genreFilter.addEventListener('change', performSearch);
       }
 
-      if (searchInput) {
-        searchInput.addEventListener('input', () => {
-          clearTimeout(searchDebounceTimer);
-          searchDebounceTimer = setTimeout(() => {
-            performSearch();
-          }, 500); // Debounce de 500ms para evitar buscas excessivas ao digitar
-        });
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevenir submissão de formulário se o input estiver em um
-                performSearch();
-            }
-        });
-      }
+      [filterTituloInput, filterAutorInput, filterEditoraInput].forEach(input => {
+        if (input) {
+          input.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+              performSearch();
+            }, 500); // Debounce de 500ms
+          });
+          input.addEventListener('keypress', function(event) {
+              if (event.key === 'Enter') {
+                  event.preventDefault();
+                  performSearch();
+              }
+          });
+        }
+      });
       
       // Carregar livros iniciais (sem filtros)
       loadBooks();
