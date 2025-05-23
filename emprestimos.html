@@ -488,7 +488,7 @@
       loadLoans();
     });
 
-    // Buscar usuários cadastrados ao digitar no campo ou clicar no botão
+    // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
     async function searchUsers() {
       const searchTerm = document.getElementById('userSearch').value.trim();
       const resultsDiv = document.getElementById('userSearchResults');
@@ -498,7 +498,7 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por nome OU matrícula
+        // Busca por nome OU matrícula (ajuste conforme seu banco)
         let query = db.collection('usuarios')
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
@@ -528,6 +528,19 @@
         showAlert('danger', 'Erro ao buscar usuários');
       }
     }
+
+    // Selecionar usuário da lista
+    function selectUser(userId, userName) {
+      document.getElementById('userSearch').value = userName;
+      document.getElementById('selectedUserId').value = userId;
+      document.getElementById('userSearchResults').classList.remove('show');
+    }
+
+    // Adicione listeners para busca automática ao digitar ou clicar no botão
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('userSearch').addEventListener('input', searchUsers);
+      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
+    });
 
     // Buscar livros cadastrados ao digitar no campo ou clicar no botão
     async function searchBooks() {
@@ -568,13 +581,6 @@
         console.error('Erro ao buscar livros:', error);
         showAlert('danger', 'Erro ao buscar livros');
       }
-    }
-
-    // Selecionar usuário da lista
-    function selectUser(userId, userName) {
-      document.getElementById('userSearch').value = userName;
-      document.getElementById('selectedUserId').value = userId;
-      document.getElementById('userSearchResults').classList.remove('show');
     }
 
     // Selecionar livro da lista
