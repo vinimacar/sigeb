@@ -229,38 +229,6 @@
       border-color: #4facfe;
       box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
     }
-    .cover-preview-container {
-      position: relative;
-      cursor: pointer;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-    .cover-upload-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      opacity: 0;
-      transition: var(--transition);
-    }
-    .cover-preview-container:hover .cover-upload-overlay {
-      opacity: 1;
-    }
-    .cover-upload-overlay i {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-    #imagemCapa {
-      display: none;
-    }
     .btn-primary {
       background: var(--accent-gradient);
       border: none;
@@ -595,21 +563,6 @@
                   </div>
                 </div>
               </div>
-
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label">Capa do Livro</label>
-                    <div class="cover-preview-container" onclick="document.getElementById('editImagemCapa').click()">
-                      <img id="editCapaPreview" src="img/capa-padrao.jpg" alt="Capa do Livro" style="width: 100%; height: 200px; object-fit: cover;">
-                      <div class="cover-upload-overlay">
-                        <span>Clique para alterar a capa</span>
-                      </div>
-                    </div>
-                    <input type="file" class="form-control" id="editImagemCapa" accept="image/*" style="display: none;">
-                  </div>
-                </div>
-              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -732,10 +685,6 @@
         document.getElementById('editQuantidade').value = book.quantidade;
         document.getElementById('editDescricao').value = book.descricao || '';
         
-        if (book.capaUrl) {
-          document.getElementById('editCapaPreview').src = book.capaUrl;
-        }
-
         const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
         editModal.show();
       } catch (error) {
@@ -756,7 +705,6 @@
 
       try {
         const id = document.getElementById('editBookId').value;
-        const imageFile = document.getElementById('editImagemCapa').files[0];
         
         const bookData = {
           titulo: document.getElementById('editTitulo').value,
@@ -770,13 +718,6 @@
           descricao: document.getElementById('editDescricao').value,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-
-        // Upload da nova imagem se houver
-        if (imageFile) {
-          const storageRef = storage.ref(`capas/${id}_${imageFile.name}`);
-          await storageRef.put(imageFile);
-          bookData.capaUrl = await storageRef.getDownloadURL();
-        }
 
         // Atualizar no Firestore
         await db.collection('livros').doc(id).update(bookData);
@@ -804,17 +745,6 @@
         showAlert('danger', 'Erro ao excluir livro');
       }
     }
-
-    // Preview da imagem
-    document.getElementById('editImagemCapa').addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('editCapaPreview').src = e.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
-      }
-    });
 
     // Mostrar alertas
     function showAlert(type, message) {
@@ -892,19 +822,6 @@
           addBookButton.disabled = false;
           addBookButton.innerHTML = 'Salvar Livro';
         }
-      }
-    }
-
-    // Preview da imagem para adicionar livro
-    function previewCover(input) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('coverPreview').src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-      } else {
-        document.getElementById('coverPreview').src = 'https://via.placeholder.com/200x300?text=Capa+do+Livro';
       }
     }
 
