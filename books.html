@@ -208,7 +208,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Adicione o campo oculto no formulário de edição -->
                     <form id="editBookForm">
+                        <input type="hidden" id="editBookId">
                         <div class="mb-3">
                             <label class="form-label">Título</label>
                             <input type="text" class="form-control" id="editTitulo" required>
@@ -295,18 +297,29 @@
                 const livrosRef = collection(db, 'livros');
                 const q = query(livrosRef, orderBy('titulo'));
                 const querySnapshot = await getDocs(q);
-                
-                const bookGrid = document.querySelector('.book-grid');
-                bookGrid.innerHTML = '';
 
-                querySnapshot.forEach((doc) => {
-                    const book = doc.data();
-                    const card = createBookCard(doc.id, book);
-                    bookGrid.appendChild(card);
+                const booksTableBody = document.getElementById('booksTableBody');
+                booksTableBody.innerHTML = '';
+
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${book.titulo || ''}</td>
+                        <td>${book.autores || ''}</td>
+                        <td>${book.isbn || ''}</td>
+                        <td>${book.genero || ''}</td>
+                        <td>${book.quantidade > 0 ? 'Disponível' : 'Indisponível'}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning" onclick="editBook('${docSnap.id}')"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteBook('${docSnap.id}')"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    booksTableBody.appendChild(tr);
                 });
             } catch (error) {
                 console.error('Erro ao carregar livros:', error);
-                showAlert('danger', 'Erro ao carregar livros');
+                alert('Erro ao carregar livros');
             }
         }
 
@@ -347,6 +360,7 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
                 modal.hide();
                 document.getElementById('addBookForm').reset();
+                loadBooks();
                 alert('Livro adicionado com sucesso!');
             }).catch((error) => {
                 console.error("Erro ao adicionar livro:", error);
