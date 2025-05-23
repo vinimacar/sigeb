@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <!-- Firebase Initialization -->
   <script>
     // Firebase configuration
@@ -486,7 +487,7 @@
       loadLoans();
     });
 
-    // Buscar usuários cadastrados ao digitar no campo de busca
+    // Buscar usuários cadastrados ao clicar no botão de busca ou digitar no campo
     async function searchUsers() {
       const searchTerm = document.getElementById('userSearch').value.trim();
       const resultsDiv = document.getElementById('userSearchResults');
@@ -496,13 +497,13 @@
       if (searchTerm.length < 2) return;
 
       try {
-        const usersRef = db.collection('usuarios');
         // Busca por nome OU matrícula
-        const snapshot = await usersRef
+        let query = db.collection('usuarios')
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
+          .limit(10);
+
+        const snapshot = await query.get();
 
         if (snapshot.empty) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
@@ -527,7 +528,7 @@
       }
     }
 
-    // Buscar livros cadastrados ao digitar no campo de busca
+    // Buscar livros cadastrados ao clicar no botão de busca ou digitar no campo
     async function searchBooks() {
       const searchTerm = document.getElementById('bookSearch').value.trim();
       const resultsDiv = document.getElementById('bookSearchResults');
@@ -537,13 +538,13 @@
       if (searchTerm.length < 2) return;
 
       try {
-        const booksRef = db.collection('livros');
         // Busca por título OU ISBN
-        const snapshot = await booksRef
+        let query = db.collection('livros')
           .where('titulo', '>=', searchTerm)
           .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
+          .limit(10);
+
+        const snapshot = await query.get();
 
         if (snapshot.empty) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
@@ -584,10 +585,12 @@
       document.getElementById('quantity').max = quantity;
     }
 
-    // Adicione listeners para busca automática ao digitar
+    // Adicione listeners para busca automática ao digitar ou clicar no botão
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('userSearch').addEventListener('input', searchUsers);
       document.getElementById('bookSearch').addEventListener('input', searchBooks);
+      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
+      document.querySelector('#addLoanForm button[onclick="searchBooks()"]').addEventListener('click', searchBooks);
     });
 
     // Registrar empréstimo
