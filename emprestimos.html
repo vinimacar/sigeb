@@ -9,10 +9,8 @@
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
   <!-- Firebase Initialization -->
   <script>
     // Firebase configuration
@@ -499,6 +497,7 @@
 
       try {
         const usersRef = db.collection('usuarios');
+        // Busca por nome OU matrícula
         const snapshot = await usersRef
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
@@ -514,7 +513,10 @@
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${user.nome} (${user.email})`;
-            div.onclick = () => selectUser(doc.id, user.nome);
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectUser(doc.id, user.nome);
+            };
             resultsDiv.appendChild(div);
           });
         }
@@ -536,6 +538,7 @@
 
       try {
         const booksRef = db.collection('livros');
+        // Busca por título OU ISBN
         const snapshot = await booksRef
           .where('titulo', '>=', searchTerm)
           .where('titulo', '<=', searchTerm + '\uf8ff')
@@ -551,7 +554,10 @@
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
-            div.onclick = () => selectBook(doc.id, book.titulo, book.quantidade);
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectBook(doc.id, book.titulo, book.quantidade);
+            };
             resultsDiv.appendChild(div);
           });
         }
@@ -577,6 +583,12 @@
       document.getElementById('bookSearchResults').classList.remove('show');
       document.getElementById('quantity').max = quantity;
     }
+
+    // Adicione listeners para busca automática ao digitar
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('userSearch').addEventListener('input', searchUsers);
+      document.getElementById('bookSearch').addEventListener('input', searchBooks);
+    });
 
     // Registrar empréstimo
     async function handleLoanSubmission(event) {
