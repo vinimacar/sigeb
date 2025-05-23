@@ -858,16 +858,8 @@
         const quantidade = parseInt(document.getElementById('quantidade').value);
         const generos = Array.from(document.getElementById('generos').selectedOptions).map(option => option.value);
         const idioma = document.getElementById('idioma').value;
-        const imagemCapaFile = document.getElementById('imagemCapa').files[0];
 
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
-
-        if (imagemCapaFile) {
-          const imageName = `${Date.now()}_${imagemCapaFile.name}`;
-          const storageRef = storage.ref(`capas_livros/${imageName}`);
-          const uploadTask = await storageRef.put(imagemCapaFile);
-          capaUrl = await uploadTask.ref.getDownloadURL();
-        }
 
         await db.collection('livros').add({
           titulo,
@@ -879,7 +871,7 @@
           quantidade,
           generos,
           idioma,
-          capaUrl, // <-- GARANTE QUE O CAMPO É SALVO
+          capaUrl, // Mantém o placeholder
           disponiveis: quantidade,
           emprestados: 0,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -890,7 +882,6 @@
         bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
         form.reset();
         form.classList.remove('was-validated');
-        document.getElementById('coverPreview').src = 'https://via.placeholder.com/200x300?text=Capa+do+Livro';
         loadBooks();
 
       } catch (error) {
@@ -1110,3 +1101,4 @@
   </script>
 </body>
 </html>
+
