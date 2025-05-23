@@ -1,4 +1,3 @@
-
 const firebaseConfig = {
   apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
   authDomain: "sigeb-ccd3f.firebaseapp.com",
@@ -15,10 +14,8 @@ if (typeof firebase === "undefined") {
   throw new Error("Firebase SDK não carregado. Verifique a ordem dos <script> no HTML.");
 }
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
+// Inicialização do Firebase
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
