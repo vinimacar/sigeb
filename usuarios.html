@@ -649,11 +649,115 @@
         setTimeout(() => alertDiv.remove(), 5000);
       }
 
-      // Inicialização
-      document.addEventListener('DOMContentLoaded', function() {
+      // Função para carregar usuários do Firestore e renderizar na tabela
+      async function loadUsers() {
+        const tbody = document.querySelector('.users-table tbody');
+        tbody.innerHTML = '';
+        const snapshot = await db.collection('usuarios').get();
+        snapshot.forEach(doc => {
+          const user = doc.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.nome}</td>
+            <td>${user.email}</td>
+            <td>${user.matricula || ''}</td>
+            <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status || 'Ativo'}</span></td>
+            <td>${user.livrosEmprestados || 0}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="action-button edit-button" data-id="${doc.id}">
+                  <i class='bx bx-edit-alt'></i>
+                </button>
+                <button class="action-button delete-button" data-id="${doc.id}">
+                  <i class='bx bx-trash'></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Adiciona eventos aos botões
+        document.querySelectorAll('.edit-button').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const id = this.getAttribute('data-id');
+            await editUser(id);
+          });
+        });
+        document.querySelectorAll('.delete-button').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const id = this.getAttribute('data-id');
+            if (confirm('Deseja realmente excluir este usuário?')) {
+              await db.collection('usuarios').doc(id).delete();
+              showAlert('success', 'Usuário excluído com sucesso!');
+              loadUsers();
+            }
+          });
+        });
+      }
+
+      // Função para editar usuário (exemplo: preenche o modal para edição)
+      async function editUser(id) {
+        const doc = await db.collection('usuarios').doc(id).get();
+        if (!doc.exists) return;
+        const user = doc.data();
+
+        // Preenche o formulário do modal com os dados do usuário
+        document.getElementById('nome').value = user.nome || '';
+        document.getElementById('funcao').value = user.funcao || '';
+        document.getElementById('endereco').value = user.endereco?.logradouro || '';
+        document.getElementById('numero').value = user.endereco?.numero || '';
+        document.getElementById('cep').value = user.endereco?.cep || '';
+        document.getElementById('bairro').value = user.endereco?.bairro || '';
+        document.getElementById('cidade').value = user.endereco?.cidade || '';
+        document.getElementById('uf').value = user.endereco?.uf || '';
+        document.getElementById('telefone').value = user.telefone || '';
+        document.getElementById('email').value = user.email || '';
+        if (user.credenciais) {
+          document.getElementById('username').value = user.credenciais.username || '';
+          // Não preenche a senha por segurança
+        }
+        toggleLoginCredentials();
+
+        // Altera o evento do formulário para atualizar em vez de criar
         const form = document.getElementById('addUserForm');
-        form.addEventListener('submit', handleUserSubmission);
-      });
+        form.onsubmit = async function(event) {
+          event.preventDefault();
+          // Atualiza os dados do usuário
+          const updatedData = {
+            nome: document.getElementById('nome').value,
+            funcao: document.getElementById('funcao').value,
+            endereco: {
+              logradouro: document.getElementById('endereco').value,
+              numero: document.getElementById('numero').value,
+              cep: document.getElementById('cep').value,
+              bairro: document.getElementById('bairro').value,
+              cidade: document.getElementById('cidade').value,
+              uf: document.getElementById('uf').value
+            },
+            telefone: document.getElementById('telefone').value,
+            email: document.getElementById('email').value
+          };
+          if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(updatedData.funcao)) {
+            updatedData.credenciais = {
+              username: document.getElementById('username').value
+              // Não atualiza a senha aqui por segurança
+            };
+          }
+          await db.collection('usuarios').doc(id).update(updatedData);
+          showAlert('success', 'Usuário atualizado com sucesso!');
+          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+          form.reset();
+          form.onsubmit = handleUserSubmission; // Volta para o modo de cadastro
+          loadUsers();
+        };
+
+        // Abre o modal
+        new bootstrap.Modal(document.getElementById('addUserModal')).show();
+      }
+
+      // Carrega os usuários ao iniciar
+      document.addEventListener('DOMContentLoaded', loadUsers);
     </script>
 
     <style>
