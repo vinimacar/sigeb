@@ -747,6 +747,28 @@
         new bootstrap.Modal(document.getElementById('addUserModal')).show();
       }
 
+      // Adicione esta função para filtrar usuários
+      function filterUsers() {
+        const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+        document.querySelectorAll('.users-table tbody tr').forEach(tr => {
+          const nome = tr.children[0].textContent.toLowerCase();
+          const email = tr.children[1].textContent.toLowerCase();
+          const matricula = tr.children[2].textContent.toLowerCase();
+          if (
+            nome.includes(search) ||
+            email.includes(search) ||
+            matricula.includes(search)
+          ) {
+            tr.style.display = '';
+          } else {
+            tr.style.display = 'none';
+          }
+        });
+      }
+
+      // Adicione o evento ao campo de busca
+      document.querySelector('.search-box input').addEventListener('input', filterUsers);
+
       // Carrega os usuários ao iniciar
       document.addEventListener('DOMContentLoaded', loadUsers);
       document.getElementById('addUserForm').addEventListener('submit', handleUserSubmission);
