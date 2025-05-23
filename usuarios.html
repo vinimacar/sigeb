@@ -322,6 +322,7 @@
           </div>
           <div class="modal-body">
             <form id="addUserForm" class="needs-validation" novalidate>
+              <input type="hidden" id="usuarioId">
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
@@ -584,19 +585,19 @@
         }
       });
 
-      // Função para salvar usuário
+      // Função para salvar usuário (criar ou editar)
       async function handleUserSubmission(event) {
         event.preventDefault();
-        
+
         const form = document.getElementById('addUserForm');
         if (!form.checkValidity()) {
           form.classList.add('was-validated');
           return;
         }
 
-        // Corrigido: buscar o botão de submit apenas dentro do formulário do modal
         const submitButton = form.querySelector('button[type="submit"]');
         const originalText = submitButton.innerHTML;
+        const usuarioId = document.getElementById('usuarioId').value;
 
         try {
           submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
@@ -618,7 +619,6 @@
             dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
           };
 
-          // Adicionar credenciais se necessário
           if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(userData.funcao)) {
             userData.credenciais = {
               username: document.getElementById('username').value,
@@ -626,11 +626,19 @@
             };
           }
 
-          // Salvar no Firestore
-          await db.collection('usuarios').add(userData);
+          if (usuarioId) {
+            // Atualizar usuário existente
+            delete userData.dataCadastro; // Não atualize dataCadastro ao editar
+            await db.collection('usuarios').doc(usuarioId).update(userData);
+            showAlert('success', 'Usuário atualizado com sucesso!');
+          } else {
+            // Criar novo usuário
+            await db.collection('usuarios').add(userData);
+            showAlert('success', 'Usuário cadastrado com sucesso!');
+          }
 
-          showAlert('success', 'Usuário cadastrado com sucesso!');
           form.reset();
+          document.getElementById('usuarioId').value = '';
           bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
           if (typeof loadUsers === 'function') loadUsers();
 
@@ -713,13 +721,13 @@
         });
       }
 
-      // Função para editar usuário (exemplo: preenche o modal para edição)
+      // Função para editar usuário
       async function editUser(id) {
         const doc = await db.collection('usuarios').doc(id).get();
         if (!doc.exists) return;
         const user = doc.data();
 
-        // Preenche o formulário do modal com os dados do usuário
+        document.getElementById('usuarioId').value = id;
         document.getElementById('nome').value = user.nome || '';
         document.getElementById('funcao').value = user.funcao || '';
         document.getElementById('endereco').value = user.endereco?.logradouro || '';
@@ -732,42 +740,8 @@
         document.getElementById('email').value = user.email || '';
         if (user.credenciais) {
           document.getElementById('username').value = user.credenciais.username || '';
-          // Não preenche a senha por segurança
         }
         toggleLoginCredentials();
-
-        // Altera o evento do formulário para atualizar em vez de criar
-        const form = document.getElementById('addUserForm');
-        form.onsubmit = async function(event) {
-          event.preventDefault();
-          // Atualiza os dados do usuário
-          const updatedData = {
-            nome: document.getElementById('nome').value,
-            funcao: document.getElementById('funcao').value,
-            endereco: {
-              logradouro: document.getElementById('endereco').value,
-              numero: document.getElementById('numero').value,
-              cep: document.getElementById('cep').value,
-              bairro: document.getElementById('bairro').value,
-              cidade: document.getElementById('cidade').value,
-              uf: document.getElementById('uf').value
-            },
-            telefone: document.getElementById('telefone').value,
-            email: document.getElementById('email').value
-          };
-          if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(updatedData.funcao)) {
-            updatedData.credenciais = {
-              username: document.getElementById('username').value
-              // Não atualiza a senha aqui por segurança
-            };
-          }
-          await db.collection('usuarios').doc(id).update(updatedData);
-          showAlert('success', 'Usuário atualizado com sucesso!');
-          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-          form.reset();
-          form.onsubmit = handleUserSubmission; // Volta para o modo de cadastro
-          loadUsers();
-        };
 
         // Abre o modal
         new bootstrap.Modal(document.getElementById('addUserModal')).show();
@@ -776,6 +750,15 @@
       // Carrega os usuários ao iniciar
       document.addEventListener('DOMContentLoaded', loadUsers);
       document.getElementById('addUserForm').addEventListener('submit', handleUserSubmission);
+
+      // Limpa o formulário e o campo usuarioId ao fechar o modal
+      document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('addUserForm').reset();
+        document.getElementById('usuarioId').value = '';
+        document.getElementById('addUserForm').classList.remove('was-validated');
+        // Esconde campos de login se necessário
+        document.getElementById('loginCredentials').style.display = 'none';
+      });
     </script>
 
     <style>
