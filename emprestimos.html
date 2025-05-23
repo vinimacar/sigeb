@@ -488,87 +488,93 @@
       loadLoans();
     });
 
-    // Buscar usuários
+    // Buscar usuários cadastrados ao digitar no campo de busca
     async function searchUsers() {
-      const searchTerm = document.getElementById('userSearch').value;
+      const searchTerm = document.getElementById('userSearch').value.trim();
       const resultsDiv = document.getElementById('userSearchResults');
-      
-      if (searchTerm.length < 3) return;
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
+
+      if (searchTerm.length < 2) return;
 
       try {
         const usersRef = db.collection('usuarios');
         const snapshot = await usersRef
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(5)
+          .limit(10)
           .get();
 
-        resultsDiv.innerHTML = '';
+        if (snapshot.empty) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
+        } else {
+          snapshot.forEach(doc => {
+            const user = doc.data();
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            div.textContent = `${user.nome} (${user.email})`;
+            div.onclick = () => selectUser(doc.id, user.nome);
+            resultsDiv.appendChild(div);
+          });
+        }
         resultsDiv.classList.add('show');
-
-        snapshot.forEach(doc => {
-          const user = doc.data();
-          const div = document.createElement('a');
-          div.className = 'dropdown-item';
-          div.href = '#';
-          div.textContent = `${user.nome} (${user.email})`;
-          div.onclick = () => selectUser(doc.id, user.nome);
-          resultsDiv.appendChild(div);
-        });
       } catch (error) {
         console.error('Erro ao buscar usuários:', error);
         showAlert('danger', 'Erro ao buscar usuários');
       }
     }
 
-    // Buscar livros
+    // Buscar livros cadastrados ao digitar no campo de busca
     async function searchBooks() {
-      const searchTerm = document.getElementById('bookSearch').value;
+      const searchTerm = document.getElementById('bookSearch').value.trim();
       const resultsDiv = document.getElementById('bookSearchResults');
-      
-      if (searchTerm.length < 3) return;
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
+
+      if (searchTerm.length < 2) return;
 
       try {
         const booksRef = db.collection('livros');
         const snapshot = await booksRef
           .where('titulo', '>=', searchTerm)
           .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(5)
+          .limit(10)
           .get();
 
-        resultsDiv.innerHTML = '';
+        if (snapshot.empty) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
+        } else {
+          snapshot.forEach(doc => {
+            const book = doc.data();
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
+            div.onclick = () => selectBook(doc.id, book.titulo, book.quantidade);
+            resultsDiv.appendChild(div);
+          });
+        }
         resultsDiv.classList.add('show');
-
-        snapshot.forEach(doc => {
-          const book = doc.data();
-          const div = document.createElement('a');
-          div.className = 'dropdown-item';
-          div.href = '#';
-          div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
-          div.onclick = () => selectBook(doc.id, book.titulo, book.quantidade);
-          resultsDiv.appendChild(div);
-        });
       } catch (error) {
         console.error('Erro ao buscar livros:', error);
         showAlert('danger', 'Erro ao buscar livros');
       }
     }
 
-    // Selecionar usuário
+    // Selecionar usuário da lista
     function selectUser(userId, userName) {
       document.getElementById('userSearch').value = userName;
       document.getElementById('selectedUserId').value = userId;
       document.getElementById('userSearchResults').classList.remove('show');
     }
 
-    // Selecionar livro
+    // Selecionar livro da lista
     function selectBook(bookId, bookTitle, quantity) {
       document.getElementById('bookSearch').value = bookTitle;
       document.getElementById('selectedBookId').value = bookId;
       document.getElementById('availableQuantity').textContent = quantity;
       document.getElementById('bookSearchResults').classList.remove('show');
-      
-      // Limitar quantidade máxima disponível
       document.getElementById('quantity').max = quantity;
     }
 
@@ -795,4 +801,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
