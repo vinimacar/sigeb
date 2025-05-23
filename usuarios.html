@@ -841,5 +841,55 @@
       }
     });
   </script>
+
+  <!-- Adicione antes do fechamento do </body> -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // Importar usuários via XLS/XLSX
+    document.getElementById('importXlsBtn').addEventListener('click', function() {
+      document.getElementById('xlsInput').click();
+    });
+
+    document.getElementById('xlsInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const usuarios = XLSX.utils.sheet_to_json(sheet);
+
+          let count = 0;
+          for (const usuario of usuarios) {
+            // Ajuste os campos conforme o cabeçalho do seu XLS
+            const userData = {
+              nome: usuario.Nome || usuario.nome || "",
+              email: usuario.Email || usuario.email || "",
+              matricula: usuario.Matricula || usuario.matricula || "",
+              funcao: usuario.Função || usuario.Funcao || usuario.funcao || "ALUNO",
+              status: usuario.Status || usuario.status || "Ativo",
+              dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            // Gere um ID único para cada usuário
+            if (userData.nome && userData.email && userData.matricula) {
+              const newUserRef = db.collection('usuarios').doc();
+              userData.id = newUserRef.id;
+              await newUserRef.set(userData);
+              count++;
+            }
+          }
+          showAlert('success', `${count} usuários importados com sucesso!`);
+          if (typeof loadUsers === 'function') loadUsers();
+        } catch (err) {
+          showAlert('danger', 'Erro ao importar usuários. Verifique o arquivo.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    });
+  </script>
 </body>
 </html>
