@@ -641,8 +641,6 @@
       card.innerHTML = `
         <div class="d-flex justify-content-between align-items-start">
           <div>
-            <img src="${book.capaUrl ? book.capaUrl : 'https://via.placeholder.com/80x120?text=Sem+Capa'}" 
-                 alt="Capa do Livro" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
             <h5>${book.titulo}</h5>
             <p class="text-muted mb-1">${Array.isArray(book.autores) ? book.autores.join(', ') : book.autores}</p>
             <p class="text-muted mb-2">${book.editora}, ${book.ano}</p>
