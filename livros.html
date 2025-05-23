@@ -24,7 +24,7 @@
       authDomain: "sigeb-ccd3f.firebaseapp.com",
       databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
       projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      storageBucket: "sigeb-ccd3f.appspot.com", // <-- CORRIGIDO AQUI
       messagingSenderId: "209689711066",
       appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
       measurementId: "G-VJBDW2B7HZ"
@@ -705,8 +705,10 @@
       card.innerHTML = `
         <div class="d-flex justify-content-between align-items-start">
           <div>
+            <img src="${book.capaUrl ? book.capaUrl : 'https://via.placeholder.com/80x120?text=Sem+Capa'}" 
+                 alt="Capa do Livro" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
             <h5>${book.titulo}</h5>
-            <p class="text-muted mb-1">${book.autores}</p>
+            <p class="text-muted mb-1">${Array.isArray(book.autores) ? book.autores.join(', ') : book.autores}</p>
             <p class="text-muted mb-2">${book.editora}, ${book.ano}</p>
             <span class="book-status ${book.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
               ${book.quantidade > 0 ? `${book.quantidade} disponíveis` : 'Indisponível'}
@@ -874,8 +876,8 @@
         const generos = Array.from(document.getElementById('generos').selectedOptions).map(option => option.value);
         const idioma = document.getElementById('idioma').value;
         const imagemCapaFile = document.getElementById('imagemCapa').files[0];
-        
-        let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível'; // Default image
+
+        let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         if (imagemCapaFile) {
           const imageName = `${Date.now()}_${imagemCapaFile.name}`;
@@ -894,8 +896,8 @@
           quantidade,
           generos,
           idioma,
-          capaUrl,
-          disponiveis: quantidade, // Assuming all new books are initially available
+          capaUrl, // <-- GARANTE QUE O CAMPO É SALVO
+          disponiveis: quantidade,
           emprestados: 0,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1124,4 +1126,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
