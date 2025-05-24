@@ -11,6 +11,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <!-- Firebase Initialization -->
   <style>
     body { font-family: 'Poppins', sans-serif; background: #f0f2f5; }
     .main-content { margin-left: 250px; padding: 20px; }
@@ -110,14 +116,26 @@
     </div>
   </div>
   <script>
-    // Firebase config (ajuste conforme seu projeto)
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
       projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
     };
+
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
+
+    // Initialize services
+    const auth = firebase.auth();
     const db = firebase.firestore();
+    const storage = firebase.storage();
+    const analytics = firebase.analytics();
 
     // Alternar filtros conforme tipo de relatório
     document.getElementById('reportType').addEventListener('change', function() {
