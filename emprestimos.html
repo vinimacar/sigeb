@@ -552,26 +552,38 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por título OU ISBN
-        let query = db.collection('livros')
+        // Busca por título
+        const queryByTitle = db.collection('livros')
           .where('titulo', '>=', searchTerm)
           .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(10);
+          .limit(10)
+          .get();
 
-        const snapshot = await query.get();
+        // Busca por ISBN
+        const queryByISBN = db.collection('livros')
+          .where('isbn', '>=', searchTerm)
+          .where('isbn', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
 
-        if (snapshot.empty) {
+        const [titleSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByISBN]);
+
+        // Usar Map para evitar duplicatas
+        const booksMap = new Map();
+        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+
+        if (booksMap.size === 0) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
         } else {
-          snapshot.forEach(doc => {
-            const book = doc.data();
+          booksMap.forEach((book, id) => {
             const div = document.createElement('a');
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
             div.onclick = (e) => {
               e.preventDefault();
-              selectBook(doc.id, book.titulo, book.quantidade);
+              selectBook(id, book.titulo, book.quantidade);
             };
             resultsDiv.appendChild(div);
           });
@@ -824,3 +836,4 @@
   </script>
 </body>
 </html>
+
