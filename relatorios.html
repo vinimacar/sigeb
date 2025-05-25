@@ -181,12 +181,13 @@
         const snapshot = await query.get();
         html = `<h5>Relatório de Usuários</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Nome</th><th>Email</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>`;
+        <tr><th>Nome</th><th>Email</th><th>Cargo</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>`;
         snapshot.forEach(doc => {
           const d = doc.data();
           html += `<tr>
             <td>${d.nome || ''}</td>
             <td>${d.email || ''}</td>
+            <td>${d.cargo || ''}</td>
             <td>${d.status || ''}</td>
             <td>${d.dataCadastro ? new Date(d.dataCadastro.seconds*1000).toLocaleDateString() : ''}</td>
           </tr>`;
@@ -195,13 +196,27 @@
       } else if (tipo === 'emprestimos') {
         const situacao = document.getElementById('emprestimosSituacao').value;
         let query = db.collection('emprestimos');
-        if (situacao) query = query.where('situacao', '==', situacao);
-        const snapshot = await query.get();
+        let emprestimos = [];
+
+        if (situacao === '') {
+          // Busca todos os tipos: ativo, finalizado e atrasado
+          const ativosSnap = await db.collection('emprestimos').where('situacao', '==', 'ativo').get();
+          const finalizadosSnap = await db.collection('emprestimos').where('situacao', '==', 'finalizado').get();
+          const atrasadosSnap = await db.collection('emprestimos').where('situacao', '==', 'atrasado').get();
+          emprestimos = [
+            ...ativosSnap.docs.map(doc => doc.data()),
+            ...finalizadosSnap.docs.map(doc => doc.data()),
+            ...atrasadosSnap.docs.map(doc => doc.data())
+          ];
+        } else {
+          const snapshot = await query.where('situacao', '==', situacao).get();
+          emprestimos = snapshot.docs.map(doc => doc.data());
+        }
+
         html = `<h5>Relatório de Empréstimos</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
         <tr><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Situação</th></tr></thead><tbody>`;
-        snapshot.forEach(doc => {
-          const d = doc.data();
+        emprestimos.forEach(d => {
           html += `<tr>
             <td>${d.usuarioNome || ''}</td>
             <td>${d.livroTitulo || ''}</td>
