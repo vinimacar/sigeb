@@ -195,7 +195,6 @@
         html += '</tbody></table>';
       } else if (tipo === 'emprestimos') {
         const situacao = document.getElementById('emprestimosSituacao').value;
-        let query = db.collection('emprestimos');
         let emprestimos = [];
 
         if (situacao === '') {
@@ -204,27 +203,47 @@
           const finalizadosSnap = await db.collection('emprestimos').where('situacao', '==', 'finalizado').get();
           const atrasadosSnap = await db.collection('emprestimos').where('situacao', '==', 'atrasado').get();
           emprestimos = [
-            ...ativosSnap.docs.map(doc => doc.data()),
-            ...finalizadosSnap.docs.map(doc => doc.data()),
-            ...atrasadosSnap.docs.map(doc => doc.data())
+            ...ativosSnap.docs,
+            ...finalizadosSnap.docs,
+            ...atrasadosSnap.docs
           ];
         } else {
-          const snapshot = await query.where('situacao', '==', situacao).get();
-          emprestimos = snapshot.docs.map(doc => doc.data());
+          const snapshot = await db.collection('emprestimos').where('situacao', '==', situacao).get();
+          emprestimos = snapshot.docs;
         }
 
         html = `<h5>Relatório de Empréstimos</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
         <tr><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Situação</th></tr></thead><tbody>`;
-        emprestimos.forEach(d => {
+
+        for (const doc of emprestimos) {
+          const d = doc.data();
+          // Busca nome do usuário e título do livro se não existirem no documento
+          let usuarioNome = d.usuarioNome;
+          let livroTitulo = d.livroTitulo;
+
+          // Se não existir, busca no banco
+          if (!usuarioNome && d.userId) {
+            try {
+              const userDoc = await db.collection('usuarios').doc(d.userId).get();
+              usuarioNome = userDoc.exists ? userDoc.data().nome : '';
+            } catch {}
+          }
+          if (!livroTitulo && d.bookId) {
+            try {
+              const livroDoc = await db.collection('livros').doc(d.bookId).get();
+              livroTitulo = livroDoc.exists ? livroDoc.data().titulo : '';
+            } catch {}
+          }
+
           html += `<tr>
-            <td>${d.usuarioNome || ''}</td>
-            <td>${d.livroTitulo || ''}</td>
+            <td>${usuarioNome || ''}</td>
+            <td>${livroTitulo || ''}</td>
             <td>${d.dataEmprestimo ? new Date(d.dataEmprestimo.seconds*1000).toLocaleDateString() : ''}</td>
             <td>${d.dataDevolucao ? new Date(d.dataDevolucao.seconds*1000).toLocaleDateString() : ''}</td>
             <td>${d.situacao || ''}</td>
           </tr>`;
-        });
+        }
         html += '</tbody></table>';
       }
       document.getElementById('reportResult').innerHTML = html || '<p>Nenhum dado encontrado.</p>';
