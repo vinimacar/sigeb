@@ -189,6 +189,10 @@
     .renew-button {
       color: #2e7d32;
     }
+    #userSearchResults, #bookSearchResults {
+      max-height: 250px;
+      overflow-y: auto;
+    }
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -490,7 +494,7 @@
 
     // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
     async function searchUsers() {
-      const searchTerm = document.getElementById('userSearch').value.trim();
+      const searchTerm = document.getElementById('userSearch').value.trim().toLowerCase();
       const resultsDiv = document.getElementById('userSearchResults');
       resultsDiv.innerHTML = '';
       resultsDiv.classList.remove('show');
@@ -498,38 +502,30 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por nome
-        const queryByName = db.collection('usuarios')
-          .where('nome', '>=', searchTerm)
-          .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
+        // Busca todos os usuários (ou limite, se muitos usuários)
+        const snapshot = await db.collection('usuarios').limit(50).get();
+        const users = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.nome) {
+            const firstName = data.nome.split(' ')[0].toLowerCase();
+            if (firstName.startsWith(searchTerm)) {
+              users.push({ id: doc.id, ...data });
+            }
+          }
+        });
 
-        // Busca por matrícula (se existir esse campo)
-        const queryByMatricula = db.collection('usuarios')
-          .where('matricula', '>=', searchTerm)
-          .where('matricula', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [nameSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByMatricula]);
-
-        // Usar Map para evitar duplicatas
-        const usersMap = new Map();
-        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-
-        if (usersMap.size === 0) {
+        if (users.length === 0) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
         } else {
-          usersMap.forEach((user, id) => {
+          users.forEach(user => {
             const div = document.createElement('a');
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${user.nome} (${user.email})`;
             div.onclick = (e) => {
               e.preventDefault();
-              selectUser(id, user.nome);
+              selectUser(user.id, user.nome);
             };
             resultsDiv.appendChild(div);
           });
@@ -556,7 +552,7 @@
 
     // Buscar livros cadastrados ao digitar no campo ou clicar no botão
     async function searchBooks() {
-      const searchTerm = document.getElementById('bookSearch').value.trim();
+      const searchTerm = document.getElementById('bookSearch').value.trim().toLowerCase();
       const resultsDiv = document.getElementById('bookSearchResults');
       resultsDiv.innerHTML = '';
       resultsDiv.classList.remove('show');
@@ -564,38 +560,30 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por título
-        const queryByTitle = db.collection('livros')
-          .where('titulo', '>=', searchTerm)
-          .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
+        // Busca todos os livros (ou limite, se muitos livros)
+        const snapshot = await db.collection('livros').limit(50).get();
+        const books = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.titulo) {
+            const firstWord = data.titulo.split(' ')[0].toLowerCase();
+            if (firstWord.startsWith(searchTerm)) {
+              books.push({ id: doc.id, ...data });
+            }
+          }
+        });
 
-        // Busca por ISBN
-        const queryByISBN = db.collection('livros')
-          .where('isbn', '>=', searchTerm)
-          .where('isbn', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [titleSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByISBN]);
-
-        // Usar Map para evitar duplicatas
-        const booksMap = new Map();
-        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-
-        if (booksMap.size === 0) {
+        if (books.length === 0) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
         } else {
-          booksMap.forEach((book, id) => {
+          books.forEach(book => {
             const div = document.createElement('a');
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
             div.onclick = (e) => {
               e.preventDefault();
-              selectBook(id, book.titulo, book.quantidade);
+              selectBook(book.id, book.titulo, book.quantidade);
             };
             resultsDiv.appendChild(div);
           });
@@ -860,3 +848,4 @@
   </script>
 </body>
 </html>
+
