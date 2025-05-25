@@ -701,7 +701,13 @@
 
         for (const doc of snapshot.docs) {
           const loan = doc.data();
-          
+
+          // Verifique se userId e bookId existem e não estão vazios
+          if (!loan.userId || !loan.bookId) {
+            console.warn('Empréstimo com userId ou bookId vazio:', doc.id);
+            continue; // Pula para o próximo empréstimo
+          }
+
           // Buscar dados do usuário e livro
           const [userDoc, bookDoc] = await Promise.all([
             db.collection('usuarios').doc(loan.userId).get(),
@@ -710,6 +716,12 @@
 
           const user = userDoc.data();
           const book = bookDoc.data();
+
+          // Verifique se user e book existem
+          if (!user || !book) {
+            console.warn('Usuário ou livro não encontrado para empréstimo:', doc.id);
+            continue;
+          }
 
           const row = document.createElement('tr');
           row.innerHTML = `
