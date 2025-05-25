@@ -57,7 +57,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-fill-color: transparent;
         }
         .nav-link {
             color: rgba(255, 255, 255, 0.8);
@@ -450,6 +449,43 @@
                     alert('Erro ao atualizar livro: ' + error.message);
                 });
         });
+
+        // Função para buscar dados do livro pelo ISBN usando Open Library
+        async function buscarLivroPorISBNBooks() {
+            const isbnInput = document.getElementById('bookIsbn');
+            if (!isbnInput) return;
+            const isbn = isbnInput.value.trim().replace(/[^0-9Xx]/g, '');
+            if (!isbn) return;
+
+            const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const livro = data[`ISBN:${isbn}`];
+
+                if (livro) {
+                    document.getElementById('bookTitle').value = livro.title || '';
+                    document.getElementById('bookAuthor').value = livro.authors?.map(a => a.name).join(', ') || '';
+                    document.getElementById('bookCategory').value = livro.subjects?.map(s => s.name).join(', ') || '';
+                    // Se quiser adicionar editora ou ano, crie os campos e preencha aqui
+                } else {
+                    alert('Livro não encontrado.');
+                }
+            } catch (error) {
+                alert('Erro ao buscar o livro.');
+                console.error(error);
+            }
+        }
+
+        // Adiciona o evento ao sair do campo ISBN no modal de novo livro
+        document.addEventListener('DOMContentLoaded', function() {
+            const isbnInput = document.getElementById('bookIsbn');
+            if (isbnInput) {
+                isbnInput.addEventListener('blur', buscarLivroPorISBNBooks);
+            }
+        });
     </script>
 </body>
 </html>
+
