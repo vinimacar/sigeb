@@ -218,29 +218,28 @@
 
         for (const doc of emprestimos) {
           const d = doc.data();
-          // Busca nome do usuário e título do livro se não existirem no documento
           let usuarioNome = d.usuarioNome;
           let livroTitulo = d.livroTitulo;
 
-          // Se não existir, busca no banco
-          if (!usuarioNome && d.userId) {
+          // Busca nome do usuário e título do livro se não existirem no documento
+          if ((!usuarioNome || !livroTitulo) && (d.userId || d.bookId)) {
             try {
-              const userDoc = await db.collection('usuarios').doc(d.userId).get();
-              usuarioNome = userDoc.exists ? userDoc.data().nome : '';
-            } catch {}
-          }
-          if (!livroTitulo && d.bookId) {
-            try {
-              const livroDoc = await db.collection('livros').doc(d.bookId).get();
-              livroTitulo = livroDoc.exists ? livroDoc.data().titulo : '';
+              if (!usuarioNome && d.userId) {
+                const userDoc = await db.collection('usuarios').doc(d.userId).get();
+                usuarioNome = userDoc.exists ? userDoc.data().nome : '';
+              }
+              if (!livroTitulo && d.bookId) {
+                const livroDoc = await db.collection('livros').doc(d.bookId).get();
+                livroTitulo = livroDoc.exists ? livroDoc.data().titulo : '';
+              }
             } catch {}
           }
 
           html += `<tr>
             <td>${usuarioNome || ''}</td>
             <td>${livroTitulo || ''}</td>
-            <td>${d.dataEmprestimo ? new Date(d.dataEmprestimo.seconds*1000).toLocaleDateString() : ''}</td>
-            <td>${d.dataDevolucao ? new Date(d.dataDevolucao.seconds*1000).toLocaleDateString() : ''}</td>
+            <td>${d.dataEmprestimo && d.dataEmprestimo.seconds ? new Date(d.dataEmprestimo.seconds*1000).toLocaleDateString() : ''}</td>
+            <td>${d.dataDevolucao && d.dataDevolucao.seconds ? new Date(d.dataDevolucao.seconds*1000).toLocaleDateString() : ''}</td>
             <td>${d.situacao || ''}</td>
           </tr>`;
         }
