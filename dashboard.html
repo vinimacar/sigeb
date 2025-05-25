@@ -329,31 +329,15 @@
 
     <div class="recent-activities" data-aos="fade-up" data-aos-delay="500">
       <h4 class="mb-4">Atividades Recentes</h4>
-      <div class="activity-item">
-        <div class="activity-icon">
-          <i class='bx bxs-book'></i>
-        </div>
-        <div class="activity-details">
-          <h4>Novo livro adicionado</h4>
-          <p>O livro "Dom Casmurro" foi adicionado ao acervo</p>
-        </div>
-      </div>
-      <div class="activity-item">
-        <div class="activity-icon">
-          <i class='bx bxs-user'></i>
-        </div>
-        <div class="activity-details">
-          <h4>Novo usuário registrado</h4>
-          <p>Maria Silva criou uma nova conta</p>
-        </div>
-      </div>
-      <div class="activity-item">
-        <div class="activity-icon">
-          <i class='bx bxs-bookmark'></i>
-        </div>
-        <div class="activity-details">
-          <h4>Empréstimo realizado</h4>
-          <p>João Santos pegou emprestado "O Pequeno Príncipe"</p>
+      <div id="recentActivities">
+        <div class="activity-item">
+          <div class="activity-icon">
+            <i class='bx bxs-hourglass'></i>
+          </div>
+          <div class="activity-details">
+            <h4>Carregando atividades...</h4>
+            <p>Aguarde um momento.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -393,13 +377,82 @@
       const emprestimosSnap = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
       document.getElementById('totalEmprestimos').textContent = emprestimosSnap.size;
 
-      // Reservas pendentes (ajuste conforme sua lógica, aqui exemplo para status RESERVADO)
+      // Reservas pendentes
       const reservasSnap = await db.collection('emprestimos').where('status', '==', 'RESERVADO').get();
       document.getElementById('totalReservas').textContent = reservasSnap.size;
     }
 
+    // Função para buscar e exibir atividades recentes
+    async function carregarAtividadesRecentes() {
+      const container = document.getElementById('recentActivities');
+      container.innerHTML = '';
+
+      // Busca os 5 últimos empréstimos
+      const emprestimosSnap = await db.collection('emprestimos')
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .get();
+
+      if (emprestimosSnap.empty) {
+        container.innerHTML = `
+          <div class="activity-item">
+            <div class="activity-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="activity-details">
+              <h4>Sem atividades recentes</h4>
+              <p>Nenhuma movimentação registrada.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      for (const doc of emprestimosSnap.docs) {
+        const data = doc.data();
+        let icon = 'bxs-bookmark';
+        let title = 'Empréstimo realizado';
+        let desc = '';
+
+        // Busca usuário e livro para detalhar a atividade
+        const [userDoc, bookDoc] = await Promise.all([
+          db.collection('usuarios').doc(data.userId).get(),
+          db.collection('livros').doc(data.bookId).get()
+        ]);
+        const user = userDoc.exists ? userDoc.data().nome : 'Usuário';
+        const book = bookDoc.exists ? bookDoc.data().titulo : 'Livro';
+
+        if (data.status === 'EMPRESTADO') {
+          icon = 'bxs-bookmark';
+          title = 'Empréstimo realizado';
+          desc = `${user} pegou emprestado "${book}"`;
+        } else if (data.status === 'DEVOLVIDO') {
+          icon = 'bxs-book';
+          title = 'Livro devolvido';
+          desc = `${user} devolveu "${book}"`;
+        } else if (data.status === 'RESERVADO') {
+          icon = 'bxs-time';
+          title = 'Reserva realizada';
+          desc = `${user} reservou "${book}"`;
+        } else {
+          desc = `${user} movimentou "${book}"`;
+        }
+
+        container.innerHTML += `
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class='bx ${icon}'></i>
+            </div>
+            <div class="activity-details">
+              <h4>${title}</h4>
+              <p>${desc}</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       atualizarDashboard();
+      carregarAtividadesRecentes();
       AOS.init({
         duration: 800,
         once: true,
