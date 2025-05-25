@@ -1014,50 +1014,44 @@
       }
     });
 
-    // Função para buscar dados do livro pelo ISBN usando Open Library
-    async function fetchBookDataByISBN(isbn) {
+    // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
+    async function buscarLivroPorISBN() {
+      const isbn = document.getElementById("isbn").value.trim().replace(/[^0-9Xx]/g, '');
+      if (!isbn) return;
+      const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
+
       try {
-        const cleanIsbn = isbn.replace(/[^0-9Xx]/g, '');
-        if (!cleanIsbn) return null;
-        const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&format=json&jscmd=data`;
         const response = await fetch(url);
         const data = await response.json();
-        const bookData = data[`ISBN:${cleanIsbn}`];
-        if (!bookData) return null;
+        const livro = data[`ISBN:${isbn}`];
 
-        // Monta os campos para o formulário
-        return {
-          titulo: bookData.title || '',
-          autores: bookData.authors ? bookData.authors.map(a => a.name).join('; ') : '',
-          editora: bookData.publishers ? bookData.publishers.map(p => p.name).join(', ') : '',
-          ano: bookData.publish_date ? (bookData.publish_date.match(/\d{4}/) ? bookData.publish_date.match(/\d{4}/)[0] : '') : '',
-          capaUrl: bookData.cover ? (bookData.cover.large || bookData.cover.medium || bookData.cover.small) : '',
-          idioma: bookData.languages && bookData.languages.length > 0 ? (bookData.languages[0].key.includes('por') ? 'pt-BR' : '') : ''
-        };
-      } catch (e) {
-        return null;
+        if (livro) {
+          document.getElementById("titulo").value = livro.title || "";
+          document.getElementById("autores").value = livro.authors?.map(a => a.name).join("; ") || "";
+          document.getElementById("editora").value = livro.publishers?.map(p => p.name).join(", ") || "";
+          // Ano de publicação: tenta extrair apenas o ano
+          if (livro.publish_date) {
+            const ano = livro.publish_date.match(/\d{4}/) ? livro.publish_date.match(/\d{4}/)[0] : livro.publish_date;
+            document.getElementById("anoPublicacao").value = ano;
+          }
+          // Idioma (opcional)
+          if (livro.languages && livro.languages.length > 0 && livro.languages[0].key.includes('por')) {
+            document.getElementById("idioma").value = "pt-BR";
+          }
+        } else {
+          alert("Livro não encontrado.");
+        }
+      } catch (error) {
+        alert("Erro ao buscar o livro.");
+        console.error(error);
       }
     }
 
-    // Preencher automaticamente os campos ao digitar o ISBN
+    // Adiciona o evento ao sair do campo ISBN
     document.addEventListener('DOMContentLoaded', function() {
       const isbnInput = document.getElementById('isbn');
       if (isbnInput) {
-        isbnInput.addEventListener('blur', async function() {
-          const isbn = isbnInput.value.trim();
-          if (!isbn) return;
-          // Evita sobrescrever se já houver título preenchido
-          if (document.getElementById('titulo').value) return;
-          const book = await fetchBookDataByISBN(isbn);
-          if (book) {
-            if (book.titulo) document.getElementById('titulo').value = book.titulo;
-            if (book.autores) document.getElementById('autores').value = book.autores;
-            if (book.editora) document.getElementById('editora').value = book.editora;
-            if (book.ano) document.getElementById('anoPublicacao').value = book.ano;
-            if (book.idioma) document.getElementById('idioma').value = book.idioma;
-            // Não preenche capa automaticamente, mas pode ser usado se desejar
-          }
-        });
+        isbnInput.addEventListener('blur', buscarLivroPorISBN);
       }
     });
   </script>
