@@ -675,7 +675,9 @@
       }
     }
 
-    // Carregar empréstimos
+    let cachedLoans = []; // Armazena os empréstimos carregados
+
+    // Modifique loadLoans para preencher cachedLoans
     async function loadLoans() {
       try {
         const loansRef = db.collection('emprestimos');
@@ -684,19 +686,19 @@
           .limit(50)
           .get();
 
+        cachedLoans = []; // Limpa o cache
+
         const tbody = document.getElementById('loansTableBody');
         tbody.innerHTML = '';
 
         for (const doc of snapshot.docs) {
           const loan = doc.data();
 
-          // Verifique se userId e bookId existem e não estão vazios
           if (!loan.userId || !loan.bookId) {
             console.warn('Empréstimo com userId ou bookId vazio:', doc.id);
-            continue; // Pula para o próximo empréstimo
+            continue;
           }
 
-          // Buscar dados do usuário e livro
           const [userDoc, bookDoc] = await Promise.all([
             db.collection('usuarios').doc(loan.userId).get(),
             db.collection('livros').doc(loan.bookId).get()
@@ -705,11 +707,20 @@
           const user = userDoc.data();
           const book = bookDoc.data();
 
-          // Verifique se user e book existem
           if (!user || !book) {
             console.warn('Usuário ou livro não encontrado para empréstimo:', doc.id);
             continue;
           }
+
+          // Salva no cache para filtro
+          cachedLoans.push({
+            id: doc.id,
+            bookTitle: book.titulo,
+            userName: user.nome,
+            loanDate: loan.loanDate,
+            returnDate: loan.returnDate,
+            status: loan.status,
+          });
 
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -735,6 +746,47 @@
         console.error('Erro ao carregar empréstimos:', error);
         showAlert('danger', 'Erro ao carregar empréstimos');
       }
+    }
+
+    // Função de filtro
+    function searchLoans() {
+      const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+      const tbody = document.getElementById('loansTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = cachedLoans.filter(loan =>
+        loan.bookTitle.toLowerCase().includes(searchTerm) ||
+        loan.userName.toLowerCase().includes(searchTerm) ||
+        (loan.loanDate && loan.loanDate.toLowerCase().includes(searchTerm)) ||
+        (loan.returnDate && loan.returnDate.toLowerCase().includes(searchTerm))
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center">Nenhum empréstimo encontrado.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(loan => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${loan.bookTitle}</td>
+          <td>${loan.userName}</td>
+          <td>${loan.loanDate}</td>
+          <td>${loan.returnDate}</td>
+          <td><span class="loan-status status-${loan.status.toLowerCase()}">${loan.status}</span></td>
+          <td>
+            <div class="action-buttons">
+              <button class="action-button return-button" title="Devolver" onclick="returnLoan('${loan.id}')">
+                <i class='bx bx-check-circle'></i>
+              </button>
+              <button class="action-button renew-button" title="Renovar" onclick="renewLoan('${loan.id}')">
+                <i class='bx bx-refresh'></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
     }
 
     // Devolver livro
