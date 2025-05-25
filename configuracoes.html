@@ -234,6 +234,32 @@
       </div>
     </div>
 
+    <div class="settings-card">
+      <h5>Cadastro da Escola</h5>
+      <form id="schoolForm">
+        <div class="mb-3">
+          <label class="form-label">Nome da Escola</label>
+          <input type="text" class="form-control" id="schoolName" placeholder="Digite o nome da escola" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email Institucional</label>
+          <input type="email" class="form-control" id="schoolEmail" placeholder="exemplo@escola.com" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Telefone</label>
+          <input type="text" class="form-control" id="schoolPhone" placeholder="(99) 99999-9999">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Endereço</label>
+          <input type="text" class="form-control" id="schoolAddress" placeholder="Rua, número, bairro, cidade">
+        </div>
+        <button type="submit" class="save-button">
+          <i class='bx bx-save'></i>
+          Salvar Cadastro
+        </button>
+      </form>
+    </div>
+
     <div class="d-flex justify-content-end mt-4">
       <button class="save-button">
         <i class='bx bx-save'></i>
@@ -243,6 +269,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const toggleSidebar = () => {
@@ -264,6 +292,43 @@
         header.prepend(hamburger);
       }
     });
+
+    // Firebase config (use a mesma do seu projeto)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.firebasestorage.app",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // Cadastro da escola
+    document.getElementById('schoolForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('schoolName').value.trim();
+      const email = document.getElementById('schoolEmail').value.trim();
+      const phone = document.getElementById('schoolPhone').value.trim();
+      const address = document.getElementById('schoolAddress').value.trim();
+
+      try {
+        await db.collection('escola').doc('dados').set({
+          nome: name,
+          email: email,
+          telefone: phone,
+          endereco: address
+        });
+        alert('Cadastro da escola salvo com sucesso!');
+      } catch (err) {
+        alert('Erro ao salvar cadastro da escola.');
+      }
+    });
   </script>
 </body>
-</html> 
+</html>
