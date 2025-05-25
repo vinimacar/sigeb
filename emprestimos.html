@@ -498,26 +498,38 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por nome OU matrícula (ajuste conforme seu banco)
-        let query = db.collection('usuarios')
+        // Busca por nome
+        const queryByName = db.collection('usuarios')
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(10);
+          .limit(10)
+          .get();
 
-        const snapshot = await query.get();
+        // Busca por matrícula (se existir esse campo)
+        const queryByMatricula = db.collection('usuarios')
+          .where('matricula', '>=', searchTerm)
+          .where('matricula', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
 
-        if (snapshot.empty) {
+        const [nameSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByMatricula]);
+
+        // Usar Map para evitar duplicatas
+        const usersMap = new Map();
+        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+
+        if (usersMap.size === 0) {
           resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
         } else {
-          snapshot.forEach(doc => {
-            const user = doc.data();
+          usersMap.forEach((user, id) => {
             const div = document.createElement('a');
             div.className = 'dropdown-item';
             div.href = '#';
             div.textContent = `${user.nome} (${user.email})`;
             div.onclick = (e) => {
               e.preventDefault();
-              selectUser(doc.id, user.nome);
+              selectUser(id, user.nome);
             };
             resultsDiv.appendChild(div);
           });
