@@ -199,29 +199,34 @@
 
         if (situacao === '') {
           // Busca todos os tipos: ativo, finalizado e atrasado
-          const ativosSnap = await db.collection('emprestimos').where('situacao', '==', 'ativo').get();
-          const finalizadosSnap = await db.collection('emprestimos').where('situacao', '==', 'finalizado').get();
-          const atrasadosSnap = await db.collection('emprestimos').where('situacao', '==', 'atrasado').get();
+          const ativosSnap = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
+          const finalizadosSnap = await db.collection('emprestimos').where('status', '==', 'DEVOLVIDO').get();
+          const atrasadosSnap = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
           emprestimos = [
             ...ativosSnap.docs,
             ...finalizadosSnap.docs,
             ...atrasadosSnap.docs
           ];
         } else {
-          const snapshot = await db.collection('emprestimos').where('situacao', '==', situacao).get();
+          // Mapeia o valor do filtro para o status correto
+          let statusFiltro = '';
+          if (situacao === 'ativo') statusFiltro = 'EMPRESTADO';
+          else if (situacao === 'finalizado') statusFiltro = 'DEVOLVIDO';
+          else if (situacao === 'atrasado') statusFiltro = 'ATRASADO';
+
+          const snapshot = await db.collection('emprestimos').where('status', '==', statusFiltro).get();
           emprestimos = snapshot.docs;
         }
 
         html = `<h5>Relatório de Empréstimos</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Situação</th></tr></thead><tbody>`;
+        <tr><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr></thead><tbody>`;
 
         for (const doc of emprestimos) {
           const d = doc.data();
           let usuarioNome = d.usuarioNome;
           let livroTitulo = d.livroTitulo;
 
-          // Busca nome do usuário e título do livro se não existirem no documento
           if ((!usuarioNome || !livroTitulo) && (d.userId || d.bookId)) {
             try {
               if (!usuarioNome && d.userId) {
@@ -240,7 +245,7 @@
             <td>${livroTitulo || ''}</td>
             <td>${d.dataEmprestimo && d.dataEmprestimo.seconds ? new Date(d.dataEmprestimo.seconds*1000).toLocaleDateString() : ''}</td>
             <td>${d.dataDevolucao && d.dataDevolucao.seconds ? new Date(d.dataDevolucao.seconds*1000).toLocaleDateString() : ''}</td>
-            <td>${d.situacao || ''}</td>
+            <td>${d.status || ''}</td>
           </tr>`;
         }
         html += '</tbody></table>';
@@ -276,3 +281,4 @@
   </script>
 </body>
 </html>
+
