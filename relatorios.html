@@ -48,7 +48,7 @@
       <a href="livros.html" class="menu-item"><i class='bx bxs-book'></i>Livros</a>
       <a href="usuarios.html" class="menu-item"><i class='bx bxs-user'></i>Usuários</a>
       <a href="emprestimos.html" class="menu-item"><i class='bx bxs-bookmark'></i>Empréstimos</a>
-      <a href="relatorios.html" class="menu-item active"><i class='bx bxs-report'></i>Relatórios</a>
+      <a href="relatorios.html" class="menu-item active" style="position:sticky;top:0;z-index:1100;"><i class='bx bxs-report'></i>Relatórios</a>
       <a href="configuracoes.html" class="menu-item"><i class='bx bxs-cog'></i>Configurações</a>
       <a href="index.html" class="menu-item"><i class='bx bxs-log-out'></i>Sair</a>
     </div>
@@ -114,6 +114,9 @@
     </div>
     <div class="report-section" id="reportResult">
       <p>Selecione o tipo de relatório e filtros desejados para visualizar e imprimir.</p>
+    </div>
+    <div id="barraAtrasados" style="display:none; background: linear-gradient(90deg, #ff512f, #dd2476); color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
+      <span id="textoAtrasados"></span>
     </div>
   </div>
   <script>
@@ -193,27 +196,41 @@
         html += '</tbody></table>';
       } else if (tipo === 'emprestimos') {
         const situacao = document.getElementById('emprestimosSituacao').value;
-        let emprestimos = [];
+        let statusFiltro = '';
+        if (situacao === 'ativo') statusFiltro = 'EMPRESTADO';
+        else if (situacao === 'finalizado') statusFiltro = 'DEVOLVIDO';
+        else if (situacao === 'atrasado') statusFiltro = 'ATRASADO';
 
-        if (situacao === '') {
-          // Busca todos os tipos: ativo, finalizado e atrasado
-          const ativosSnap = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
-          const finalizadosSnap = await db.collection('emprestimos').where('status', '==', 'DEVOLVIDO').get();
-          const atrasadosSnap = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
-          emprestimos = [
-            ...ativosSnap.docs,
-            ...finalizadosSnap.docs,
-            ...atrasadosSnap.docs
-          ];
+        let query = db.collection('emprestimos');
+        if (situacao !== '') {
+          query = query.where('status', '==', statusFiltro);
         } else {
-          // Mapeia o valor do filtro para o status correto
-          let statusFiltro = '';
-          if (situacao === 'ativo') statusFiltro = 'EMPRESTADO';
-          else if (situacao === 'finalizado') statusFiltro = 'DEVOLVIDO';
-          else if (situacao === 'atrasado') statusFiltro = 'ATRASADO';
+          // Busca todos os status relevantes de uma vez só (melhor performance que 3 queries separadas)
+          query = query.where('status', 'in', ['EMPRESTADO', 'DEVOLVIDO', 'ATRASADO']);
+        }
 
-          const snapshot = await db.collection('emprestimos').where('status', '==', statusFiltro).get();
-          emprestimos = snapshot.docs;
+        const snapshot = await query.get();
+        const emprestimos = snapshot.docs;
+
+        // Pré-carrega todos os usuários e livros em cache para evitar múltiplas queries por linha
+        const userIds = new Set();
+        const bookIds = new Set();
+        emprestimos.forEach(doc => {
+          const d = doc.data();
+          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
+          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
+        });
+
+        // Busca todos os usuários e livros necessários de uma vez
+        const usuariosMap = {};
+        if (userIds.size > 0) {
+          const userSnaps = await db.collection('usuarios').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(userIds)).get();
+          userSnaps.forEach(u => { usuariosMap[u.id] = u.data().nome; });
+        }
+        const livrosMap = {};
+        if (bookIds.size > 0) {
+          const livroSnaps = await db.collection('livros').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(bookIds)).get();
+          livroSnaps.forEach(l => { livrosMap[l.id] = l.data().titulo; });
         }
 
         html = `<h5>Relatório de Empréstimos</h5>
@@ -228,23 +245,9 @@
 
         for (const doc of emprestimos) {
           const d = doc.data();
-          let usuarioNome = d.usuarioNome;
-          let livroTitulo = d.livroTitulo;
+          let usuarioNome = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : '');
+          let livroTitulo = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : '');
 
-          if ((!usuarioNome || !livroTitulo) && (d.userId || d.bookId)) {
-            try {
-              if (!usuarioNome && d.userId) {
-                const userDoc = await db.collection('usuarios').doc(d.userId).get();
-                usuarioNome = userDoc.exists ? userDoc.data().nome : '';
-              }
-              if (!livroTitulo && d.bookId) {
-                const livroDoc = await db.collection('livros').doc(d.bookId).get();
-                livroTitulo = livroDoc.exists ? livroDoc.data().titulo : '';
-              }
-            } catch {}
-          }
-
-          // Data de retirada (dataEmprestimo) e devolução (dataDevolucao)
           const dataRetirada = d.dataEmprestimo && d.dataEmprestimo.seconds
             ? new Date(d.dataEmprestimo.seconds * 1000).toLocaleDateString()
             : '';
@@ -290,7 +293,50 @@
       });
       doc.save(`${title.replace(/\s/g, '_').toLowerCase()}.pdf`);
     });
+
+    // Função para buscar e mostrar os empréstimos atrasados na barra
+    async function mostrarBarraAtrasados() {
+      const query = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
+      if (!query.empty) {
+        let textos = [];
+        // Pré-carrega nomes dos usuários e livros
+        const userIds = new Set();
+        const bookIds = new Set();
+        query.forEach(doc => {
+          const d = doc.data();
+          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
+          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
+        });
+        const usuariosMap = {};
+        if (userIds.size > 0) {
+          const userSnaps = await db.collection('usuarios').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(userIds)).get();
+          userSnaps.forEach(u => { usuariosMap[u.id] = u.data().nome; });
+        }
+        const livrosMap = {};
+        if (bookIds.size > 0) {
+          const livroSnaps = await db.collection('livros').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(bookIds)).get();
+          livroSnaps.forEach(l => { livrosMap[l.id] = l.data().titulo; });
+        }
+        query.forEach(doc => {
+          const d = doc.data();
+          const usuario = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : 'Usuário');
+          const livro = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : 'Livro');
+          const dataDev = d.dataDevolucao && d.dataDevolucao.seconds
+            ? new Date(d.dataDevolucao.seconds * 1000).toLocaleDateString()
+            : '';
+          textos.push(`⚠️ ${usuario} está com "${livro}" atrasado desde ${dataDev}`);
+        });
+        document.getElementById('textoAtrasados').innerText = textos.join('   |   ');
+        document.getElementById('barraAtrasados').style.display = 'block';
+      } else {
+        document.getElementById('barraAtrasados').style.display = 'none';
+      }
+    }
+
+    // Chama ao carregar a página
+    document.addEventListener('DOMContentLoaded', mostrarBarraAtrasados);
   </script>
 </body>
 </html>
+
 
