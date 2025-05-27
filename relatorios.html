@@ -196,17 +196,13 @@
         html += '</tbody></table>';
       } else if (tipo === 'emprestimos') {
         const situacao = document.getElementById('emprestimosSituacao').value;
-        let statusFiltro = '';
-        if (situacao === 'ativo') statusFiltro = 'EMPRESTADO';
-        else if (situacao === 'finalizado') statusFiltro = 'DEVOLVIDO';
-        else if (situacao === 'atrasado') statusFiltro = 'ATRASADO';
-
         let query = db.collection('emprestimos');
-        if (situacao !== '') {
-          query = query.where('status', '==', statusFiltro);
+        if (situacao === 'ativo' || situacao === 'atrasado') {
+          query = query.where('status', '==', 'EMPRESTADO');
+        } else if (situacao === 'finalizado') {
+          query = query.where('status', '==', 'DEVOLVIDO');
         } else {
-          // Busca todos os status relevantes de uma vez só (melhor performance que 3 queries separadas)
-          query = query.where('status', 'in', ['EMPRESTADO', 'DEVOLVIDO', 'ATRASADO']);
+          query = query.where('status', 'in', ['EMPRESTADO', 'DEVOLVIDO']);
         }
 
         const snapshot = await query.get();
@@ -238,17 +234,32 @@
         <tr>
           <th>Usuário</th>
           <th>Livro</th>
-          <th>Data Retirada</th>
+          <th>Data Empréstimo</th>
           <th>Data Devolução</th>
           <th>Status</th>
         </tr></thead><tbody>`;
 
+        const today = new Date();
         for (const doc of emprestimos) {
           const d = doc.data();
           let usuarioNome = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : '');
           let livroTitulo = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : '');
 
-          const dataRetirada = d.dataEmprestimo && d.dataEmprestimo.seconds
+          // Determina status real
+          let status = d.status;
+          if (d.status === 'EMPRESTADO' && d.dataDevolucao && d.dataDevolucao.seconds) {
+            const returnDate = new Date(d.dataDevolucao.seconds * 1000);
+            if (returnDate < new Date(today.setHours(0,0,0,0))) {
+              status = 'ATRASADO';
+            }
+          }
+
+          // Aplica filtro de situação
+          if (situacao === 'ativo' && status !== 'EMPRESTADO') continue;
+          if (situacao === 'atrasado' && status !== 'ATRASADO') continue;
+
+          // Mostra datas de empréstimo e devolução
+          const dataEmprestimo = d.dataEmprestimo && d.dataEmprestimo.seconds
             ? new Date(d.dataEmprestimo.seconds * 1000).toLocaleDateString()
             : '';
           const dataDevolucao = d.dataDevolucao && d.dataDevolucao.seconds
@@ -258,9 +269,9 @@
           html += `<tr>
             <td>${usuarioNome || ''}</td>
             <td>${livroTitulo || ''}</td>
-            <td>${dataRetirada}</td>
+            <td>${dataEmprestimo}</td>
             <td>${dataDevolucao}</td>
-            <td>${d.status || ''}</td>
+            <td>${status || ''}</td>
           </tr>`;
         }
         html += '</tbody></table>';
