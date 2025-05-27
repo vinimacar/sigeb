@@ -900,19 +900,19 @@
           return;
         }
 
-        // Barra piscante com cor menos invasiva (amarelo suave)
+        // Barra de aviso em vermelho
         bar.style.display = 'block';
-        bar.style.background = '#fffbe6'; // amarelo claro
-        bar.style.color = '#b26a00'; // laranja escuro
+        bar.style.background = '#ffebee'; // vermelho claro
+        bar.style.color = '#b71c1c'; // vermelho escuro
         bar.style.fontWeight = 'bold';
         bar.style.fontSize = '1.1rem';
         bar.style.padding = '14px 20px';
         bar.style.borderRadius = '8px';
         bar.style.textAlign = 'center';
         bar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.10)';
-        bar.style.animation = 'blinkBar 1s steps(2, start) infinite';
+        bar.style.animation = 'blinkBar 4s steps(2, start) 3';
 
-        bar.innerHTML = `Atenção: temos ${overdueCount} livro(s) em ATRASO.`;
+        bar.innerHTML = `ATENÇÃO EXISTEM ${overdueCount} DEVOLUÇÕES DE LIVROS EM ATRASO. FAVOR ENTRE EM CONTATO COM O USUÁRIO.`;
       } catch (error) {
         // Silencia erro na barra
       }
@@ -926,7 +926,7 @@
       40% { opacity: 0.6; }
     }
     #notReturnedBar {
-      animation: blinkBar 4s steps(2, start) 3; /* Pisca 3 vezes, mais devagar */
+      animation: blinkBar 4s steps(2, start) 3;
     }
     `;
     document.head.appendChild(style);
