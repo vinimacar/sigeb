@@ -274,21 +274,33 @@
 
     <!-- Botões de filtro estilo gráfico -->
     <div id="loanStats" class="d-flex justify-content-center align-items-center mb-4" style="gap: 40px;">
-      <div class="pie-btn" id="btnEmprestado" onclick="showLoansByStatus('EMPRESTADO')">
+      <div class="pie-btn shadow-lg" id="btnEmprestado" onclick="showLoansByStatus('EMPRESTADO')">
         <div class="pie-chart pie-emprestado">
-          <span id="countEmprestado">0</span>
+          <span id="countEmprestado"></span>
+          <svg class="pie-svg" width="90" height="90">
+            <circle class="pie-bg" cx="45" cy="45" r="38"/>
+            <circle class="pie-fg pie-fg-emprestado" cx="45" cy="45" r="38"/>
+          </svg>
         </div>
         <div class="pie-label">Emprestados</div>
       </div>
-      <div class="pie-btn" id="btnAtrasado" onclick="showLoansByStatus('ATRASADO')">
+      <div class="pie-btn shadow-lg" id="btnAtrasado" onclick="showLoansByStatus('ATRASADO')">
         <div class="pie-chart pie-atrasado">
-          <span id="countAtrasado">0</span>
+          <span id="countAtrasado"></span>
+          <svg class="pie-svg" width="90" height="90">
+            <circle class="pie-bg" cx="45" cy="45" r="38"/>
+            <circle class="pie-fg pie-fg-atrasado" cx="45" cy="45" r="38"/>
+          </svg>
         </div>
         <div class="pie-label">Atrasos</div>
       </div>
-      <div class="pie-btn" id="btnDevolvido" onclick="showLoansByStatus('DEVOLVIDO')">
+      <div class="pie-btn shadow-lg" id="btnDevolvido" onclick="showLoansByStatus('DEVOLVIDO')">
         <div class="pie-chart pie-devolvido">
-          <span id="countDevolvido">0</span>
+          <span id="countDevolvido"></span>
+          <svg class="pie-svg" width="90" height="90">
+            <circle class="pie-bg" cx="45" cy="45" r="38"/>
+            <circle class="pie-fg pie-fg-devolvido" cx="45" cy="45" r="38"/>
+          </svg>
         </div>
         <div class="pie-label">Devolvidos</div>
       </div>
@@ -297,51 +309,81 @@
       #loanStats {
         margin-top: 40px;
         margin-bottom: 40px;
+        gap: 40px;
       }
       .pie-btn {
         display: flex;
         flex-direction: column;
         align-items: center;
         cursor: pointer;
-        transition: transform 0.2s;
-        min-width: 110px;
+        min-width: 120px;
+        transition: transform 0.18s, box-shadow 0.18s;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.85);
+        box-shadow: 0 4px 24px 0 rgba(80,120,255,0.07);
+        padding: 18px 10px 10px 10px;
+        position: relative;
+        overflow: visible;
       }
       .pie-btn:hover {
-        transform: scale(1.08);
+        transform: translateY(-4px) scale(1.06);
+        box-shadow: 0 8px 32px 0 rgba(80,120,255,0.13);
+        background: linear-gradient(120deg, #f8fbff 80%, #e3f2fd 100%);
       }
       .pie-chart {
         width: 90px;
         height: 90px;
         border-radius: 50%;
-        background: #e3f2fd;
+        position: relative;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      .pie-chart span {
+        position: absolute;
+        left: 0; right: 0; top: 0; bottom: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 2.1rem;
-        font-weight: 600;
-        margin-bottom: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        border: 6px solid #fff;
-        transition: box-shadow 0.2s;
-      }
-      .pie-emprestado {
-        background: conic-gradient(#4facfe 0% 100%, #e3f2fd 0%);
-        color: #4facfe;
-      }
-      .pie-atrasado {
-        background: conic-gradient(#c62828 0% 100%, #ffebee 0%);
-        color: #c62828;
-      }
-      .pie-devolvido {
-        background: conic-gradient(#2e7d32 0% 100%, #e8f5e9 0%);
-        color: #2e7d32;
-      }
-      .pie-label {
-        font-size: 1.1rem;
-        font-weight: 500;
-        margin-top: 2px;
+        font-weight: 700;
+        z-index: 2;
         color: #222;
+        pointer-events: none;
+        text-shadow: 0 2px 8px #fff, 0 1px 0 #e3f2fd;
+      }
+      .pie-svg {
+        position: absolute;
+        left: 0; top: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .pie-bg {
+        fill: none;
+        stroke: #e3f2fd;
+        stroke-width: 10;
+      }
+      .pie-fg {
+        fill: none;
+        stroke-width: 10;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dasharray 0.7s cubic-bezier(.4,2,.6,1), stroke 0.3s;
+      }
+      .pie-fg-emprestado { stroke: #4facfe; }
+      .pie-fg-atrasado { stroke: #c62828; }
+      .pie-fg-devolvido { stroke: #2e7d32; }
+      .pie-label {
+        font-size: 1.13rem;
+        font-weight: 600;
+        margin-top: 8px;
+        color: #1a1a2e;
         text-align: center;
+        letter-spacing: 0.01em;
+        text-shadow: 0 1px 0 #fff;
       }
       @media (max-width: 768px) {
         #loanStats {
@@ -856,19 +898,19 @@
           return;
         }
 
-        // Barra piscante
+        // Barra piscante com cor menos invasiva (amarelo suave)
         bar.style.display = 'block';
-        bar.style.background = '#c62828';
-        bar.style.color = '#fff';
+        bar.style.background = '#fffbe6'; // amarelo claro
+        bar.style.color = '#b26a00'; // laranja escuro
         bar.style.fontWeight = 'bold';
         bar.style.fontSize = '1.1rem';
         bar.style.padding = '14px 20px';
         bar.style.borderRadius = '8px';
         bar.style.textAlign = 'center';
-        bar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)';
+        bar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.10)';
         bar.style.animation = 'blinkBar 1s steps(2, start) infinite';
 
-        bar.innerHTML = `Atenção temos ${overdueCount} livros em ATRASO.`;
+        bar.innerHTML = `Atenção: temos ${overdueCount} livro(s) em ATRASO.`;
       } catch (error) {
         // Silencia erro na barra
       }
@@ -879,7 +921,7 @@
     style.innerHTML = `
     @keyframes blinkBar {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+      50% { opacity: 0.6; }
     }
     `;
     document.head.appendChild(style);
@@ -1180,11 +1222,18 @@
       document.getElementById('countAtrasado').textContent = countAtrasado;
       document.getElementById('countDevolvido').textContent = countDevolvido;
 
-      // Atualiza o gráfico de pizza (preenchimento proporcional)
+      // SVG Pie: calcula proporção
       const total = countEmprestado + countAtrasado + countDevolvido || 1;
-      document.querySelector('.pie-emprestado').style.background = `conic-gradient(#4facfe 0% ${(countEmprestado/total)*100}%, #e3f2fd ${(countEmprestado/total)*100}% 100%)`;
-      document.querySelector('.pie-atrasado').style.background = `conic-gradient(#c62828 0% ${(countAtrasado/total)*100}%, #ffebee ${(countAtrasado/total)*100}% 100%)`;
-      document.querySelector('.pie-devolvido').style.background = `conic-gradient(#2e7d32 0% ${(countDevolvido/total)*100}%, #e8f5e9 ${(countDevolvido/total)*100}% 100%)`;
+      const circleLength = 2 * Math.PI * 38;
+      function setPie(selector, value) {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.style.strokeDasharray = `${(value/total)*circleLength} ${circleLength}`;
+        }
+      }
+      setPie('.pie-fg-emprestado', countEmprestado);
+      setPie('.pie-fg-atrasado', countAtrasado);
+      setPie('.pie-fg-devolvido', countDevolvido);
     }
     document.addEventListener('DOMContentLoaded', loadLoanStats);
 
