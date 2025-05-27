@@ -969,9 +969,16 @@
         try {
           let usuariosRaw = [];
           if (fileName.endsWith('.csv')) {
-            // CSV
-            usuariosRaw = csvToArray(e.target.result, ";"); // tente ";" para CSVs do Excel brasileiro
-            if (usuariosRaw.length === 0) usuariosRaw = csvToArray(e.target.result, ",");
+            // CSV com tabulação (Excel exporta assim para colunas)
+            usuariosRaw = csvToArray(e.target.result, "\t");
+            // Se não encontrar, tenta ponto e vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ";");
+            }
+            // Se não encontrar, tenta vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ",");
+            }
           } else {
             // XLS/XLSX
             const data = new Uint8Array(e.target.result);
@@ -983,20 +990,20 @@
 
           // Mapeia os dados para o formato do Firestore
           const usuarios = usuariosRaw.map(usuario => ({
-            nome: usuario.Nome || usuario.nome || "",
-            email: usuario.Email || usuario.email || "",
-            matricula: usuario.Matricula || usuario.matricula || "",
-            funcao: usuario.Função || usuario.Funcao || usuario.funcao || "ALUNO",
-            status: usuario.Status || usuario.status || "Ativo",
+            nome: usuario["Nome Completo*"] || "",
+            funcao: usuario["Função*"] || "ALUNO",
             endereco: {
-              logradouro: usuario.Endereco || usuario.endereco || "",
-              numero: usuario.Numero || usuario.numero || "",
-              cep: usuario.CEP || usuario.cep || "",
-              bairro: usuario.Bairro || usuario.bairro || "",
-              cidade: usuario.Cidade || usuario.cidade || "",
-              uf: usuario.UF || usuario.uf || ""
+              logradouro: usuario["Endereço*"] || "",
+              numero: usuario["Número*"] || "",
+              cep: usuario["CEP*"] || "",
+              bairro: usuario["Bairro*"] || "",
+              cidade: usuario["Cidade*"] || "",
+              uf: usuario["UF*"] || ""
             },
-            telefone: usuario.Telefone || usuario.telefone || "",
+            telefone: usuario["Telefone*"] || "",
+            email: usuario["Email*"] || "",
+            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || "",
+            status: "Ativo",
             dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
           }));
 
@@ -1007,7 +1014,7 @@
             const total = usuarios.length;
             for (let i = 0; i < total; i++) {
               const u = usuarios[i];
-              if (u.nome && u.email && u.matricula) {
+              if (u.nome && u.email) {
                 await db.collection('usuarios').add(u);
                 count++;
               }
@@ -1036,7 +1043,7 @@
     });
 
     // Função para ler CSV e converter para array de objetos
-    function csvToArray(str, delimiter = ",") {
+    function csvToArray(str, delimiter = "\t") {
       const headers = str.slice(0, str.indexOf("\n")).split(delimiter).map(h => h.trim().replace(/"/g, ''));
       return str
         .slice(str.indexOf("\n") + 1)
@@ -1052,8 +1059,91 @@
         });
     }
 
-    // Adicione um novo input para CSV (ou altere o existente para aceitar CSV também)
+    // Aceita .csv, .xls, .xlsx
     document.getElementById('xlsInput').setAttribute('accept', '.xls,.xlsx,.csv');
+
+    // Evento de importação
+    document.getElementById('xlsInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = file.name.toLowerCase();
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          let usuariosRaw = [];
+          if (fileName.endsWith('.csv')) {
+            // CSV com tabulação (Excel exporta assim para colunas)
+            usuariosRaw = csvToArray(e.target.result, "\t");
+            // Se não encontrar, tenta ponto e vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ";");
+            }
+            // Se não encontrar, tenta vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ",");
+            }
+          } else {
+            // XLS/XLSX
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            usuariosRaw = XLSX.utils.sheet_to_json(sheet);
+          }
+
+          // Mapeia os dados para o formato do Firestore
+          const usuarios = usuariosRaw.map(usuario => ({
+            nome: usuario["Nome Completo*"] || "",
+            funcao: usuario["Função*"] || "ALUNO",
+            endereco: {
+              logradouro: usuario["Endereço*"] || "",
+              numero: usuario["Número*"] || "",
+              cep: usuario["CEP*"] || "",
+              bairro: usuario["Bairro*"] || "",
+              cidade: usuario["Cidade*"] || "",
+              uf: usuario["UF*"] || ""
+            },
+            telefone: usuario["Telefone*"] || "",
+            email: usuario["Email*"] || "",
+            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || "",
+            status: "Ativo",
+            dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+          }));
+
+          // Mostra modal de confirmação
+          criarModalConfirmacaoImportacao(usuarios, async (bsModal, usuarios) => {
+            // Importação com barra de progresso
+            let count = 0;
+            const total = usuarios.length;
+            for (let i = 0; i < total; i++) {
+              const u = usuarios[i];
+              if (u.nome && u.email) {
+                await db.collection('usuarios').add(u);
+                count++;
+              }
+              // Atualiza barra de progresso
+              const percent = Math.round(((i + 1) / total) * 100);
+              const bar = document.querySelector('#importProgress .progress-bar');
+              bar.style.width = percent + '%';
+              bar.innerText = percent + '%';
+              document.getElementById('importProgressText').innerText = `Importando ${i + 1} de ${total} usuários...`;
+            }
+            bsModal.hide();
+            showAlert('success', `${count} usuários importados com sucesso!`);
+            if (typeof loadUsers === 'function') loadUsers();
+          });
+
+        } catch (err) {
+          showAlert('danger', 'Erro ao importar usuários. Verifique o arquivo.');
+        }
+      };
+      if (fileName.endsWith('.csv')) {
+        reader.readAsText(file, 'utf-8');
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+      e.target.value = '';
+    });
   </script>
 </body>
 </html>
