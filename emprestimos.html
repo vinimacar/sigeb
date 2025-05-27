@@ -920,8 +920,11 @@
     const style = document.createElement('style');
     style.innerHTML = `
     @keyframes blinkBar {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      0%, 80%, 100% { opacity: 1; }
+      40% { opacity: 0.6; }
+    }
+    #notReturnedBar {
+      animation: blinkBar 4s steps(2, start) 3; /* Pisca 3 vezes, mais devagar */
     }
     `;
     document.head.appendChild(style);
@@ -930,7 +933,7 @@
     async function loadLoans(filterStatus) {
       try {
         const loansRef = db.collection('emprestimos');
-        let query = loansRef.orderBy('createdAt', 'desc').limit(50);
+        let query = loansRef.orderBy('createdAt', 'desc').limit(15); // Alterado para 15
         const snapshot = await query.get();
 
         const tbody = document.getElementById('loansTableBody');
@@ -1246,4 +1249,3 @@
   </script>
 </body>
 </html>
-
