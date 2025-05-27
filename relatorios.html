@@ -307,16 +307,24 @@
 
     // Função para buscar e mostrar os empréstimos atrasados na barra
     async function mostrarBarraAtrasados() {
-      const query = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
+      const query = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
       if (!query.empty) {
         let textos = [];
         // Pré-carrega nomes dos usuários e livros
         const userIds = new Set();
         const bookIds = new Set();
+        const atrasados = [];
+        const today = new Date();
         query.forEach(doc => {
           const d = doc.data();
-          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
-          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
+          if (d.dataDevolucao && d.dataDevolucao.seconds) {
+            const returnDate = new Date(d.dataDevolucao.seconds * 1000);
+            if (returnDate < new Date(today.setHours(0,0,0,0))) {
+              atrasados.push(doc);
+              if (!d.usuarioNome && d.userId) userIds.add(d.userId);
+              if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
+            }
+          }
         });
         const usuariosMap = {};
         if (userIds.size > 0) {
@@ -328,7 +336,7 @@
           const livroSnaps = await db.collection('livros').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(bookIds)).get();
           livroSnaps.forEach(l => { livrosMap[l.id] = l.data().titulo; });
         }
-        query.forEach(doc => {
+        atrasados.forEach(doc => {
           const d = doc.data();
           const usuario = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : 'Usuário');
           const livro = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : 'Livro');
@@ -337,8 +345,12 @@
             : '';
           textos.push(`⚠️ ${usuario} está com "${livro}" atrasado desde ${dataDev}`);
         });
-        document.getElementById('textoAtrasados').innerText = textos.join('   |   ');
-        document.getElementById('barraAtrasados').style.display = 'block';
+        if (textos.length > 0) {
+          document.getElementById('textoAtrasados').innerText = textos.join('   |   ');
+          document.getElementById('barraAtrasados').style.display = 'block';
+        } else {
+          document.getElementById('barraAtrasados').style.display = 'none';
+        }
       } else {
         document.getElementById('barraAtrasados').style.display = 'none';
       }
@@ -349,5 +361,7 @@
   </script>
 </body>
 </html>
+
+
 
 
