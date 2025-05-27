@@ -302,6 +302,7 @@
     <div class="dashboard-header" data-aos="fade-down">
       <h2>Bem-vindo ao SIGEB</h2>
       <p>Sistema de Gestão de Biblioteca</p>
+      <p id="nomeEscola" style="font-weight:600;color:#4facfe"></p>
     </div>
 
     <div class="stats-container">
@@ -380,6 +381,14 @@
       // Reservas pendentes
       const reservasSnap = await db.collection('emprestimos').where('status', '==', 'RESERVADO').get();
       document.getElementById('totalReservas').textContent = reservasSnap.size;
+
+      // Buscar e exibir nome da escola cadastrada
+      const escolaSnap = await db.collection('configuracoes').doc('escola').get();
+      let nomeEscola = 'Escola não cadastrada';
+      if (escolaSnap.exists && escolaSnap.data().nome) {
+        nomeEscola = escolaSnap.data().nome;
+      }
+      document.getElementById('nomeEscola').textContent = nomeEscola;
     }
 
     // Função para buscar e exibir atividades recentes
@@ -487,4 +496,5 @@
   </script>
 </body>
 </html>
+
 
