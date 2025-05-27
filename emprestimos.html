@@ -852,6 +852,34 @@
       }, 5000);
     }
 
+    // Função para filtrar empréstimos na tabela pelo campo de busca
+    function searchLoans() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const rows = document.querySelectorAll('#loansTableBody tr');
+      rows.forEach(row => {
+        // Pega os textos das colunas: livro, usuário, data empréstimo, data devolução
+        const livro = row.children[0]?.textContent.toLowerCase() || '';
+        const usuario = row.children[1]?.textContent.toLowerCase() || '';
+        const dataEmprestimo = row.children[2]?.textContent.toLowerCase() || '';
+        const dataDevolucao = row.children[3]?.textContent.toLowerCase() || '';
+        if (
+          livro.includes(search) ||
+          usuario.includes(search) ||
+          dataEmprestimo.includes(search) ||
+          dataDevolucao.includes(search)
+        ) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // Adiciona evento ao campo de busca para filtrar enquanto digita
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('searchInput').addEventListener('input', searchLoans);
+    });
+
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('addLoanForm');
@@ -860,4 +888,3 @@
   </script>
 </body>
 </html>
-
