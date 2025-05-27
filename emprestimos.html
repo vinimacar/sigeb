@@ -215,7 +215,8 @@
       display: inline-block;
       white-space: nowrap;
       will-change: transform;
-      animation: marquee-bar 18s linear infinite;
+      /* Velocidade ajustada para leitura humana: 40s */
+      animation: marquee-bar 40s linear infinite;
     }
     @keyframes marquee-bar {
       0% { transform: translateX(100%);}
@@ -862,11 +863,15 @@
 
           // Verifica se está atrasado
           let atrasado = false;
+          let status = loan.status;
           if (loan.status === 'EMPRESTADO' && loan.returnDate) {
             const [d, m, y] = loan.returnDate.split('/');
             const returnDate = new Date(`${y}-${m}-${d}`);
             const today = new Date();
-            if (returnDate < today.setHours(0,0,0,0)) atrasado = true;
+            if (returnDate < today.setHours(0,0,0,0)) {
+              atrasado = true;
+              status = 'ATRASADO';
+            }
           }
 
           const row = document.createElement('tr');
@@ -878,7 +883,7 @@
               ${loan.returnDate}
               ${atrasado ? `<span style="color:#c62828; font-weight:bold; margin-left:8px;">ATRASADO</span>` : ''}
             </td>
-            <td><span class="loan-status status-${loan.status.toLowerCase()}">${loan.status}</span></td>
+            <td><span class="loan-status status-${status.toLowerCase()}">${status}</span></td>
             <td>
               <div class="action-buttons">
                 <button class="action-button return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
