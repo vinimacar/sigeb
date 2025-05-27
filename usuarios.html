@@ -883,6 +883,83 @@
       }
     });
 
+    // Crie um modal para confirmação visual dos dados importados
+    function criarModalConfirmacaoImportacao(usuarios, onConfirm) {
+      // Remove modal antigo se existir
+      const oldModal = document.getElementById('modalConfirmImport');
+      if (oldModal) oldModal.remove();
+
+      // Cria HTML do modal
+      const modal = document.createElement('div');
+      modal.className = 'modal fade';
+      modal.id = 'modalConfirmImport';
+      modal.tabIndex = -1;
+      modal.innerHTML = `
+        <div class="modal-dialog modal-xl">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Confirmar Importação de Usuários</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div style="max-height:350px;overflow:auto;">
+                <table class="table table-bordered table-sm">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Matrícula</th>
+                      <th>Status</th>
+                      <th>Função</th>
+                      <th>Telefone</th>
+                      <th>Endereço</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${usuarios.map(u => `
+                      <tr>
+                        <td>${u.nome || ''}</td>
+                        <td>${u.email || ''}</td>
+                        <td>${u.matricula || ''}</td>
+                        <td>${u.status || ''}</td>
+                        <td>${u.funcao || ''}</td>
+                        <td>${u.telefone || ''}</td>
+                        <td>${u.endereco ? [
+                          u.endereco.logradouro, u.endereco.numero, u.endereco.bairro, u.endereco.cidade, u.endereco.uf, u.endereco.cep
+                        ].filter(Boolean).join(', ') : ''}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div id="importProgress" class="my-3" style="display:none;">
+                <div class="progress">
+                  <div class="progress-bar" role="progressbar" style="width:0%">0%</div>
+                </div>
+                <div class="mt-2 text-center" id="importProgressText"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" id="btnConfirmarImportacao">Confirmar Importação</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Mostra o modal
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
+
+      // Ao clicar em confirmar, chama o callback
+      document.getElementById('btnConfirmarImportacao').onclick = async function() {
+        document.getElementById('importProgress').style.display = 'block';
+        this.disabled = true;
+        await onConfirm(bsModal, usuarios);
+      };
+    }
+
     document.getElementById('xlsInput').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -893,35 +970,50 @@
           const workbook = XLSX.read(data, {type: 'array'});
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
-          const usuarios = XLSX.utils.sheet_to_json(sheet);
+          const usuariosRaw = XLSX.utils.sheet_to_json(sheet);
 
-          let count = 0;
-          for (const usuario of usuarios) {
-            // Ajuste os campos conforme o cabeçalho do seu XLS
-            const userData = {
-              nome: usuario.Nome || usuario.nome || "",
-              email: usuario.Email || usuario.email || "",
-              matricula: usuario.Matricula || usuario.matricula || "",
-              funcao: usuario.Função || usuario.Funcao || usuario.funcao || "ALUNO",
-              status: usuario.Status || usuario.status || "Ativo",
-              endereco: {
-                logradouro: usuario.Endereco || usuario.endereco || "",
-                numero: usuario.Numero || usuario.numero || "",
-                cep: usuario.CEP || usuario.cep || "",
-                bairro: usuario.Bairro || usuario.bairro || "",
-                cidade: usuario.Cidade || usuario.cidade || "",
-                uf: usuario.UF || usuario.uf || ""
-              },
-              telefone: usuario.Telefone || usuario.telefone || "",
-              dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            if (userData.nome && userData.email && userData.matricula) {
-              await db.collection('usuarios').add(userData);
-              count++;
+          // Mapeia os dados para o formato do Firestore
+          const usuarios = usuariosRaw.map(usuario => ({
+            nome: usuario.Nome || usuario.nome || "",
+            email: usuario.Email || usuario.email || "",
+            matricula: usuario.Matricula || usuario.matricula || "",
+            funcao: usuario.Função || usuario.Funcao || usuario.funcao || "ALUNO",
+            status: usuario.Status || usuario.status || "Ativo",
+            endereco: {
+              logradouro: usuario.Endereco || usuario.endereco || "",
+              numero: usuario.Numero || usuario.numero || "",
+              cep: usuario.CEP || usuario.cep || "",
+              bairro: usuario.Bairro || usuario.bairro || "",
+              cidade: usuario.Cidade || usuario.cidade || "",
+              uf: usuario.UF || usuario.uf || ""
+            },
+            telefone: usuario.Telefone || usuario.telefone || "",
+            dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+          }));
+
+          // Mostra modal de confirmação
+          criarModalConfirmacaoImportacao(usuarios, async (bsModal, usuarios) => {
+            // Importação com barra de progresso
+            let count = 0;
+            const total = usuarios.length;
+            for (let i = 0; i < total; i++) {
+              const u = usuarios[i];
+              if (u.nome && u.email && u.matricula) {
+                await db.collection('usuarios').add(u);
+                count++;
+              }
+              // Atualiza barra de progresso
+              const percent = Math.round(((i + 1) / total) * 100);
+              const bar = document.querySelector('#importProgress .progress-bar');
+              bar.style.width = percent + '%';
+              bar.innerText = percent + '%';
+              document.getElementById('importProgressText').innerText = `Importando ${i + 1} de ${total} usuários...`;
             }
-          }
-          showAlert('success', `${count} usuários importados com sucesso!`);
-          if (typeof loadUsers === 'function') loadUsers();
+            bsModal.hide();
+            showAlert('success', `${count} usuários importados com sucesso!`);
+            if (typeof loadUsers === 'function') loadUsers();
+          });
+
         } catch (err) {
           showAlert('danger', 'Erro ao importar usuários. Verifique o arquivo.');
         }
@@ -932,4 +1024,3 @@
   </script>
 </body>
 </html>
-
