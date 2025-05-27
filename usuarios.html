@@ -866,8 +866,8 @@
     async function solicitarSenhaImportacao() {
       return new Promise((resolve) => {
         const senha = prompt('Digite a senha de administrador para importar usuários:');
-        // Troque "SENHAADMIN" pela senha real desejada
-        if (senha === 'SENHAADMIN') {
+        // Agora a senha é "1234"
+        if (senha === '1234') {
           resolve(true);
         } else {
           alert('Senha incorreta. Importação cancelada.');
@@ -932,3 +932,4 @@
   </script>
 </body>
 </html>
+
