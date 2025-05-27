@@ -963,14 +963,23 @@
     document.getElementById('xlsInput').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
+      const fileName = file.name.toLowerCase();
       const reader = new FileReader();
       reader.onload = async function(e) {
         try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, {type: 'array'});
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const usuariosRaw = XLSX.utils.sheet_to_json(sheet);
+          let usuariosRaw = [];
+          if (fileName.endsWith('.csv')) {
+            // CSV
+            usuariosRaw = csvToArray(e.target.result, ";"); // tente ";" para CSVs do Excel brasileiro
+            if (usuariosRaw.length === 0) usuariosRaw = csvToArray(e.target.result, ",");
+          } else {
+            // XLS/XLSX
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            usuariosRaw = XLSX.utils.sheet_to_json(sheet);
+          }
 
           // Mapeia os dados para o formato do Firestore
           const usuarios = usuariosRaw.map(usuario => ({
@@ -1018,9 +1027,33 @@
           showAlert('danger', 'Erro ao importar usuários. Verifique o arquivo.');
         }
       };
-      reader.readAsArrayBuffer(file);
+      if (fileName.endsWith('.csv')) {
+        reader.readAsText(file, 'utf-8');
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
       e.target.value = '';
     });
+
+    // Função para ler CSV e converter para array de objetos
+    function csvToArray(str, delimiter = ",") {
+      const headers = str.slice(0, str.indexOf("\n")).split(delimiter).map(h => h.trim().replace(/"/g, ''));
+      return str
+        .slice(str.indexOf("\n") + 1)
+        .split("\n")
+        .filter(line => line.trim().length > 0)
+        .map(line => {
+          const values = line.split(delimiter).map(v => v.trim().replace(/"/g, ''));
+          const obj = {};
+          headers.forEach((header, i) => {
+            obj[header] = values[i] || "";
+          });
+          return obj;
+        });
+    }
+
+    // Adicione um novo input para CSV (ou altere o existente para aceitar CSV também)
+    document.getElementById('xlsInput').setAttribute('accept', '.xls,.xlsx,.csv');
   </script>
 </body>
 </html>
