@@ -269,19 +269,30 @@
       </button>
     </div>
 
-    <!-- TARJA DE EMPRÉSTIMOS NÃO DEVOLVIDOS (agora acima do filtro de pesquisa) -->
-    <div id="notReturnedBar" style="display:none; margin-bottom:20px;">
-      <!-- Conteúdo será preenchido via JS -->
+    <!-- Barra piscante de atrasos -->
+    <div id="notReturnedBar" style="display:none; margin-bottom:20px;"></div>
+
+    <!-- Botões de filtro estilo gráfico -->
+    <div id="loanStats" class="d-flex gap-3 mb-4">
+      <button class="btn btn-outline-primary" id="btnEmprestado" onclick="showLoansByStatus('EMPRESTADO')">
+        Emprestados <span class="badge bg-primary" id="countEmprestado">0</span>
+      </button>
+      <button class="btn btn-outline-danger" id="btnAtrasado" onclick="showLoansByStatus('ATRASADO')">
+        Atrasos <span class="badge bg-danger" id="countAtrasado">0</span>
+      </button>
+      <button class="btn btn-outline-success" id="btnDevolvido" onclick="showLoansByStatus('DEVOLVIDO')">
+        Devolvidos <span class="badge bg-success" id="countDevolvido">0</span>
+      </button>
     </div>
 
-    <div class="search-box">
+    <div class="search-box" style="display:none;">
       <input type="text" id="searchInput" placeholder="Pesquisar por livro, usuário ou data...">
       <button class="add-button" onclick="searchLoans()">
         <i class='bx bx-search'></i>
       </button>
     </div>
 
-    <div class="loans-table">
+    <div class="loans-table" style="display:none;">
       <div class="table-responsive">
         <table class="table">
           <thead>
@@ -805,40 +816,29 @@
     document.head.appendChild(style);
 
     // Carregar empréstimos
-    async function loadLoans() {
+    async function loadLoans(filterStatus) {
       try {
         const loansRef = db.collection('emprestimos');
-        const snapshot = await loansRef
-          .orderBy('createdAt', 'desc')
-          .limit(50)
-          .get();
+        let query = loansRef.orderBy('createdAt', 'desc').limit(50);
+        const snapshot = await query.get();
 
         const tbody = document.getElementById('loansTableBody');
         tbody.innerHTML = '';
 
+        const today = new Date();
+
         for (const doc of snapshot.docs) {
           const loan = doc.data();
-
-          // Verifique se userId e bookId existem e não estão vazios
-          if (!loan.userId || !loan.bookId) {
-            console.warn('Empréstimo com userId ou bookId vazio:', doc.id);
-            continue; // Pula para o próximo empréstimo
-          }
+          if (!loan.userId || !loan.bookId) continue;
 
           // Buscar dados do usuário e livro
           const [userDoc, bookDoc] = await Promise.all([
             db.collection('usuarios').doc(loan.userId).get(),
             db.collection('livros').doc(loan.bookId).get()
           ]);
-
           const user = userDoc.data();
           const book = bookDoc.data();
-
-          // Verifique se user e book existem
-          if (!user || !book) {
-            console.warn('Usuário ou livro não encontrado para empréstimo:', doc.id);
-            continue;
-          }
+          if (!user || !book) continue;
 
           // Verifica se está atrasado
           let atrasado = false;
@@ -846,21 +846,21 @@
           if (loan.status === 'EMPRESTADO' && loan.returnDate) {
             const [d, m, y] = loan.returnDate.split('/');
             const returnDate = new Date(`${y}-${m}-${d}`);
-            const today = new Date();
             if (returnDate < today.setHours(0,0,0,0)) {
               atrasado = true;
               status = 'ATRASADO';
             }
           }
 
+          // Filtro pelo status
+          if (filterStatus && status !== filterStatus) continue;
+
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${book.titulo}</td>
             <td>${user.nome}</td>
             <td>${loan.loanDate}</td>
-            <td>
-              ${loan.returnDate}
-            </td>
+            <td>${loan.returnDate}</td>
             <td><span class="loan-status status-${status.toLowerCase()}">${status}</span></td>
             <td>
               <div class="action-buttons">
@@ -878,7 +878,6 @@
           `;
           tbody.appendChild(row);
         }
-
         // Atualiza a barra de empréstimos não devolvidos
         await showNotReturnedBar();
       } catch (error) {
@@ -1083,7 +1082,43 @@
 
     // Opcional: também atualizar barra ao iniciar
     document.addEventListener('DOMContentLoaded', showNotReturnedBar);
+    
+    // Carregar contadores e exibir botões
+    async function loadLoanStats() {
+      let countEmprestado = 0, countAtrasado = 0, countDevolvido = 0;
+      const loansRef = db.collection('emprestimos');
+      const snapshot = await loansRef.get();
+      const today = new Date();
+      snapshot.forEach(doc => {
+        const loan = doc.data();
+        if (loan.status === 'DEVOLVIDO') {
+          countDevolvido += loan.quantity || 1;
+        } else if (loan.status === 'EMPRESTADO') {
+          if (loan.returnDate) {
+            const [d, m, y] = loan.returnDate.split('/');
+            const returnDate = new Date(`${y}-${m}-${d}`);
+            if (returnDate < today.setHours(0,0,0,0)) {
+              countAtrasado += loan.quantity || 1;
+            } else {
+              countEmprestado += loan.quantity || 1;
+            }
+          } else {
+            countEmprestado += loan.quantity || 1;
+          }
+        }
+      });
+      document.getElementById('countEmprestado').textContent = countEmprestado;
+      document.getElementById('countAtrasado').textContent = countAtrasado;
+      document.getElementById('countDevolvido').textContent = countDevolvido;
+    }
+    document.addEventListener('DOMContentLoaded', loadLoanStats);
+
+    // Mostrar lista ao clicar no botão
+    async function showLoansByStatus(status) {
+      document.querySelector('.loans-table').style.display = '';
+      document.querySelector('.search-box').style.display = '';
+      await loadLoans(status);
+    }
   </script>
 </body>
 </html>
-
