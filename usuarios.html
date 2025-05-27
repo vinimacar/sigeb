@@ -1009,11 +1009,26 @@
 
           // Mostra modal de confirmação
           criarModalConfirmacaoImportacao(usuarios, async (bsModal, usuarios) => {
-            // Importação com barra de progresso
+            // Buscar todas as matrículas já cadastradas
+            const snapshot = await db.collection('usuarios').get();
+            const matriculasExistentes = new Set();
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              if (data.matricula) {
+                matriculasExistentes.add(String(data.matricula).trim());
+              }
+            });
+
+            // Filtra usuários para não importar duplicados pela matrícula
+            const usuariosParaImportar = usuarios.filter(u => {
+              const matricula = String(u.matricula).trim();
+              return matricula && !matriculasExistentes.has(matricula);
+            });
+
             let count = 0;
-            const total = usuarios.length;
+            const total = usuariosParaImportar.length;
             for (let i = 0; i < total; i++) {
-              const u = usuarios[i];
+              const u = usuariosParaImportar[i];
               if (u.nome && u.email) {
                 await db.collection('usuarios').add(u);
                 count++;
@@ -1026,6 +1041,9 @@
               document.getElementById('importProgressText').innerText = `Importando ${i + 1} de ${total} usuários...`;
             }
             bsModal.hide();
+            if (usuarios.length !== usuariosParaImportar.length) {
+              showAlert('warning', `${usuarios.length - usuariosParaImportar.length} usuários não foram importados por matrícula duplicada.`);
+            }
             showAlert('success', `${count} usuários importados com sucesso!`);
             if (typeof loadUsers === 'function') loadUsers();
           });
@@ -1112,11 +1130,26 @@
 
           // Mostra modal de confirmação
           criarModalConfirmacaoImportacao(usuarios, async (bsModal, usuarios) => {
-            // Importação com barra de progresso
+            // Buscar todas as matrículas já cadastradas
+            const snapshot = await db.collection('usuarios').get();
+            const matriculasExistentes = new Set();
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              if (data.matricula) {
+                matriculasExistentes.add(String(data.matricula).trim());
+              }
+            });
+
+            // Filtra usuários para não importar duplicados pela matrícula
+            const usuariosParaImportar = usuarios.filter(u => {
+              const matricula = String(u.matricula).trim();
+              return matricula && !matriculasExistentes.has(matricula);
+            });
+
             let count = 0;
-            const total = usuarios.length;
+            const total = usuariosParaImportar.length;
             for (let i = 0; i < total; i++) {
-              const u = usuarios[i];
+              const u = usuariosParaImportar[i];
               if (u.nome && u.email) {
                 await db.collection('usuarios').add(u);
                 count++;
@@ -1129,6 +1162,9 @@
               document.getElementById('importProgressText').innerText = `Importando ${i + 1} de ${total} usuários...`;
             }
             bsModal.hide();
+            if (usuarios.length !== usuariosParaImportar.length) {
+              showAlert('warning', `${usuarios.length - usuariosParaImportar.length} usuários não foram importados por matrícula duplicada.`);
+            }
             showAlert('success', `${count} usuários importados com sucesso!`);
             if (typeof loadUsers === 'function') loadUsers();
           });
