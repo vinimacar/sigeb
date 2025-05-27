@@ -242,6 +242,13 @@
     .text-muted {
       font-size: 0.8rem;
     }
+    .modal-footer .btn-primary#saveBookBtn {
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transition: none !important;
+    }
   </style>
 </head>
 <body>
@@ -472,7 +479,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" form="addBookForm" class="btn btn-primary" id="saveBookBtn">Salvar Livro</button>
+            <button type="submit" form="addBookForm" class="btn btn-primary" id="saveBookBtn" style="display:inline-block;">Salvar Livro</button>
           </div>
         </div>
       </div>
@@ -1075,6 +1082,7 @@
   </script>
 </body>
 </html>
+
 
 
 
