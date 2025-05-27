@@ -218,7 +218,13 @@
 
         html = `<h5>Relatório de Empréstimos</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr></thead><tbody>`;
+        <tr>
+          <th>Usuário</th>
+          <th>Livro</th>
+          <th>Data Retirada</th>
+          <th>Data Devolução</th>
+          <th>Status</th>
+        </tr></thead><tbody>`;
 
         for (const doc of emprestimos) {
           const d = doc.data();
@@ -238,11 +244,19 @@
             } catch {}
           }
 
+          // Data de retirada (dataEmprestimo) e devolução (dataDevolucao)
+          const dataRetirada = d.dataEmprestimo && d.dataEmprestimo.seconds
+            ? new Date(d.dataEmprestimo.seconds * 1000).toLocaleDateString()
+            : '';
+          const dataDevolucao = d.dataDevolucao && d.dataDevolucao.seconds
+            ? new Date(d.dataDevolucao.seconds * 1000).toLocaleDateString()
+            : '';
+
           html += `<tr>
             <td>${usuarioNome || ''}</td>
             <td>${livroTitulo || ''}</td>
-            <td>${d.dataEmprestimo && d.dataEmprestimo.seconds ? new Date(d.dataEmprestimo.seconds*1000).toLocaleDateString() : ''}</td>
-            <td>${d.dataDevolucao && d.dataDevolucao.seconds ? new Date(d.dataDevolucao.seconds*1000).toLocaleDateString() : ''}</td>
+            <td>${dataRetirada}</td>
+            <td>${dataDevolucao}</td>
             <td>${d.status || ''}</td>
           </tr>`;
         }
@@ -279,3 +293,4 @@
   </script>
 </body>
 </html>
+
