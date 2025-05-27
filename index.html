@@ -317,7 +317,7 @@
     const oldBtn = document.querySelector('.access-button');
     if (oldBtn) oldBtn.style.display = 'none';
 
-    // Login com Firebase Auth
+    // --- LOGIN ---
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim();
@@ -332,6 +332,34 @@
         errorDiv.style.display = 'block';
       }
     });
+
+    // --- CADASTRO ---
+    async function cadastrarUsuario(email, password) {
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        // Usuário cadastrado com sucesso
+        alert('Cadastro realizado! Você já pode fazer login.');
+        // Redirecionar ou limpar formulário, se desejar
+      } catch (error) {
+        alert('Erro ao cadastrar: ' + (error.message || 'Verifique os dados.'));
+      }
+    }
+
+    // Exemplo de uso do cadastro (adicione um formulário de cadastro no HTML e chame esta função no submit):
+    // cadastrarUsuario('email@exemplo.com', 'senha123');
+
+    // --- LOGOUT ---
+    async function logout() {
+      try {
+        await auth.signOut();
+        window.location.href = 'index.html';
+      } catch (error) {
+        alert('Erro ao sair: ' + (error.message || 'Tente novamente.'));
+      }
+    }
+
+    // Exemplo de uso do logout (adicione um botão de logout e chame logout() no click):
+    // <button onclick="logout()">Sair</button>
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
