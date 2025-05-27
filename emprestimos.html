@@ -756,74 +756,53 @@
           .where('status', '==', 'EMPRESTADO')
           .get();
 
-        const loans = [];
+        let overdueCount = 0;
+        const today = new Date();
         snapshot.forEach(doc => {
-          const data = doc.data();
-          loans.push({
-            ...data,
-            id: doc.id
-          });
+          const loan = doc.data();
+          if (loan.returnDate) {
+            const [d, m, y] = loan.returnDate.split('/');
+            const returnDate = new Date(`${y}-${m}-${d}`);
+            if (returnDate < today.setHours(0,0,0,0)) {
+              overdueCount += loan.quantity || 1;
+            }
+          }
         });
 
         const bar = document.getElementById('notReturnedBar');
-        if (loans.length === 0) {
+        if (overdueCount === 0) {
           bar.style.display = 'none';
           bar.innerHTML = '';
           return;
         }
 
+        // Barra piscante
         bar.style.display = 'block';
-        bar.style.background = 'linear-gradient(90deg, #1a1a2e 60%, #c62828 100%)';
-        bar.style.color = 'white';
+        bar.style.background = '#c62828';
+        bar.style.color = '#fff';
         bar.style.fontWeight = 'bold';
         bar.style.fontSize = '1.1rem';
-        bar.style.padding = '12px 20px';
+        bar.style.padding = '14px 20px';
         bar.style.borderRadius = '8px';
-        bar.style.overflow = 'hidden';
-        bar.style.whiteSpace = 'nowrap';
+        bar.style.textAlign = 'center';
         bar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)';
-        bar.style.display = 'flex';
-        bar.style.alignItems = 'center';
-        bar.style.gap = '0';
+        bar.style.animation = 'blinkBar 1s steps(2, start) infinite';
 
-        // Monta a tarja
-        let html = `<span style="background:#c62828; color:#fff; padding:4px 16px; border-radius:4px; margin-right:18px; letter-spacing:2px; font-size:1rem;">EMPRÉSTIMOS NÃO DEVOLVIDOS</span>`;
-        for (const loan of loans) {
-          // Buscar dados do usuário e livro para exibir nome/título
-          let userName = loan.userName || '';
-          let bookTitle = loan.bookTitle || '';
-          if (!userName || !bookTitle) {
-            try {
-              const [userDoc, bookDoc] = await Promise.all([
-                db.collection('usuarios').doc(loan.userId).get(),
-                db.collection('livros').doc(loan.bookId).get()
-              ]);
-              userName = userDoc.exists ? userDoc.data().nome : loan.userId;
-              bookTitle = bookDoc.exists ? bookDoc.data().titulo : loan.bookId;
-            } catch {}
-          }
-          // Verifica atraso
-          let atrasado = false;
-          if (loan.returnDate) {
-            const [d, m, y] = loan.returnDate.split('/');
-            const returnDate = new Date(`${y}-${m}-${d}`);
-            const today = new Date();
-            if (returnDate < today.setHours(0,0,0,0)) atrasado = true;
-          }
-          html += `<span style="margin-right:40px;">
-            <i class='bx bxs-book'></i> <b>${bookTitle}</b> 
-            <i class='bx bxs-user'></i> ${userName}
-            <span style="margin-left:8px;${atrasado ? 'color:#ff5252;font-weight:bold;' : ''}">
-              ${atrasado ? 'EM ATRASO' : 'Previsto: ' + (loan.returnDate || '')}
-            </span>
-          </span>`;
-        }
-        // Repete o conteúdo para efeito contínuo
-        bar.innerHTML = `<div class="marquee">${html + html}</div>`;
+        bar.innerHTML = `Atenção temos ${overdueCount} livros em ATRASO.`;
       } catch (error) {
         // Silencia erro na barra
       }
     }
+
+    // Adicione o CSS para o efeito de piscar:
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes blinkBar {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    `;
+    document.head.appendChild(style);
 
     // Carregar empréstimos
     async function loadLoans() {
@@ -1107,3 +1086,4 @@
   </script>
 </body>
 </html>
+
