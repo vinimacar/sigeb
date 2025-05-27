@@ -271,6 +271,29 @@
             </div>
             <button type="submit" class="btn btn-gradient w-100">Entrar</button>
             <div id="loginError" class="mt-2 text-danger" style="display:none;"></div>
+            <div class="text-center mt-3">
+              <button type="button" id="showRegisterBtn" class="btn btn-link" style="color:#4facfe;">Primeiro acesso? Cadastre-se</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="register-container" class="mt-4" style="max-width:400px;margin:auto; display:none;">
+          <form id="registerForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+            <h4 class="mb-3" style="color:#fff;">Cadastro</h4>
+            <div class="mb-3">
+              <label for="registerEmail" class="form-label" style="color:#fff;">E-mail</label>
+              <input type="email" class="form-control" id="registerEmail" required autocomplete="username">
+            </div>
+            <div class="mb-3">
+              <label for="registerPassword" class="form-label" style="color:#fff;">Senha</label>
+              <input type="password" class="form-control" id="registerPassword" required autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn btn-secondary w-100">Cadastrar</button>
+            <div id="registerError" class="mt-2 text-danger" style="display:none;"></div>
+            <div id="registerSuccess" class="mt-2 text-success" style="display:none;"></div>
+            <div class="text-center mt-3">
+              <button type="button" id="backToLoginBtn" class="btn btn-link" style="color:#4facfe;">Já tem conta? Fazer login</button>
+            </div>
           </form>
         </div>
 
@@ -317,6 +340,16 @@
     const oldBtn = document.querySelector('.access-button');
     if (oldBtn) oldBtn.style.display = 'none';
 
+    // Alterna exibição entre login e cadastro
+    document.getElementById('showRegisterBtn').onclick = function() {
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('register-container').style.display = 'block';
+    };
+    document.getElementById('backToLoginBtn').onclick = function() {
+      document.getElementById('register-container').style.display = 'none';
+      document.getElementById('login-container').style.display = 'block';
+    };
+
     // --- LOGIN ---
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -360,6 +393,26 @@
 
     // Exemplo de uso do logout (adicione um botão de logout e chame logout() no click):
     // <button onclick="logout()">Sair</button>
+
+    // Cadastro de novo usuário
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const errorDiv = document.getElementById('registerError');
+      const successDiv = document.getElementById('registerSuccess');
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        successDiv.textContent = 'Cadastro realizado! Você já pode fazer login.';
+        successDiv.style.display = 'block';
+        document.getElementById('registerForm').reset();
+      } catch (error) {
+        errorDiv.textContent = error.message || 'Erro ao cadastrar. Verifique os dados.';
+        errorDiv.style.display = 'block';
+      }
+    });
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -382,3 +435,4 @@
   </script>
 </body>
 </html>
+
