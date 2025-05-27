@@ -753,7 +753,6 @@
 
         document.getElementById('usuarioId').value = id;
         document.getElementById('nome').value = user.nome || '';
-        document.getElementById('matrícula').value = user.matricula || '';
         document.getElementById('funcao').value = user.funcao || '';
         document.getElementById('endereco').value = user.endereco?.logradouro || '';
         document.getElementById('numero').value = user.endereco?.numero || '';
@@ -1003,7 +1002,7 @@
             },
             telefone: usuario["Telefone*"] || "",
             email: usuario["Email*"] || "",
-            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || "",
+            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || usuario["Matrícula"] || "",
             status: "Ativo",
             dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
           }));
@@ -1106,7 +1105,7 @@
             },
             telefone: usuario["Telefone*"] || "",
             email: usuario["Email*"] || "",
-            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || "",
+            matricula: usuario["Matrícula*"] || usuario["Matricula*"] || usuario["matricula"] || usuario["Matrícula"] || "",
             status: "Ativo",
             dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
           }));
@@ -1148,3 +1147,4 @@
   </script>
 </body>
 </html>
+
