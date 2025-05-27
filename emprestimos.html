@@ -250,6 +250,11 @@
       </button>
     </div>
 
+    <!-- TARJA DE EMPRÉSTIMOS NÃO DEVOLVIDOS (agora acima do filtro de pesquisa) -->
+    <div id="notReturnedBar" style="display:none; margin-bottom:20px;">
+      <!-- Conteúdo será preenchido via JS -->
+    </div>
+
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="Pesquisar por livro, usuário ou data...">
       <button class="add-button" onclick="searchLoans()">
@@ -391,10 +396,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <div id="notReturnedBar" style="display:none; margin-bottom:20px;">
-    <!-- Conteúdo será preenchido via JS -->
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -728,7 +729,7 @@
       }
     }
 
-    // Função para verificar e exibir barra de empréstimos não devolvidos
+    // Função para exibir barra de empréstimos não devolvidos
     async function showNotReturnedBar() {
       try {
         const loansRef = db.collection('emprestimos');
@@ -769,7 +770,20 @@
 
         // Monta a tarja
         let html = `<span style="background:#c62828; color:#fff; padding:4px 16px; border-radius:4px; margin-right:18px; letter-spacing:2px; font-size:1rem;">EMPRÉSTIMOS NÃO DEVOLVIDOS</span>`;
-        loans.forEach(loan => {
+        for (const loan of loans) {
+          // Buscar dados do usuário e livro para exibir nome/título
+          let userName = loan.userName || '';
+          let bookTitle = loan.bookTitle || '';
+          if (!userName || !bookTitle) {
+            try {
+              const [userDoc, bookDoc] = await Promise.all([
+                db.collection('usuarios').doc(loan.userId).get(),
+                db.collection('livros').doc(loan.bookId).get()
+              ]);
+              userName = userDoc.exists ? userDoc.data().nome : loan.userId;
+              bookTitle = bookDoc.exists ? bookDoc.data().titulo : loan.bookId;
+            } catch {}
+          }
           // Verifica atraso
           let atrasado = false;
           if (loan.returnDate) {
@@ -779,13 +793,13 @@
             if (returnDate < today.setHours(0,0,0,0)) atrasado = true;
           }
           html += `<span style="margin-right:24px;">
-            <i class='bx bxs-book'></i> <b>${loan.bookTitle || ''}</b> 
-            <i class='bx bxs-user'></i> ${loan.userName || loan.userId}
+            <i class='bx bxs-book'></i> <b>${bookTitle}</b> 
+            <i class='bx bxs-user'></i> ${userName}
             <span style="margin-left:8px;${atrasado ? 'color:#ff5252;font-weight:bold;' : ''}">
               ${atrasado ? 'EM ATRASO' : 'Previsto: ' + (loan.returnDate || '')}
             </span>
           </span>`;
-        });
+        }
         bar.innerHTML = html;
       } catch (error) {
         // Silencia erro na barra
