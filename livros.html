@@ -358,6 +358,13 @@
               <div class="row">
                 <div class="col-md-8">
                   <div class="mb-3">
+                    <label for="ean" class="form-label">Código EAN*</label>
+                    <input type="text" class="form-control" id="ean" required pattern="^\d{8,14}$" maxlength="14">
+                    <div class="invalid-feedback">
+                      Por favor, insira um código EAN válido (8 a 14 dígitos).
+                    </div>
+                  </div>
+                  <div class="mb-3">
                     <label for="isbn" class="form-label">ISBN*</label>
                     <input type="text" class="form-control" id="isbn" required
                            pattern="^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$">
@@ -465,7 +472,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" form="addBookForm" class="btn btn-primary">Salvar Livro</button>
+            <button type="submit" form="addBookForm" class="btn btn-primary" id="saveBookBtn">Salvar Livro</button>
           </div>
         </div>
       </div>
@@ -777,6 +784,7 @@
       }
 
       try {
+        const ean = document.getElementById('ean').value;
         const titulo = document.getElementById('titulo').value;
         const autores = document.getElementById('autores').value.split(';').map(a => a.trim());
         const editora = document.getElementById('editora').value;
@@ -790,6 +798,7 @@
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         await db.collection('livros').add({
+          ean, // Novo campo EAN
           titulo,
           autores,
           editora,
@@ -799,7 +808,7 @@
           quantidade,
           generos,
           idioma,
-          capaUrl, // Mantém o placeholder
+          capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1054,8 +1063,18 @@
         isbnInput.addEventListener('blur', buscarLivroPorISBN);
       }
     });
+
+    // Garante que o botão "Salvar Livro" sempre aparece
+    document.addEventListener('DOMContentLoaded', function() {
+      const addBookForm = document.getElementById('addBookForm');
+      const saveBookBtn = document.getElementById('saveBookBtn');
+      if (addBookForm && saveBookBtn) {
+        saveBookBtn.style.display = 'inline-block';
+      }
+    });
   </script>
 </body>
 </html>
+
 
 
