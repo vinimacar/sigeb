@@ -256,10 +256,23 @@
         </div>
         <h1 class="hero-title">SIGEB</h1>
         <p class="hero-subtitle">Sistema de Gestão de Biblioteca<br>Uma solução moderna e intuitiva para gerenciamento de bibliotecas</p>
-        <button onclick="acessarSistema()" class="access-button">
-          <i class="bx bx-log-in" style="vertical-align:middle; margin-right:8px;"></i>
-          Acessar Sistema
-        </button>
+
+        <!-- Substitua o botão "Acessar Sistema" pelo formulário de login abaixo -->
+        <div id="login-container" class="mt-4" style="max-width:400px;margin:auto;">
+          <form id="loginForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+            <h4 class="mb-3" style="color:#fff;">Login</h4>
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label" style="color:#fff;">E-mail</label>
+              <input type="email" class="form-control" id="loginEmail" required autocomplete="username">
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label" style="color:#fff;">Senha</label>
+              <input type="password" class="form-control" id="loginPassword" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-gradient w-100">Entrar</button>
+            <div id="loginError" class="mt-2 text-danger" style="display:none;"></div>
+          </form>
+        </div>
 
         <div class="row mt-5">
           <div class="col-md-4">
@@ -300,14 +313,25 @@
       });
     });
 
-    function acessarSistema() {
-      const button = document.querySelector('.access-button');
-      button.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        button.style.transform = 'scale(1)';
+    // Esconde o botão antigo, se existir
+    const oldBtn = document.querySelector('.access-button');
+    if (oldBtn) oldBtn.style.display = 'none';
+
+    // Login com Firebase Auth
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.style.display = 'none';
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
         window.location.href = 'dashboard.html';
-      }, 200);
-    }
+      } catch (error) {
+        errorDiv.textContent = 'E-mail ou senha inválidos.';
+        errorDiv.style.display = 'block';
+      }
+    });
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -330,4 +354,3 @@
   </script>
 </body>
 </html>
-
