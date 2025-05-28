@@ -245,8 +245,11 @@
     <!-- Adicione o botão de importação acima da tabela de usuários -->
     <div class="d-flex justify-content-end mb-3">
       <input type="file" id="xlsInput" accept=".xls,.xlsx" style="display:none" />
-      <button class="btn btn-success" id="importXlsBtn" type="button">
+      <button class="btn btn-success me-2" id="importXlsBtn" type="button">
         <i class='bx bx-upload'></i> Importar Alunos XLS
+      </button>
+      <button class="btn btn-primary" id="addColaboradorBtn" type="button" data-bs-toggle="modal" data-bs-target="#addColaboradorModal">
+        <i class='bx bx-user-plus'></i> Cadastrar Colaborador
       </button>
     </div>
 
@@ -529,6 +532,68 @@
       </div>
     </div>
 
+    <!-- Modal Cadastro de Colaborador -->
+    <div class="modal fade" id="addColaboradorModal" tabindex="-1" aria-labelledby="addColaboradorModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addColaboradorModalLabel">Cadastrar Colaborador</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addColaboradorForm" class="needs-validation" novalidate>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="colabNome" class="form-label">Nome Completo*</label>
+                  <input type="text" class="form-control" id="colabNome" required>
+                  <div class="invalid-feedback">Por favor, insira o nome completo.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="colabFuncao" class="form-label">Função*</label>
+                  <select class="form-select" id="colabFuncao" required>
+                    <option value="">Selecione a função</option>
+                    <option value="PROFESSOR">Professor</option>
+                    <option value="SUPERVISOR">Supervisor</option>
+                    <option value="DIRETOR">Diretor</option>
+                    <option value="BIBLIOTECARIO">Bibliotecário</option>
+                  </select>
+                  <div class="invalid-feedback">Por favor, selecione a função.</div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="colabEmail" class="form-label">Email*</label>
+                  <input type="email" class="form-control" id="colabEmail" required>
+                  <div class="invalid-feedback">Por favor, insira um email válido.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="colabTelefone" class="form-label">Telefone*</label>
+                  <input type="tel" class="form-control" id="colabTelefone" required>
+                  <div class="invalid-feedback">Por favor, insira um telefone válido.</div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="colabUsername" class="form-label">Nome de Usuário*</label>
+                  <input type="text" class="form-control" id="colabUsername" required>
+                  <div class="invalid-feedback">Por favor, insira um nome de usuário.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="colabPassword" class="form-label">Senha*</label>
+                  <input type="password" class="form-control" id="colabPassword" required minlength="8">
+                  <div class="invalid-feedback">Por favor, insira uma senha (mínimo 8 caracteres).</div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Colaborador</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       // Função para buscar CEP
       async function buscarCEP() {
@@ -608,72 +673,15 @@
         }
       });
 
-      // Função para salvar usuário (criar ou editar)
-      async function handleUserSubmission(event) {
-        event.preventDefault();
-
-        const form = document.getElementById('addUserForm');
-        if (!form.checkValidity()) {
-          form.classList.add('was-validated');
-          return;
+      // Máscara para telefone do colaborador
+      document.getElementById('colabTelefone').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+          value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+          value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+          e.target.value = value;
         }
-
-        const submitButton = form.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        const usuarioId = document.getElementById('usuarioId').value;
-
-        try {
-          submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-          submitButton.disabled = true;
-
-          const userData = {
-            nome: document.getElementById('nome').value,
-            funcao: document.getElementById('funcao').value,
-            endereco: {
-              logradouro: document.getElementById('endereco').value,
-              numero: document.getElementById('numero').value,
-              cep: document.getElementById('cep').value,
-              bairro: document.getElementById('bairro').value,
-              cidade: document.getElementById('cidade').value,
-              uf: document.getElementById('uf').value
-            },
-            telefone: document.getElementById('telefone').value,
-            email: document.getElementById('email').value,
-            status: document.getElementById('status').value, // <-- Adicionado aqui
-            dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
-          };
-
-          if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(userData.funcao)) {
-            userData.credenciais = {
-              username: document.getElementById('username').value,
-              password: await hashPassword(document.getElementById('password').value)
-            };
-          }
-
-          if (usuarioId) {
-            // Atualizar usuário existente
-            delete userData.dataCadastro; // Não atualize dataCadastro ao editar
-            await db.collection('usuarios').doc(usuarioId).update(userData);
-            showAlert('success', 'Usuário atualizado com sucesso!');
-          } else {
-            // Criar novo usuário
-            await db.collection('usuarios').add(userData);
-            showAlert('success', 'Usuário cadastrado com sucesso!');
-          }
-
-          form.reset();
-          document.getElementById('usuarioId').value = '';
-          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-          if (typeof loadUsers === 'function') loadUsers();
-
-        } catch (error) {
-          console.error('Erro ao salvar usuário:', error);
-          showAlert('danger', 'Erro ao salvar o usuário. Por favor, tente novamente.');
-        } finally {
-          submitButton.innerHTML = originalText;
-          submitButton.disabled = false;
-        }
-      }
+      });
 
       // Função para hash da senha (exemplo simples - em produção usar bcrypt ou similar)
       async function hashPassword(password) {
@@ -798,6 +806,40 @@
       document.addEventListener('DOMContentLoaded', loadUsers);
       document.getElementById('addUserForm').addEventListener('submit', handleUserSubmission);
 
+      // Cadastro de colaborador
+      document.getElementById('addColaboradorForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const form = event.target;
+        if (!form.checkValidity()) {
+          form.classList.add('was-validated');
+          return;
+        }
+
+        const colaborador = {
+          nome: document.getElementById('colabNome').value,
+          funcao: document.getElementById('colabFuncao').value,
+          email: document.getElementById('colabEmail').value,
+          telefone: document.getElementById('colabTelefone').value,
+          credenciais: {
+            username: document.getElementById('colabUsername').value,
+            password: await hashPassword(document.getElementById('colabPassword').value)
+          },
+          status: "Ativo",
+          dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+          await db.collection('usuarios').add(colaborador);
+          showAlert('success', 'Colaborador cadastrado com sucesso!');
+          form.reset();
+          bootstrap.Modal.getInstance(document.getElementById('addColaboradorModal')).hide();
+          if (typeof loadUsers === 'function') loadUsers();
+        } catch (error) {
+          console.error('Erro ao cadastrar colaborador:', error);
+          showAlert('danger', 'Erro ao cadastrar colaborador. Por favor, tente novamente.');
+        }
+      });
+
       // Limpa o formulário e o campo usuarioId ao fechar o modal
       document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('addUserForm').reset();
@@ -806,6 +848,28 @@
         // Esconde campos de login se necessário
         document.getElementById('loginCredentials').style.display = 'none';
       });
+
+      // Limpa o formulário ao fechar o modal
+      document.getElementById('addColaboradorModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('addColaboradorForm').reset();
+        document.getElementById('addColaboradorForm').classList.remove('was-validated');
+      });
+
+      // Exemplo de autenticação customizada
+      async function autenticarColaborador(username, senha) {
+        const hash = await hashPassword(senha);
+        const snapshot = await db.collection('usuarios')
+          .where('credenciais.username', '==', username)
+          .where('credenciais.password', '==', hash)
+          .get();
+        if (!snapshot.empty) {
+          // Login OK
+          return snapshot.docs[0].data();
+        } else {
+          // Login inválido
+          return null;
+        }
+      }
     </script>
 
     <style>
@@ -1019,10 +1083,11 @@
               }
             });
 
-            // Filtra usuários para não importar duplicados pela matrícula
+            // Filtra usuários para não importar duplicados pela matrícula E só alunos
             const usuariosParaImportar = usuarios.filter(u => {
               const matricula = String(u.matricula).trim();
-              return matricula && !matriculasExistentes.has(matricula);
+              // Só importa se for ALUNO e matrícula não duplicada
+              return u.funcao === "ALUNO" && matricula && !matriculasExistentes.has(matricula);
             });
 
             let count = 0;
@@ -1140,10 +1205,11 @@
               }
             });
 
-            // Filtra usuários para não importar duplicados pela matrícula
+            // Filtra usuários para não importar duplicados pela matrícula E só alunos
             const usuariosParaImportar = usuarios.filter(u => {
               const matricula = String(u.matricula).trim();
-              return matricula && !matriculasExistentes.has(matricula);
+              // Só importa se for ALUNO e matrícula não duplicada
+              return u.funcao === "ALUNO" && matricula && !matriculasExistentes.has(matricula);
             });
 
             let count = 0;
