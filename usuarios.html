@@ -249,8 +249,11 @@
       <button class="btn btn-success me-2" id="importXlsBtn" type="button">
         <i class='bx bx-upload'></i> Importar Alunos XLS
       </button>
-      <button class="btn btn-primary" id="addColaboradorBtn" type="button" data-bs-toggle="modal" data-bs-target="#addColaboradorModal">
+      <button class="btn btn-primary me-2" id="addColaboradorBtn" type="button" data-bs-toggle="modal" data-bs-target="#addColaboradorModal">
         <i class='bx bx-user-plus'></i> Cadastrar Colaborador
+      </button>
+      <button class="btn btn-info" id="gerenciarColaboradoresBtn" type="button" data-bs-toggle="modal" data-bs-target="#gerenciarColaboradoresModal">
+        <i class='bx bx-group'></i> Gerenciar Colaboradores
       </button>
     </div>
 
@@ -590,6 +593,38 @@
                 <button type="submit" class="btn btn-primary">Salvar Colaborador</button>
               </div>
             </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Gerenciar Colaboradores -->
+    <div class="modal fade" id="gerenciarColaboradoresModal" tabindex="-1" aria-labelledby="gerenciarColaboradoresModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="gerenciarColaboradoresModalLabel">Perfis dos Colaboradores</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Função</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Usuário</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="colaboradoresTableBody">
+                  <!-- Conteúdo dinâmico via JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1012,6 +1047,39 @@
           }
         }
       });
+
+      // Função para carregar colaboradores no modal
+      async function loadColaboradores() {
+        const tbody = document.getElementById('colaboradoresTableBody');
+        tbody.innerHTML = '';
+        try {
+          const snapshot = await db.collection('usuarios')
+            .where('funcao', 'in', ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'])
+            .get();
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${c.nome || ''}</td>
+              <td>${c.funcao || ''}</td>
+              <td>${c.email || ''}</td>
+              <td>${c.telefone || ''}</td>
+              <td>${c.credenciais?.username || ''}</td>
+              <td><span class="user-status ${c.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${c.status || 'Ativo'}</span></td>
+              <td>
+                <button class="btn btn-sm btn-primary me-1" onclick="editUser('${doc.id}')"><i class='bx bx-edit-alt'></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser('${doc.id}')"><i class='bx bx-trash'></i></button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Erro ao carregar colaboradores.</td></tr>';
+        }
+      }
+
+      // Carregar colaboradores ao abrir o modal
+      document.getElementById('gerenciarColaboradoresModal').addEventListener('show.bs.modal', loadColaboradores);
     </script>
 
     <style>
