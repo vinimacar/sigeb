@@ -855,7 +855,7 @@
         document.getElementById('addColaboradorForm').classList.remove('was-validated');
       });
 
-      // Exemplo de autenticação customizada
+      // Função para autenticar colaborador pelo username e senha
       async function autenticarColaborador(username, senha) {
         const hash = await hashPassword(senha);
         const snapshot = await db.collection('usuarios')
@@ -870,6 +870,10 @@
           return null;
         }
       }
+
+      // Exemplo de uso (em sua tela de login de colaboradores):
+      // const user = await autenticarColaborador('usuario', 'senha');
+      // if (user) { /* acesso liberado */ } else { /* acesso negado */ }
     </script>
 
     <style>
