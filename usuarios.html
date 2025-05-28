@@ -1517,6 +1517,67 @@
       return arrData.filter(arr => arr.length > 0);
     }
   </script>
+
+  <!-- Adicione este modal logo antes do fechamento do </body> -->
+  <div class="modal fade" id="modalSenhaImportacao" tabindex="-1" aria-labelledby="modalSenhaImportacaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 18px;">
+        <div class="modal-header" style="border-bottom: none;">
+          <h5 class="modal-title" id="modalSenhaImportacaoLabel">
+            <i class='bx bx-lock-alt me-2'></i>Autenticação Administrador
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="inputSenhaImportacao" class="form-label">Digite a senha de administrador para importar usuários:</label>
+            <input type="password" class="form-control" id="inputSenhaImportacao" placeholder="Senha" autocomplete="off" style="border-radius: 8px;">
+            <div id="senhaImportacaoFeedback" class="invalid-feedback"></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: none;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmarSenhaImportacao">
+            <i class='bx bx-check'></i> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Substitui o prompt por um modal moderno para solicitar a senha de importação
+  function solicitarSenhaImportacao() {
+    return new Promise((resolve) => {
+      const modal = new bootstrap.Modal(document.getElementById('modalSenhaImportacao'));
+      const input = document.getElementById('inputSenhaImportacao');
+      const feedback = document.getElementById('senhaImportacaoFeedback');
+      const btn = document.getElementById('btnConfirmarSenhaImportacao');
+
+      input.value = '';
+      input.classList.remove('is-invalid');
+      feedback.textContent = '';
+
+      btn.onclick = function () {
+        if (input.value === '1234') {
+          modal.hide();
+          resolve(true);
+        } else {
+          input.classList.add('is-invalid');
+          feedback.textContent = 'Senha incorreta. Tente novamente.';
+          input.focus();
+        }
+      };
+
+      input.onkeydown = function (e) {
+        if (e.key === 'Enter') btn.click();
+      };
+
+      modal.show();
+      setTimeout(() => input.focus(), 300);
+    });
+  }
+  </script>
 </body>
 </html>
 
