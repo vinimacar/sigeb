@@ -692,61 +692,6 @@
         }
       }
 
-      // Exemplo para editar/adicionar usuário:
-      async function handleUserSubmission(event) {
-        event.preventDefault();
-        const form = event.target;
-        if (!form.checkValidity()) {
-          form.classList.add('was-validated');
-          return;
-        }
-
-        const id = document.getElementById('usuarioId').value;
-        const usuario = {
-          nome: document.getElementById('nome').value,
-          funcao: document.getElementById('funcao').value,
-          email: document.getElementById('email').value,
-          telefone: document.getElementById('telefone').value,
-          status: document.getElementById('status').value,
-          matricula: document.getElementById('matricula') ? document.getElementById('matricula').value : '',
-          endereco: {
-            logradouro: document.getElementById('endereco').value,
-            numero: document.getElementById('numero').value,
-            cep: document.getElementById('cep').value,
-            bairro: document.getElementById('bairro').value,
-            cidade: document.getElementById('cidade').value,
-            uf: document.getElementById('uf').value
-          }
-        };
-
-        if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(usuario.funcao)) {
-          usuario.credenciais = {
-            username: document.getElementById('username').value,
-            password: await hashPassword(document.getElementById('password').value)
-          };
-        }
-
-        try {
-          if (id) {
-            await db.collection('usuarios').doc(id).update(usuario);
-            showAlert('success', 'Usuário atualizado com sucesso!');
-            await registrarOperacao('Editou usuário', `ID: ${id}`);
-          } else {
-            usuario.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
-            const ref = await db.collection('usuarios').add(usuario);
-            showAlert('success', 'Usuário cadastrado com sucesso!');
-            await registrarOperacao('Cadastrou usuário', `ID: ${ref.id}`);
-          }
-          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-          form.reset();
-          form.classList.remove('was-validated');
-          loadUsers();
-        } catch (error) {
-          console.error('Erro ao salvar usuário:', error);
-          showAlert('danger', 'Erro ao salvar usuário.');
-        }
-      }
-
       // Função para buscar CEP
       async function buscarCEP() {
         const cep = document.getElementById('cep').value.replace(/\D/g, '');
@@ -954,16 +899,18 @@
       // Função para editar usuário (corrigida para funcionar com todos os registros)
       async function editUser(id) {
         try {
-          // Tenta buscar no Firestore
+          // Busca no Firestore
           let doc = await db.collection('usuarios').doc(id).get();
           let user = null;
+          let origem = 'firestore';
           if (doc.exists) {
             user = doc.data();
           } else {
-            // Se não encontrar no Firestore, tenta buscar no Realtime Database
+            // Busca no Realtime Database
             const snapshot = await firebase.database().ref('usuarios/' + id).once('value');
             if (snapshot.exists()) {
               user = snapshot.val();
+              origem = 'realtime';
             }
           }
           if (!user) {
@@ -972,6 +919,7 @@
           }
 
           document.getElementById('usuarioId').value = id;
+          document.getElementById('usuarioId').setAttribute('data-origem', origem); // Salva origem
           document.getElementById('nome').value = user.nome || '';
           document.getElementById('funcao').value = user.funcao || '';
           document.getElementById('endereco').value = user.endereco?.logradouro || '';
@@ -985,29 +933,14 @@
           document.getElementById('status').value = user.status || 'Ativo';
           if (user.credenciais) {
             document.getElementById('username').value = user.credenciais.username || '';
-            // Não preenche o campo de senha por segurança
             document.getElementById('password').value = '';
           }
           toggleLoginCredentials();
 
-          // Abre o modal
           new bootstrap.Modal(document.getElementById('addUserModal')).show();
         } catch (error) {
           showAlert('danger', 'Erro ao carregar dados do usuário.');
           console.error(error);
-        }
-      }
-
-      // Função para deletar usuário
-      async function deleteUser(id) {
-        if (!confirm('Tem certeza que deseja deletar este usuário?')) return;
-        try {
-          await db.collection('usuarios').doc(id).delete();
-          showAlert('success', 'Usuário deletado com sucesso!');
-          loadUsers();
-        } catch (error) {
-          console.error('Erro ao deletar usuário:', error);
-          showAlert('danger', 'Erro ao deletar usuário.');
         }
       }
 
@@ -1021,6 +954,7 @@
         }
 
         const id = document.getElementById('usuarioId').value;
+        const origem = document.getElementById('usuarioId').getAttribute('data-origem') || 'firestore';
         const usuario = {
           nome: document.getElementById('nome').value,
           funcao: document.getElementById('funcao').value,
@@ -1038,7 +972,6 @@
           }
         };
 
-        // Credenciais de login (se visível)
         if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(usuario.funcao)) {
           usuario.credenciais = {
             username: document.getElementById('username').value,
@@ -1048,14 +981,21 @@
 
         try {
           if (id) {
-            // Editar usuário
-            await db.collection('usuarios').doc(id).update(usuario);
-            showAlert('success', 'Usuário atualizado com sucesso!');
+            if (origem === 'firestore') {
+              // Editar usuário Firestore
+              await db.collection('usuarios').doc(id).update(usuario);
+              showAlert('success', 'Usuário atualizado com sucesso!');
+              await registrarOperacao('Editou usuário', `ID: ${id}`);
+            } else {
+              // Editar usuário Realtime Database
+              await firebase.database().ref('usuarios/' + id).update(usuario);
+              showAlert('success', 'Usuário atualizado com sucesso!');
+            }
           } else {
-            // Adicionar novo usuário
             usuario.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('usuarios').add(usuario);
+            const ref = await db.collection('usuarios').add(usuario);
             showAlert('success', 'Usuário cadastrado com sucesso!');
+            await registrarOperacao('Cadastrou usuário', `ID: ${ref.id}`);
           }
           bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
           form.reset();
@@ -1614,4 +1554,5 @@
   </script>
 </body>
 </html>
+
 
