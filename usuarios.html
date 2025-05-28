@@ -1144,23 +1144,37 @@
 
       // Validação de login de colaborador ao iniciar o sistema
       document.addEventListener('DOMContentLoaded', async function() {
-        // Exemplo simples de tela de login (pode ser substituído por um modal ou página dedicada)
-        let autenticado = false;
-        while (!autenticado) {
-          const username = prompt('Usuário (colaborador):');
-          const senha = prompt('Senha:');
-          if (!username || !senha) {
-            alert('Usuário e senha são obrigatórios.');
-            continue;
+        // Só executa se não houver usuário logado
+        if (!localStorage.getItem('usuarioLogado')) {
+          let autenticado = false;
+          let cancelado = false;
+          while (!autenticado && !cancelado) {
+            const username = prompt('Usuário (colaborador):');
+            // Se o usuário clicar em "Cancelar" no prompt, username será null
+            if (username === null) {
+              cancelado = true;
+              break;
+            }
+            const senha = prompt('Senha:');
+            if (senha === null) {
+              cancelado = true;
+              break;
+            }
+            if (!username || !senha) {
+              alert('Usuário e senha são obrigatórios.');
+              continue;
+            }
+            const user = await autenticarColaborador(username, senha);
+            if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+              autenticado = true;
+              // Salva no localStorage para manter sessão
+              localStorage.setItem('usuarioLogado', JSON.stringify(user));
+              mostrarUsuarioLogado();
+            } else {
+              alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
+            }
           }
-          // Função já definida no seu código
-          const user = await autenticarColaborador(username, senha);
-          if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-            autenticado = true;
-            // Opcional: salvar sessão/localStorage
-          } else {
-            alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
-          }
+          // Se cancelado, permite navegação normalmente (não faz nada)
         }
       });
 
@@ -1580,4 +1594,5 @@
   </script>
 </body>
 </html>
+
 
