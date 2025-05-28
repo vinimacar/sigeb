@@ -1249,5 +1249,46 @@
       await loadLoans(status);
     }
   </script>
+  <script>
+// --- Controle de permissão para registrar empréstimo ---
+
+// Função para obter usuário logado do localStorage
+function getUsuarioLogado() {
+  try {
+    return JSON.parse(localStorage.getItem('usuarioLogado'));
+  } catch {
+    return null;
+  }
+}
+
+// Função para verificar se o usuário pode registrar empréstimo
+function podeRegistrarEmprestimo() {
+  const user = getUsuarioLogado();
+  // Só permite se for colaborador (não aluno)
+  return user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao);
+}
+
+// Ao carregar a página, verifica permissão e esconde botão se não for colaborador
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.querySelector('.add-button[data-bs-target="#addLoanModal"]');
+  if (!podeRegistrarEmprestimo()) {
+    if (btn) btn.style.display = 'none';
+  }
+});
+
+// Bloqueia o submit do formulário se não for colaborador
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('addLoanForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!podeRegistrarEmprestimo()) {
+        e.preventDefault();
+        showAlert('danger', 'Apenas colaboradores podem registrar empréstimos.');
+        return false;
+      }
+    });
+  }
+});
+</script>
 </body>
 </html>
