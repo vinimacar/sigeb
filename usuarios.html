@@ -630,7 +630,123 @@
       </div>
     </div>
 
+    <!-- Adicione logo após a div .main-content para exibir o usuário logado -->
+    <div id="usuarioLogadoInfo" class="alert alert-info d-flex align-items-center mb-3" style="display:none;">
+      <i class='bx bxs-user me-2'></i>
+      <span id="usuarioLogadoNome"></span>
+    </div>
+
     <script>
+      // Salvar usuário logado no localStorage após autenticação
+      async function autenticarColaborador(username, senha) {
+        const hash = await hashPassword(senha);
+        const snapshot = await db.collection('usuarios')
+          .where('credenciais.username', '==', username)
+          .where('credenciais.password', '==', hash)
+          .get();
+        if (!snapshot.empty) {
+          const user = snapshot.docs[0].data();
+          user.id = snapshot.docs[0].id;
+          localStorage.setItem('usuarioLogado', JSON.stringify(user));
+          return user;
+        } else {
+          return null;
+        }
+      }
+
+      // Exibir usuário logado na tela
+      function mostrarUsuarioLogado() {
+        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (user) {
+          document.getElementById('usuarioLogadoNome').textContent = `Usuário logado: ${user.nome} (${user.funcao})`;
+          document.getElementById('usuarioLogadoInfo').style.display = 'flex';
+        }
+      }
+
+      // Registrar operação do usuário logado
+      async function registrarOperacao(acao, detalhes = '') {
+        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (!user) return;
+        await db.collection('logs').add({
+          usuarioId: user.id,
+          nome: user.nome,
+          funcao: user.funcao,
+          acao,
+          detalhes,
+          dataHora: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      // Exemplo de uso: registre operações nas funções de CRUD
+      // Exemplo para deletar usuário:
+      async function deleteUser(id) {
+        if (!confirm('Tem certeza que deseja deletar este usuário?')) return;
+        try {
+          await db.collection('usuarios').doc(id).delete();
+          showAlert('success', 'Usuário deletado com sucesso!');
+          await registrarOperacao('Deletou usuário', `ID: ${id}`);
+          loadUsers();
+        } catch (error) {
+          console.error('Erro ao deletar usuário:', error);
+          showAlert('danger', 'Erro ao deletar usuário.');
+        }
+      }
+
+      // Exemplo para editar/adicionar usuário:
+      async function handleUserSubmission(event) {
+        event.preventDefault();
+        const form = event.target;
+        if (!form.checkValidity()) {
+          form.classList.add('was-validated');
+          return;
+        }
+
+        const id = document.getElementById('usuarioId').value;
+        const usuario = {
+          nome: document.getElementById('nome').value,
+          funcao: document.getElementById('funcao').value,
+          email: document.getElementById('email').value,
+          telefone: document.getElementById('telefone').value,
+          status: document.getElementById('status').value,
+          matricula: document.getElementById('matricula') ? document.getElementById('matricula').value : '',
+          endereco: {
+            logradouro: document.getElementById('endereco').value,
+            numero: document.getElementById('numero').value,
+            cep: document.getElementById('cep').value,
+            bairro: document.getElementById('bairro').value,
+            cidade: document.getElementById('cidade').value,
+            uf: document.getElementById('uf').value
+          }
+        };
+
+        if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(usuario.funcao)) {
+          usuario.credenciais = {
+            username: document.getElementById('username').value,
+            password: await hashPassword(document.getElementById('password').value)
+          };
+        }
+
+        try {
+          if (id) {
+            await db.collection('usuarios').doc(id).update(usuario);
+            showAlert('success', 'Usuário atualizado com sucesso!');
+            await registrarOperacao('Editou usuário', `ID: ${id}`);
+          } else {
+            usuario.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
+            const ref = await db.collection('usuarios').add(usuario);
+            showAlert('success', 'Usuário cadastrado com sucesso!');
+            await registrarOperacao('Cadastrou usuário', `ID: ${ref.id}`);
+          }
+          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+          form.reset();
+          form.classList.remove('was-validated');
+          loadUsers();
+        } catch (error) {
+          console.error('Erro ao salvar usuário:', error);
+          showAlert('danger', 'Erro ao salvar usuário.');
+        }
+      }
+
       // Função para buscar CEP
       async function buscarCEP() {
         const cep = document.getElementById('cep').value.replace(/\D/g, '');
@@ -1080,6 +1196,9 @@
 
       // Carregar colaboradores ao abrir o modal
       document.getElementById('gerenciarColaboradoresModal').addEventListener('show.bs.modal', loadColaboradores);
+
+      // Chame mostrarUsuarioLogado ao carregar a página
+      document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
     </script>
 
     <style>
