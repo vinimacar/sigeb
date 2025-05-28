@@ -951,31 +951,51 @@
         });
       }
 
-      // Função para editar usuário
+      // Função para editar usuário (corrigida para funcionar com todos os registros)
       async function editUser(id) {
-        const doc = await db.collection('usuarios').doc(id).get();
-        if (!doc.exists) return;
-        const user = doc.data();
+        try {
+          // Tenta buscar no Firestore
+          let doc = await db.collection('usuarios').doc(id).get();
+          let user = null;
+          if (doc.exists) {
+            user = doc.data();
+          } else {
+            // Se não encontrar no Firestore, tenta buscar no Realtime Database
+            const snapshot = await firebase.database().ref('usuarios/' + id).once('value');
+            if (snapshot.exists()) {
+              user = snapshot.val();
+            }
+          }
+          if (!user) {
+            showAlert('danger', 'Usuário não encontrado.');
+            return;
+          }
 
-        document.getElementById('usuarioId').value = id;
-        document.getElementById('nome').value = user.nome || '';
-        document.getElementById('funcao').value = user.funcao || '';
-        document.getElementById('endereco').value = user.endereco?.logradouro || '';
-        document.getElementById('numero').value = user.endereco?.numero || '';
-        document.getElementById('cep').value = user.endereco?.cep || '';
-        document.getElementById('bairro').value = user.endereco?.bairro || '';
-        document.getElementById('cidade').value = user.endereco?.cidade || '';
-        document.getElementById('uf').value = user.endereco?.uf || '';
-        document.getElementById('telefone').value = user.telefone || '';
-        document.getElementById('email').value = user.email || '';
-        document.getElementById('status').value = user.status || 'Ativo'; // <-- Adicionado aqui
-        if (user.credenciais) {
-          document.getElementById('username').value = user.credenciais.username || '';
+          document.getElementById('usuarioId').value = id;
+          document.getElementById('nome').value = user.nome || '';
+          document.getElementById('funcao').value = user.funcao || '';
+          document.getElementById('endereco').value = user.endereco?.logradouro || '';
+          document.getElementById('numero').value = user.endereco?.numero || '';
+          document.getElementById('cep').value = user.endereco?.cep || '';
+          document.getElementById('bairro').value = user.endereco?.bairro || '';
+          document.getElementById('cidade').value = user.endereco?.cidade || '';
+          document.getElementById('uf').value = user.endereco?.uf || '';
+          document.getElementById('telefone').value = user.telefone || '';
+          document.getElementById('email').value = user.email || '';
+          document.getElementById('status').value = user.status || 'Ativo';
+          if (user.credenciais) {
+            document.getElementById('username').value = user.credenciais.username || '';
+            // Não preenche o campo de senha por segurança
+            document.getElementById('password').value = '';
+          }
+          toggleLoginCredentials();
+
+          // Abre o modal
+          new bootstrap.Modal(document.getElementById('addUserModal')).show();
+        } catch (error) {
+          showAlert('danger', 'Erro ao carregar dados do usuário.');
+          console.error(error);
         }
-        toggleLoginCredentials();
-
-        // Abre o modal
-        new bootstrap.Modal(document.getElementById('addUserModal')).show();
       }
 
       // Função para deletar usuário
@@ -1594,5 +1614,4 @@
   </script>
 </body>
 </html>
-
 
