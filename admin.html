@@ -162,48 +162,39 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-      authDomain: "sigeb-ccd3f.firebaseapp.com",
-      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-      projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
-      messagingSenderId: "209689711066",
-      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-      measurementId: "G-VJBDW2B7HZ"
-    };
+  <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    // Firebase config
+    import { firebaseConfig } from './firebase-config.js';
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getDatabase();
 
-    // Check authentication and admin status
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = 'index.html';
-      } else {
-        // Check if user is admin
-        db.collection('allowed_users')
-          .doc(user.uid)
-          .get()
-          .then((doc) => {
-            if (!doc.exists || doc.data().role !== 'admin') {
-              window.location.href = 'dashboard.html';
-            } else {
-              // Update user profile information
-              document.getElementById('userPhoto').src = user.photoURL || 'https://via.placeholder.com/64';
-              document.getElementById('userName').textContent = user.displayName || 'Usuário';
-              document.getElementById('userEmail').textContent = user.email;
-              
-              loadAllowedUsers();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const dbRef = ref(db);
+        get(child(dbRef, `usuarios/${user.uid}`)).then((snapshot) => {
+          if (snapshot.exists()) {
+            const nivel = snapshot.val().nivel;
+            if (nivel !== "admin") {
+              alert("Acesso negado!");
+              window.location.href = "index.html";
             }
-          });
+          } else {
+            alert("Usuário não encontrado!");
+            window.location.href = "index.html";
+          }
+        });
+      } else {
+        window.location.href = "index.html";
       }
     });
+  </script>
 
+  <script>
     function loadAllowedUsers() {
       const tableBody = document.getElementById('userTableBody');
       
@@ -312,4 +303,4 @@
     }
   </script>
 </body>
-</html> 
+</html>
