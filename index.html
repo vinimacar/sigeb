@@ -272,7 +272,6 @@
       <small class="text-muted">Mínimo 6 caracteres</small>
     </div>
     
-    <!-- ✅ NOVO CAMPO DE CONFIRMAÇÃO -->
     <div class="mb-3">
       <label for="confirmPassword" class="form-label" style="color:#fff;">Confirme a Senha</label>
       <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password">
@@ -288,26 +287,6 @@
     </div>
   </form>
 </div>
-
-        <div id="register-container" class="mt-4" style="max-width:400px;margin:auto; display:none;">
-          <form id="registerForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
-            <h4 class="mb-3" style="color:#fff;">Cadastro</h4>
-            <div class="mb-3">
-              <label for="registerEmail" class="form-label" style="color:#fff;">E-mail</label>
-              <input type="email" class="form-control" id="registerEmail" required autocomplete="username">
-            </div>
-            <div class="mb-3">
-              <label for="registerPassword" class="form-label" style="color:#fff;">Senha</label>
-              <input type="password" class="form-control" id="registerPassword" required autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn btn-secondary w-100">Cadastrar</button>
-            <div id="registerError" class="mt-2 text-danger" style="display:none;"></div>
-            <div id="registerSuccess" class="mt-2 text-success" style="display:none;"></div>
-            <div class="text-center mt-3">
-              <button type="button" id="backToLoginBtn" class="btn btn-link" style="color:#4facfe;">Já tem conta? Fazer login</button>
-            </div>
-          </form>
-        </div>
 
         <div class="row mt-5">
           <div class="col-md-4">
@@ -456,8 +435,6 @@
   </script>
   
   <script>
-// ✅ ADICIONE este JavaScript no final do seu arquivo, antes do fechamento </body>
-
 // Validação em tempo real da confirmação de senha
 document.getElementById('confirmPassword').addEventListener('input', function() {
   const password = document.getElementById('registerPassword').value;
@@ -478,7 +455,7 @@ document.getElementById('confirmPassword').addEventListener('input', function() 
   }
 });
 
-// ✅ SUBSTITUA o event listener do registerForm por este:
+// SUBSTITUA o event listener do registerForm por este:
 document.getElementById('registerForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   
@@ -552,3 +529,5 @@ document.getElementById('registerForm').addEventListener('submit', async functio
 </script>
 </body>
 </html>
+
+
