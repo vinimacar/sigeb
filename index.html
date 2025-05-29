@@ -257,25 +257,37 @@
         <h1 class="hero-title">SIGEB</h1>
         <p class="hero-subtitle">Sistema de Gestão de Biblioteca<br>Uma solução moderna e intuitiva para gerenciamento de bibliotecas</p>
 
-        <!-- Substitua o botão "Acessar Sistema" pelo formulário de login abaixo -->
-        <div id="login-container" class="mt-4" style="max-width:400px;margin:auto;">
-          <form id="loginForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
-            <h4 class="mb-3" style="color:#fff;">Login</h4>
-            <div class="mb-3">
-              <label for="loginEmail" class="form-label" style="color:#fff;">E-mail</label>
-              <input type="email" class="form-control" id="loginEmail" required autocomplete="username">
-            </div>
-            <div class="mb-3">
-              <label for="loginPassword" class="form-label" style="color:#fff;">Senha</label>
-              <input type="password" class="form-control" id="loginPassword" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn btn-gradient w-100">Entrar</button>
-            <div id="loginError" class="mt-2 text-danger" style="display:none;"></div>
-            <div class="text-center mt-3">
-              <button type="button" id="showRegisterBtn" class="btn btn-link" style="color:#4facfe;">Primeiro acesso? Cadastre-se</button>
-            </div>
-          </form>
-        </div>
+        <div id="register-container" class="mt-4" style="max-width:400px;margin:auto; display:none;">
+  <form id="registerForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+    <h4 class="mb-3" style="color:#fff;">Cadastro</h4>
+    
+    <div class="mb-3">
+      <label for="registerEmail" class="form-label" style="color:#fff;">E-mail</label>
+      <input type="email" class="form-control" id="registerEmail" required autocomplete="username">
+    </div>
+    
+    <div class="mb-3">
+      <label for="registerPassword" class="form-label" style="color:#fff;">Senha</label>
+      <input type="password" class="form-control" id="registerPassword" required autocomplete="new-password" minlength="6">
+      <small class="text-muted">Mínimo 6 caracteres</small>
+    </div>
+    
+    <!-- ✅ NOVO CAMPO DE CONFIRMAÇÃO -->
+    <div class="mb-3">
+      <label for="confirmPassword" class="form-label" style="color:#fff;">Confirme a Senha</label>
+      <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password">
+      <div id="passwordMatch" class="mt-1" style="font-size: 0.8rem; display: none;"></div>
+    </div>
+    
+    <button type="submit" class="btn btn-secondary w-100">Cadastrar</button>
+    <div id="registerError" class="mt-2 text-danger" style="display:none;"></div>
+    <div id="registerSuccess" class="mt-2 text-success" style="display:none;"></div>
+    
+    <div class="text-center mt-3">
+      <button type="button" id="backToLoginBtn" class="btn btn-link" style="color:#4facfe;">Já tem conta? Fazer login</button>
+    </div>
+  </form>
+</div>
 
         <div id="register-container" class="mt-4" style="max-width:400px;margin:auto; display:none;">
           <form id="registerForm" class="p-4 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 2px 10px rgba(0,0,0,0.08);">
@@ -442,7 +454,101 @@
     // Inicializa o Database
     const db = firebase.database();
   </script>
+  
+  <script>
+// ✅ ADICIONE este JavaScript no final do seu arquivo, antes do fechamento </body>
+
+// Validação em tempo real da confirmação de senha
+document.getElementById('confirmPassword').addEventListener('input', function() {
+  const password = document.getElementById('registerPassword').value;
+  const confirm = this.value;
+  const matchDiv = document.getElementById('passwordMatch');
+  
+  if (confirm.length > 0) {
+    matchDiv.style.display = 'block';
+    if (password === confirm) {
+      matchDiv.textContent = '✓ Senhas coincidem';
+      matchDiv.style.color = '#28a745';
+    } else {
+      matchDiv.textContent = '✗ Senhas não coincidem';
+      matchDiv.style.color = '#dc3545';
+    }
+  } else {
+    matchDiv.style.display = 'none';
+  }
+});
+
+// ✅ SUBSTITUA o event listener do registerForm por este:
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const errorDiv = document.getElementById('registerError');
+  const successDiv = document.getElementById('registerSuccess');
+  
+  // Limpar mensagens anteriores
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  
+  // ✅ VALIDAÇÕES
+  try {
+    // Validar se senhas coincidem
+    if (password !== confirmPassword) {
+      throw new Error('As senhas não coincidem');
+    }
+    
+    // Validar força da senha
+    if (password.length < 6) {
+      throw new Error('A senha deve ter pelo menos 6 caracteres');
+    }
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error('Digite um e-mail válido');
+    }
+    
+    // Cadastrar no Firebase
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Salvar dados do usuário
+    await db.ref('usuarios/' + user.uid).set({
+      email: email,
+      tipo: 'usuario',
+      cadastroCompleto: false,
+      dataCadastro: new Date().toISOString()
+    });
+    
+    // Sucesso
+    successDiv.textContent = 'Cadastro realizado com sucesso!';
+    successDiv.style.display = 'block';
+    
+    // Redirecionar após 2 segundos
+    setTimeout(() => {
+      window.location.href = 'completar_cadastro.html';
+    }, 2000);
+    
+  } catch (error) {
+    // Tratar erros específicos do Firebase
+    let errorMessage = 'Erro ao cadastrar. Tente novamente.';
+    
+    if (error.code === 'auth/email-already-in-use') {
+      errorMessage = 'Este e-mail já está cadastrado';
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Senha muito fraca. Use pelo menos 6 caracteres';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'E-mail inválido';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    errorDiv.textContent = errorMessage;
+    errorDiv.style.display = 'block';
+  }
+});
+</script>
 </body>
 </html>
-
-
