@@ -242,6 +242,10 @@
           <input type="text" class="form-control" id="schoolName" placeholder="Digite o nome da escola" required>
         </div>
         <div class="mb-3">
+          <label class="form-label">Código da Escola *</label>
+          <input type="text" class="form-control" id="schoolId" placeholder="Ex: escola001" required>
+        </div>
+        <div class="mb-3">
           <label class="form-label">CNPJ *</label>
           <input type="text" class="form-control" id="schoolCNPJ" placeholder="00.000.000/0000-00" required>
         </div>
@@ -348,7 +352,8 @@
     // Cadastro da escola
     document.getElementById('schoolForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      // Campos obrigatórios
+      // Novo campo obrigatório: código único da escola
+      const schoolId = document.getElementById('schoolId').value.trim();
       const name = document.getElementById('schoolName').value.trim();
       const cnpj = document.getElementById('schoolCNPJ').value.trim();
       const director = document.getElementById('schoolDirector').value.trim();
@@ -360,19 +365,17 @@
       const cep = document.getElementById('schoolCEP').value.trim();
       const city = document.getElementById('schoolCity').value.trim();
       const uf = document.getElementById('schoolUF').value.trim().toUpperCase();
-
-      // Campos opcionais
       const instagram = document.getElementById('schoolInstagram').value.trim();
       const site = document.getElementById('schoolSite').value.trim();
 
-      // Validação dos obrigatórios
-      if (!name || !cnpj || !director || !phone || !email || !address || !number || !neighborhood || !cep || !city || !uf) {
+      if (!schoolId || !name || !cnpj || !director || !phone || !email || !address || !number || !neighborhood || !cep || !city || !uf) {
         alert('Preencha todos os campos obrigatórios marcados com *.');
         return;
       }
 
       try {
-        await db.collection('escola').doc('dados').set({
+        // Salva os dados da escola em uma coleção separada por escola
+        await db.collection('escolas').doc(schoolId).set({
           nome: name,
           cnpj: cnpj,
           diretor: director,
@@ -395,3 +398,4 @@
   </script>
 </body>
 </html>
+
