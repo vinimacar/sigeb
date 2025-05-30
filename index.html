@@ -273,6 +273,9 @@
             <div class="text-center mt-3">
               <button type="button" id="showRegisterBtn" class="btn btn-link" style="color:#4facfe;">Não tem conta? Cadastre-se</button>
             </div>
+            <div class="text-center mt-2">
+              <button type="button" id="forgotPasswordBtn" class="btn btn-link" style="color:#4facfe;">Esqueceu a senha?</button>
+            </div>
           </form>
         </div>
 
@@ -436,6 +439,29 @@
         errorDiv.style.display = 'block';
       }
     });
+
+    // Recuperação de senha
+    document.getElementById('forgotPasswordBtn').onclick = function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) {
+        alert('Digite seu e-mail para recuperar a senha.');
+        document.getElementById('loginEmail').focus();
+        return;
+      }
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          alert('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+        })
+        .catch((error) => {
+          let msg = 'Erro ao enviar e-mail de recuperação.';
+          if (error.code === 'auth/user-not-found') {
+            msg = 'E-mail não cadastrado.';
+          } else if (error.code === 'auth/invalid-email') {
+            msg = 'E-mail inválido.';
+          }
+          alert(msg);
+        });
+    };
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
