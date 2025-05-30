@@ -332,14 +332,21 @@
     if (oldBtn) oldBtn.style.display = 'none';
 
     // Alterna exibição entre login e cadastro
-    document.getElementById('showRegisterBtn').onclick = function() {
-      document.getElementById('login-container').style.display = 'none';
-      document.getElementById('register-container').style.display = 'block';
-    };
-    document.getElementById('backToLoginBtn').onclick = function() {
-      document.getElementById('register-container').style.display = 'none';
-      document.getElementById('login-container').style.display = 'block';
-    };
+    // Corrigido para não dar erro caso o botão não exista
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    if (showRegisterBtn) {
+      showRegisterBtn.onclick = function() {
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('register-container').style.display = 'block';
+      };
+    }
+    const backToLoginBtn = document.getElementById('backToLoginBtn');
+    if (backToLoginBtn) {
+      backToLoginBtn.onclick = function() {
+        document.getElementById('register-container').style.display = 'none';
+        document.getElementById('login-container').style.display = 'block';
+      };
+    }
 
     // --- LOGIN ---
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
