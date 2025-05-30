@@ -364,6 +364,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
     // Configuração do Firebase (use a mesma do seu projeto)
     const firebaseConfig = {
@@ -380,7 +381,7 @@
       firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
-    const db = firebase.database();
+    const db = firebase.firestore();
 
     // Exibe log do usuário logado
     auth.onAuthStateChanged(async function(user) {
@@ -389,8 +390,8 @@
         // Busca nome do usuário no banco, se existir
         let nome = '';
         try {
-          const snap = await db.ref('usuarios/' + user.uid).once('value');
-          nome = snap.val() && snap.val().nome ? snap.val().nome : '';
+          const snap = await db.collection('usuarios').doc(user.uid).get();
+          nome = snap.exists && snap.data().nome ? snap.data().nome : '';
         } catch {}
         userLogInfo.textContent = nome
           ? `Logado como: ${nome} (${user.email})`
@@ -411,32 +412,29 @@
 
     // Atualiza todos os dados do dashboard em tempo real
     function atualizarDashboard() {
-      // Livros
-      db.ref('livros').on('value', snapshot => {
-        const livros = snapshot.val();
-        document.getElementById('totalLivros').textContent = livros ? Object.keys(livros).length : 0;
+      // Livros (Firestore)
+      db.collection('livros').onSnapshot(snapshot => {
+        document.getElementById('totalLivros').textContent = snapshot.size;
       });
 
-      // Usuários
-      db.ref('usuarios').on('value', snapshot => {
-        const usuarios = snapshot.val();
+      // Usuários (Firestore)
+      db.collection('usuarios').onSnapshot(snapshot => {
         let totalAtivos = 0;
-        if (usuarios) {
-          Object.values(usuarios).forEach(u => {
-            if (u.cadastroCompleto === true) totalAtivos++;
-          });
-        }
+        snapshot.forEach(doc => {
+          const u = doc.data();
+          if (u.cadastroCompleto === true) totalAtivos++;
+        });
         document.getElementById('totalUsuarios').textContent = totalAtivos;
       });
 
       // Empréstimos ativos, reservas e atrasados (buscando do Firestore/Firebase)
-      db.ref('emprestimos').on('value', snapshot => {
+      db.collection('emprestimos').onSnapshot(snapshot => {
         let totalEmprestimos = 0;
         let totalReservas = 0;
         let totalAtrasados = 0;
         const hoje = new Date();
         snapshot.forEach(child => {
-          const data = child.val();
+          const data = child.data();
           if (data.status === 'EMPRESTADO') {
             totalEmprestimos++;
             // Verifica atraso
@@ -465,12 +463,12 @@
     }
 
     // Busca e exibe as 5 atividades recentes (últimos empréstimos/reservas/devoluções)
-    function carregarAtividadesRecentes() {
+    async function carregarAtividadesRecentes() {
       const container = document.getElementById('recentActivities');
-      db.ref('emprestimos').orderByChild('createdAt').limitToLast(5).on('value', async snapshot => {
+      db.collection('emprestimos').orderBy('createdAt').limit(5).onSnapshot(async snapshot => {
         const atividades = [];
         snapshot.forEach(child => {
-          atividades.push({ id: child.key, ...child.val() });
+          atividades.push({ id: child.id, ...child.data() });
         });
         atividades.reverse(); // Mais recente primeiro
 
@@ -498,11 +496,11 @@
           let book = 'Livro';
           try {
             const [userSnap, bookSnap] = await Promise.all([
-              db.ref('usuarios/' + data.userId).once('value'),
-              db.ref('livros/' + data.bookId).once('value')
+              db.collection('usuarios').doc(data.userId).get(),
+              db.collection('livros').doc(data.bookId).get()
             ]);
-            if (userSnap.exists() && userSnap.val().nome) user = userSnap.val().nome;
-            if (bookSnap.exists() && bookSnap.val().titulo) book = bookSnap.val().titulo;
+            if (userSnap.exists && userSnap.data().nome) user = userSnap.data().nome;
+            if (bookSnap.exists && bookSnap.data().titulo) book = bookSnap.data().titulo;
           } catch {}
 
           if (data.status === 'EMPRESTADO') {
