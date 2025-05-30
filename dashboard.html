@@ -420,10 +420,16 @@
       // Usuários
       db.ref('usuarios').on('value', snapshot => {
         const usuarios = snapshot.val();
-        document.getElementById('totalUsuarios').textContent = usuarios ? Object.keys(usuarios).length : 0;
+        let totalAtivos = 0;
+        if (usuarios) {
+          Object.values(usuarios).forEach(u => {
+            if (u.cadastroCompleto === true) totalAtivos++;
+          });
+        }
+        document.getElementById('totalUsuarios').textContent = totalAtivos;
       });
 
-      // Empréstimos ativos, reservas e atrasados
+      // Empréstimos ativos, reservas e atrasados (buscando do Firestore/Firebase)
       db.ref('emprestimos').on('value', snapshot => {
         let totalEmprestimos = 0;
         let totalReservas = 0;
@@ -435,8 +441,13 @@
             totalEmprestimos++;
             // Verifica atraso
             if (data.dataDevolucao) {
+              // Considera apenas a data (ignora hora)
               const dataDevolucao = new Date(data.dataDevolucao);
-              if (dataDevolucao < hoje) totalAtrasados++;
+              if (
+                dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)
+              ) {
+                totalAtrasados++;
+              }
             }
           }
           if (data.status === 'RESERVADO') totalReservas++;
@@ -559,5 +570,6 @@
   </script>
 </body>
 </html>
+
 
 
