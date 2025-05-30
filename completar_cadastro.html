@@ -82,7 +82,7 @@
       background: rgba(0,242,254,0.08);
       border: 2px solid #4facfe;
       border-radius: 14px;
-      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s, color 0.2s;
       cursor: pointer;
       color: #fff;
       min-height: 110px;
@@ -91,11 +91,13 @@
       box-shadow: 0 0 0 3px #00f2fe, 0 4px 16px rgba(0,242,254,0.13);
       border-color: #00f2fe;
       background: rgba(0,242,254,0.16);
+      color: #1a1a2e !important; /* Letras escuras ao passar o mouse ou selecionar */
     }
-    .card-title {
-      color: #00f2fe;
-      font-weight: 600;
-      font-size: 1.15rem;
+    .card.escola-card:hover .card-title,
+    .card.escola-card.selected .card-title,
+    .card.escola-card:hover .card-body,
+    .card.escola-card.selected .card-body {
+      color: #1a1a2e !important;
     }
     .text-danger, .text-success {
       font-weight: 500;
@@ -277,6 +279,22 @@
       }
     });
 
+    function validarCPF(cpf) {
+      cpf = cpf.replace(/[^\d]+/g, '');
+      if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+      let soma = 0, resto;
+      for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+      resto = (soma * 10) % 11;
+      if ((resto === 10) || (resto === 11)) resto = 0;
+      if (resto !== parseInt(cpf.substring(9, 10))) return false;
+      soma = 0;
+      for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+      resto = (soma * 10) % 11;
+      if ((resto === 10) || (resto === 11)) resto = 0;
+      if (resto !== parseInt(cpf.substring(10, 11))) return false;
+      return true;
+    }
+
     document.getElementById('completarCadastroForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const msgDiv = document.getElementById('cadastroMsg');
@@ -289,9 +307,16 @@
         return;
       }
 
+      const cpf = document.getElementById('cpf').value.trim();
+      if (!validarCPF(cpf)) {
+        msgDiv.textContent = "CPF inválido.";
+        msgDiv.classList.add('text-danger');
+        document.getElementById('cpf').focus();
+        return;
+      }
+
       const nome = document.getElementById('nome').value.trim();
       const telefone = document.getElementById('telefone').value.trim();
-      const cpf = document.getElementById('cpf').value.trim();
       const funcao = document.getElementById('funcao').value;
       const dataNascimento = document.getElementById('dataNascimento').value;
       const sexo = document.getElementById('sexo').value;
@@ -373,3 +398,4 @@
   </script>
 </body>
 </html>
+
