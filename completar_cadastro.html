@@ -87,6 +87,10 @@
             <option value="Outro">Outro</option>
           </select>
         </div>
+        <div class="mb-3 col-md-4">
+          <label for="cep" class="form-label">CEP</label>
+          <input type="text" class="form-control" id="cep" name="cep" required maxlength="9" placeholder="00000-000">
+        </div>
         <div class="mb-3 col-md-8">
           <label for="endereco" class="form-label">Endereço</label>
           <input type="text" class="form-control" id="endereco" name="endereco" required>
@@ -156,6 +160,7 @@
       const funcao = document.getElementById('funcao').value;
       const dataNascimento = document.getElementById('dataNascimento').value;
       const sexo = document.getElementById('sexo').value;
+      const cep = document.getElementById('cep').value.trim();
       const endereco = document.getElementById('endereco').value.trim();
       const numero = document.getElementById('numero').value.trim();
       const bairro = document.getElementById('bairro').value.trim();
@@ -180,6 +185,7 @@
           tipo: funcao,
           dataNascimento: dataNascimento,
           sexo: sexo,
+          cep: cep,
           endereco: endereco,
           numero: numero,
           bairro: bairro,
@@ -214,6 +220,14 @@
       if (v.length > 9) v = v.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
       e.target.value = v;
     });
+
+    // Máscara simples para CEP
+    document.getElementById('cep').addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2');
+      e.target.value = v;
+    });
   </script>
 </body>
 </html>
+
