@@ -152,6 +152,38 @@
       }
     });
 
+    // Após garantir que o usuário está logado, busque a escola vinculada
+    auth.onAuthStateChanged(async function(user) {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+      try {
+        // Busca os dados do usuário no banco
+        const snap = await db.ref('usuarios/' + user.uid).once('value');
+        const usuario = snap.val();
+        if (usuario && usuario.escolaId) {
+          // Busca o nome da escola vinculada
+          const escolaSnap = await db.ref('configuracoes/escola/' + usuario.escolaId).once('value');
+          const escola = escolaSnap.val();
+          if (escola && escola.nome) {
+            // Exibe o nome da escola em algum lugar do formulário, por exemplo acima do botão Salvar
+            let escolaDiv = document.getElementById('escolaVinculada');
+            if (!escolaDiv) {
+              escolaDiv = document.createElement('div');
+              escolaDiv.id = 'escolaVinculada';
+              escolaDiv.className = 'mb-3 text-center';
+              const form = document.getElementById('completarCadastroForm');
+              form.insertBefore(escolaDiv, form.querySelector('button[type="submit"]'));
+            }
+            escolaDiv.innerHTML = `<strong>Escola vinculada:</strong> ${escola.nome}`;
+          }
+        }
+      } catch (e) {
+        // Se não encontrar escola, não exibe nada
+      }
+    });
+
     document.getElementById('completarCadastroForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const nome = document.getElementById('nome').value.trim();
@@ -230,4 +262,3 @@
   </script>
 </body>
 </html>
-
