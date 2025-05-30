@@ -18,15 +18,19 @@
       margin: 0;
     }
     .cadastro-container {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.10);
       padding: 2.5rem 2rem;
-      border-radius: 18px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-      max-width: 520px;
+      border-radius: 22px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+      max-width: 540px;
       width: 100%;
+      border: 1.5px solid #00f2fe;
+      backdrop-filter: blur(2px);
     }
     .form-label {
       color: #fff;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
     .btn-gradient {
       background: linear-gradient(90deg, #00f2fe, #4facfe);
@@ -39,28 +43,80 @@
       letter-spacing: 1px;
       transition: all 0.3s cubic-bezier(.4,1,.7,1.1);
       width: 100%;
+      box-shadow: 0 2px 8px rgba(0,242,254,0.08);
     }
-    .btn-gradient:hover {
+    .btn-gradient:hover, .btn-gradient:focus {
       background: linear-gradient(90deg, #4facfe, #00f2fe);
       transform: translateY(-2px) scale(1.03);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0,242,254,0.18);
     }
     .form-control {
-      background: rgba(255,255,255,0.13);
-      color: #fff;
-      border: 1px solid #4facfe;
-    }
-    .form-control:focus {
       background: rgba(255,255,255,0.18);
       color: #fff;
+      border: 1.5px solid #4facfe;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
       border-color: #00f2fe;
-      box-shadow: none;
+      box-shadow: 0 0 0 2px #00f2fe33;
+    }
+    .form-select, select.form-control {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      border: 1.5px solid #4facfe;
+      border-radius: 12px;
+      font-size: 1rem;
+    }
+    .form-select:focus, select.form-control:focus {
+      border-color: #00f2fe;
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+      box-shadow: 0 0 0 2px #00f2fe33;
+    }
+    .card.escola-card {
+      background: rgba(0,242,254,0.08);
+      border: 2px solid #4facfe;
+      border-radius: 14px;
+      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+      cursor: pointer;
+      color: #fff;
+      min-height: 110px;
+    }
+    .card.escola-card:hover, .card.escola-card.selected {
+      box-shadow: 0 0 0 3px #00f2fe, 0 4px 16px rgba(0,242,254,0.13);
+      border-color: #00f2fe;
+      background: rgba(0,242,254,0.16);
+    }
+    .card-title {
+      color: #00f2fe;
+      font-weight: 600;
+      font-size: 1.15rem;
+    }
+    .text-danger, .text-success {
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      font-size: 1.05rem;
+    }
+    @media (max-width: 600px) {
+      .cadastro-container {
+        padding: 1.2rem 0.5rem;
+        max-width: 98vw;
+      }
+      .card.escola-card {
+        min-height: 90px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="cadastro-container">
     <h3 class="mb-4 text-center">Completar Cadastro</h3>
-    <!-- Adicione este bloco antes do formulário de cadastro -->
+    <!-- Já existe o bloco abaixo do título, mantenha-o assim: -->
     <div id="escolasContainer" class="mb-4"></div>
     <form id="completarCadastroForm" autocomplete="off">
       <div class="row">
@@ -154,10 +210,10 @@
       }
     });
 
-    // Busca as escolas do Firestore e exibe como cards para seleção
     const escolasContainer = document.getElementById('escolasContainer');
     let escolaSelecionada = null;
 
+    // Busca as escolas do Firestore e exibe como cards para seleção
     firebase.firestore().collection('escolas').get().then(snapshot => {
       let html = '<label class="form-label mb-2">Selecione a escola que você pertence:</label><div class="row">';
       snapshot.forEach(doc => {
@@ -182,8 +238,8 @@
       // Seleção visual do card
       document.querySelectorAll('.escola-card').forEach(card => {
         card.onclick = function() {
-          document.querySelectorAll('.escola-card').forEach(c => c.style.boxShadow = '');
-          this.style.boxShadow = '0 0 0 3px #00f2fe';
+          document.querySelectorAll('.escola-card').forEach(c => c.classList.remove('selected'));
+          this.classList.add('selected');
           escolaSelecionada = this.getAttribute('data-id');
         };
       });
