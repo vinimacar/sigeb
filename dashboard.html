@@ -419,18 +419,16 @@
 
       // Usuários (Firestore)
       db.collection('usuarios').onSnapshot(snapshot => {
-        let totalAtivos = 0;
+        let totalCadastrados = 0;
         snapshot.forEach(doc => {
-          const u = doc.data();
-          if (u.cadastroCompleto === true) totalAtivos++;
+          totalCadastrados++;
         });
-        document.getElementById('totalUsuarios').textContent = totalAtivos;
+        document.getElementById('totalUsuarios').textContent = totalCadastrados;
       });
 
       // Empréstimos ativos, reservas e atrasados (buscando do Firestore/Firebase)
       db.collection('emprestimos').onSnapshot(snapshot => {
         let totalEmprestimos = 0;
-        let totalReservas = 0;
         let totalAtrasados = 0;
         const hoje = new Date();
         snapshot.forEach(child => {
@@ -439,19 +437,15 @@
             totalEmprestimos++;
             // Verifica atraso
             if (data.dataDevolucao) {
-              // Considera apenas a data (ignora hora)
               const dataDevolucao = new Date(data.dataDevolucao);
-              if (
-                dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)
-              ) {
+              if (dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)) {
                 totalAtrasados++;
               }
             }
           }
-          if (data.status === 'RESERVADO') totalReservas++;
         });
         document.getElementById('totalEmprestimos').textContent = totalEmprestimos;
-        document.getElementById('totalReservas').textContent = totalReservas;
+        document.getElementById('totalReservas').textContent = totalAtrasados; // Somente atrasos
         document.getElementById('totalAtrasados').textContent = totalAtrasados;
       });
 
