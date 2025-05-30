@@ -3,85 +3,467 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Completar Cadastro - SIGEB</title>
+  <title>SIGEB - Biblioteca</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" />
   <style>
+    :root {
+      --primary: #1a1a2e;
+      --secondary: #16213e;
+      --accent1: #00f2fe;
+      --accent2: #4facfe;
+      --danger: #c62828;
+      --text-light: #e0e0e0;
+      --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.3);
+      --transition: all 0.3s cubic-bezier(.4,1,.7,1.1);
+    }
+
+    html, body {
+      height: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: var(--primary);
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      background: var(--primary);
+    }
+
+    .hero-container {
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 48px;
+      padding-bottom: 48px;
+      background: var(--primary);
+    }
+
+    .logo-container {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #e0e0e0;
-      margin: 0;
     }
-    .cadastro-container {
-      background: rgba(255,255,255,0.08);
-      padding: 2.5rem 2rem;
-      border-radius: 18px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+
+    .school-logo {
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 24px var(--accent2));
+      border-radius: 50%;
+      background: white;
+      padding: 10px;
+      border: 4px solid #fff;
+      transition: var(--transition);
+    }
+
+    .school-logo:hover {
+      transform: scale(1.05) rotate(-2deg);
+      filter: drop-shadow(0 0 36px var(--accent1));
+    }
+
+    .logo-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, var(--accent2) 0%, var(--accent1) 80%, transparent 100%);
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: 0.25;
+      z-index: -1;
+    }
+
+    .hero-title {
+      font-weight: 700;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .hero-subtitle {
+      color: var(--text-light);
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      text-align: center;
       max-width: 420px;
-      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      opacity: 0.95;
     }
+
+    .main-content {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.06);
+      border-radius: 18px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      padding: 2rem 1.5rem 1.5rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+
     .form-label {
       color: #fff;
+      font-size: 0.98rem;
     }
-    .btn-gradient {
-      background: linear-gradient(90deg, #00f2fe, #4facfe);
-      color: #fff;
-      border: none;
-      padding: 0.9rem 2.2rem;
-      border-radius: 30px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.3s cubic-bezier(.4,1,.7,1.1);
-      width: 100%;
-    }
-    .btn-gradient:hover {
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      transform: translateY(-2px) scale(1.03);
-    }
+
     .form-control {
-      background: rgba(255,255,255,0.13);
-      color: #fff;
-      border: 1px solid #4facfe;
+      font-size: 0.98rem;
     }
-    .form-control:focus {
-      background: rgba(255,255,255,0.18);
-      color: #fff;
-      border-color: #00f2fe;
-      box-shadow: none;
+
+    .toggle-password {
+      position: absolute;
+      top: 32px;
+      right: 12px;
+      cursor: pointer;
+      color: #4facfe;
+      font-size: 1.1rem;
+    }
+
+    .btn-link {
+      color: #4facfe !important;
+      font-size: 0.95rem;
+      padding: 0;
+    }
+
+    .feature-section {
+      margin-top: 2.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 1.2rem 1.2rem 1rem 1.2rem;
+      min-width: 220px;
+      max-width: 260px;
+      flex: 1 1 220px;
+      transition: var(--transition);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border: 1.5px solid transparent;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px) scale(1.03);
+      background: rgba(255,255,255,0.16);
+      border: 1.5px solid var(--accent2);
+    }
+
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.7rem;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    @media (max-width: 600px) {
+      .main-content {
+        padding: 1.2rem 0.5rem 1rem 0.5rem;
+      }
+      .feature-section {
+        gap: 0.7rem;
+      }
+      .feature-card {
+        min-width: 140px;
+        max-width: 100%;
+        padding: 1rem 0.5rem 0.7rem 0.5rem;
+      }
+      .school-logo {
+        width: 100px;
+        height: 100px;
+      }
+      .logo-glow {
+        width: 120px;
+        height: 120px;
+      }
+      .hero-title {
+        font-size: 1.5rem;
+      }
+    }
+
+    footer {
+      background: rgba(22,33,62,0.85);
+      color: #e0e0e0;
+      font-size: 0.85rem;
+      padding: 0.5rem 0;
+      text-align: center;
+      margin-top: 2rem;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <div class="cadastro-container">
-    <h3 class="mb-4 text-center">Completar Cadastro</h3>
-    <form id="completarCadastroForm" autocomplete="off">
-      <div class="mb-3">
-        <label for="nome" class="form-label">Nome completo</label>
-        <input type="text" class="form-control" id="nome" required>
+  <div class="hero-container" style="padding-top:32px; padding-bottom:32px;">
+    <div class="logo-container" style="position:relative; margin-bottom: 1.2rem;">
+      <div class="logo-glow"></div>
+      <img src="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" alt="Logo do SIGEB" class="school-logo" style="width: 180px; height: 180px; box-shadow: 0 0 48px 0 var(--accent2), 0 4px 24px #0003; border: 5px solid #fff;">
+      <h1 class="hero-title" style="font-size:3.2rem; margin-top:0.7rem; margin-bottom:0.3rem; background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 4px 24px var(--accent2),0 2px 10px rgba(0,0,0,0.12);letter-spacing:3px;">SIGEB</h1>
+      <div class="hero-subtitle" style="font-size:1.15rem; color:#b8e0ff; margin-bottom:0.5rem; opacity:0.92;">
+        Sistema de Gestão de Biblioteca<br>
+        Moderno, intuitivo e eficiente para sua instituição.
       </div>
-      <div class="mb-3">
-        <label for="telefone" class="form-label">Telefone</label>
-        <input type="tel" class="form-control" id="telefone" required>
+    </div>
+    <div class="main-content" style="max-width: 430px; margin-bottom: 1.2rem;">
+      <div id="login-container" style="display:block;">
+        <form id="loginForm">
+          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Login</h5>
+          <div class="mb-2">
+            <label for="loginEmail" class="form-label">E-mail</label>
+            <input type="email" class="form-control form-control-sm" id="loginEmail" required autocomplete="username">
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="loginPassword" class="form-label">Senha</label>
+            <input type="password" class="form-control form-control-sm" id="loginPassword" required autocomplete="current-password">
+            <span class="toggle-password" toggle="#loginPassword">
+              <i class="bx bx-show"></i>
+            </span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Entrar</button>
+          <div id="loginError" class="mt-1 text-danger" style="display:none;font-size:0.9rem;"></div>
+          <div class="text-center mt-2">
+            <button type="button" id="showRegisterBtn" class="btn btn-link">Não tem conta? Cadastre-se</button>
+          </div>
+          <div class="text-center mt-1">
+            <button type="button" id="forgotPasswordBtn" class="btn btn-link">Esqueceu a senha?</button>
+          </div>
+        </form>
       </div>
-      <div class="mb-3">
-        <label for="cpf" class="form-label">CPF</label>
-        <input type="text" class="form-control" id="cpf" required maxlength="14" placeholder="000.000.000-00">
+      <div id="register-container" style="display:none;">
+        <form id="registerForm">
+          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Cadastro</h5>
+          <div class="mb-2">
+            <label for="registerEmail" class="form-label">E-mail</label>
+            <input type="email" class="form-control form-control-sm" id="registerEmail" required autocomplete="username">
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="registerPassword" class="form-label">Senha</label>
+            <input type="password" class="form-control form-control-sm" id="registerPassword" required autocomplete="new-password" minlength="6">
+            <span class="toggle-password" toggle="#registerPassword">
+              <i class="bx bx-show"></i>
+            </span>
+            <small class="text-muted" style="font-size:0.85rem;">Mínimo 6 caracteres</small>
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="confirmPassword" class="form-label">Confirme a Senha</label>
+            <input type="password" class="form-control form-control-sm" id="confirmPassword" required autocomplete="new-password">
+            <span class="toggle-password" toggle="#confirmPassword">
+              <i class="bx bx-show"></i>
+            </span>
+            <div id="passwordMatch" class="mt-1" style="font-size:0.8rem; display:none;"></div>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm w-100">Cadastrar</button>
+          <div id="registerError" class="mt-1 text-danger" style="display:none;font-size:0.9rem;"></div>
+          <div id="registerSuccess" class="mt-1 text-success" style="display:none;font-size:0.9rem;"></div>
+          <div class="text-center mt-2">
+            <button type="button" id="backToLoginBtn" class="btn btn-link">Já tem conta? Fazer login</button>
+          </div>
+        </form>
       </div>
-      <button type="submit" class="btn btn-gradient mt-3">Salvar</button>
-      <div id="cadastroMsg" class="mt-3 text-center"></div>
-    </form>
+    </div>
+    <div class="feature-section" style="margin-top: 1.2rem;">
+      <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+        <i class="bx bx-book-reader feature-icon"></i>
+        <h6>Gestão de Acervo</h6>
+        <p style="font-size:0.95rem;">Controle completo dos livros e materiais.</p>
+      </div>
+      <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+        <i class="bx bx-user-check feature-icon"></i>
+        <h6>Controle de Usuários</h6>
+        <p style="font-size:0.95rem;">Gerenciamento eficiente de membros.</p>
+      </div>
+      <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+        <i class="bx bx-transfer-alt feature-icon"></i>
+        <h6>Empréstimos</h6>
+        <p style="font-size:0.95rem;">Sistema inteligente de empréstimos.</p>
+      </div>
+    </div>
   </div>
+  <footer>
+    <div>
+      Desenvolvido por: VMC Soluções em Softwares.<br>
+      © 2025 SIGEB<br>
+      WhatsApp: <a href="https://wa.me/5534999188660" target="_blank" style="color:#4facfe; text-decoration:underline;">(99) 99999-9999</a>
+    </div>
+  </footer>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      AOS.init({ 
+        duration: 1000, 
+        once: true, 
+        offset: 100,
+        delay: 100
+      });
+    });
+
+    // Esconde o botão antigo, se existir
+    const oldBtn = document.querySelector('.access-button');
+    if (oldBtn) oldBtn.style.display = 'none';
+
+    // Alterna exibição entre login e cadastro
+    // Corrigido para não dar erro caso o botão não exista
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    if (showRegisterBtn) {
+      showRegisterBtn.onclick = function() {
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('register-container').style.display = 'block';
+      };
+    }
+    const backToLoginBtn = document.getElementById('backToLoginBtn');
+    if (backToLoginBtn) {
+      backToLoginBtn.onclick = function() {
+        document.getElementById('register-container').style.display = 'none';
+        document.getElementById('login-container').style.display = 'block';
+      };
+    }
+
+    // --- LOGIN ---
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.style.display = 'none';
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        errorDiv.textContent = 'E-mail ou senha inválidos.';
+        errorDiv.style.display = 'block';
+      }
+    });
+
+    // --- CADASTRO ---
+    async function cadastrarUsuario(email, password) {
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        // Usuário cadastrado com sucesso
+        alert('Cadastro realizado! Você já pode fazer login.');
+        // Redirecionar ou limpar formulário, se desejar
+      } catch (error) {
+        alert('Erro ao cadastrar: ' + (error.message || 'Verifique os dados.'));
+      }
+    }
+
+    // Exemplo de uso do cadastro (adicione um formulário de cadastro no HTML e chame esta função no submit):
+    // cadastrarUsuario('email@exemplo.com', 'senha123');
+
+    // --- LOGOUT ---
+    async function logout() {
+      try {
+        await auth.signOut();
+        window.location.href = 'index.html';
+      } catch (error) {
+        alert('Erro ao sair: ' + (error.message || 'Tente novamente.'));
+      }
+    }
+
+    // Exemplo de uso do logout (adicione um botão de logout e chame logout() no click):
+    // <button onclick="logout()">Sair</button>
+
+    // Cadastro de novo usuário
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const errorDiv = document.getElementById('registerError');
+      const successDiv = document.getElementById('registerSuccess');
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        // Salva o tipo de usuário no banco de dados
+        await db.ref('usuarios/' + user.uid).set({
+          email: email,
+          tipo: 'usuario',
+          cadastroCompleto: false
+        });
+        // Redireciona para página de completar cadastro
+        window.location.href = 'completar_cadastro.html';
+      } catch (error) {
+        errorDiv.textContent = error.message || 'Erro ao cadastrar. Verifique os dados.';
+        errorDiv.style.display = 'block';
+      }
+    });
+
+    // Recuperação de senha
+    document.getElementById('forgotPasswordBtn').onclick = function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) {
+        alert('Digite seu e-mail para recuperar a senha.');
+        document.getElementById('loginEmail').focus();
+        return;
+      }
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          alert('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+        })
+        .catch((error) => {
+          let msg = 'Erro ao enviar e-mail de recuperação.';
+          if (error.code === 'auth/user-not-found') {
+            msg = 'E-mail não cadastrado.';
+          } else if (error.code === 'auth/invalid-email') {
+            msg = 'E-mail inválido.';
+          }
+          alert(msg);
+        });
+    };
+
+    // Mostrar/ocultar senha
+    document.querySelectorAll('.toggle-password').forEach(function(el) {
+      el.addEventListener('click', function() {
+        const input = document.querySelector(this.getAttribute('toggle'));
+        const icon = this.querySelector('i');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('bx-show');
+          icon.classList.add('bx-hide');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('bx-hide');
+          icon.classList.add('bx-show');
+        }
+      });
+    });
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
-    // Configuração do Firebase (mesma do index.html)
+    // Configuração do Firebase do seu projeto
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
@@ -92,62 +474,108 @@
       appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
       measurementId: "G-VJBDW2B7HZ"
     };
+    // Inicializa o Firebase
     firebase.initializeApp(firebaseConfig);
+    // Inicializa o Auth
     const auth = firebase.auth();
+    // Inicializa o Database
     const db = firebase.database();
-
-    // Garante que o usuário está logado
-    auth.onAuthStateChanged(function(user) {
-      if (!user) {
-        window.location.href = "index.html";
-      }
-    });
-
-    document.getElementById('completarCadastroForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const nome = document.getElementById('nome').value.trim();
-      const telefone = document.getElementById('telefone').value.trim();
-      const cpf = document.getElementById('cpf').value.trim();
-      const msgDiv = document.getElementById('cadastroMsg');
-      msgDiv.textContent = '';
-      msgDiv.className = 'mt-3 text-center';
-
-      const user = auth.currentUser;
-      if (!user) {
-        msgDiv.textContent = "Usuário não autenticado.";
-        msgDiv.classList.add('text-danger');
-        return;
-      }
-
-      try {
-        await db.ref('usuarios/' + user.uid).update({
-          nome: nome,
-          telefone: telefone,
-          cpf: cpf,
-          cadastroCompleto: true
-        });
-        msgDiv.textContent = "Cadastro completo com sucesso!";
-        msgDiv.classList.add('text-success');
-        setTimeout(() => {
-          window.location.href = "usuarios.html"; // Redireciona para a página de usuários
-        }, 1500);
-      } catch (error) {
-        msgDiv.textContent = "Erro ao salvar dados. Tente novamente.";
-        msgDiv.classList.add('text-danger');
-      }
-    });
-
-    // Máscara simples para CPF
-    document.getElementById('cpf').addEventListener('input', function(e) {
-      let v = e.target.value.replace(/\D/g, '');
-      if (v.length > 3) v = v.replace(/^(\d{3})(\d)/, '$1.$2');
-      if (v.length > 6) v = v.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
-      if (v.length > 9) v = v.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
-      e.target.value = v;
-    });
-
-    // Redireciona para página de completar cadastro
-    window.location.href = 'completar_cadastro.html';
   </script>
+  
+  <script>
+// Validação em tempo real da confirmação de senha
+document.getElementById('confirmPassword').addEventListener('input', function() {
+  const password = document.getElementById('registerPassword').value;
+  const confirm = this.value;
+  const matchDiv = document.getElementById('passwordMatch');
+  
+  if (confirm.length > 0) {
+    matchDiv.style.display = 'block';
+    if (password === confirm) {
+      matchDiv.textContent = '✓ Senhas coincidem';
+      matchDiv.style.color = '#28a745';
+    } else {
+      matchDiv.textContent = '✗ Senhas não coincidem';
+      matchDiv.style.color = '#dc3545';
+    }
+  } else {
+    matchDiv.style.display = 'none';
+  }
+});
+
+// SUBSTITUA o event listener do registerForm por este:
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const errorDiv = document.getElementById('registerError');
+  const successDiv = document.getElementById('registerSuccess');
+  
+  // Limpar mensagens anteriores
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  
+  // ✅ VALIDAÇÕES
+  try {
+    // Validar se senhas coincidem
+    if (password !== confirmPassword) {
+      throw new Error('As senhas não coincidem');
+    }
+    
+    // Validar força da senha
+    if (password.length < 6) {
+      throw new Error('A senha deve ter pelo menos 6 caracteres');
+    }
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error('Digite um e-mail válido');
+    }
+    
+    // Cadastrar no Firebase
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Salvar dados do usuário
+    await db.ref('usuarios/' + user.uid).set({
+      email: email,
+      tipo: 'usuario',
+      cadastroCompleto: false,
+      dataCadastro: new Date().toISOString()
+    });
+    
+    // Sucesso
+    successDiv.textContent = 'Cadastro realizado com sucesso!';
+    successDiv.style.display = 'block';
+    
+    // Redirecionar após 2 segundos
+    setTimeout(() => {
+      window.location.href = 'completar_cadastro.html';
+    }, 2000);
+    
+  } catch (error) {
+    // Tratar erros específicos do Firebase
+    let errorMessage = 'Erro ao cadastrar. Tente novamente.';
+    
+    if (error.code === 'auth/email-already-in-use') {
+      errorMessage = 'Este e-mail já está cadastrado';
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Senha muito fraca. Use pelo menos 6 caracteres';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'E-mail inválido';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    errorDiv.textContent = errorMessage;
+    errorDiv.style.display = 'block';
+  }
+});
+</script>
 </body>
 </html>
+
+
