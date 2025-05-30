@@ -541,6 +541,34 @@
     </div>
   </div>
 
+  <!-- Modal Comprovante de Empréstimo -->
+  <div class="modal fade" id="printLoanModal" tabindex="-1" aria-labelledby="printLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" id="printArea">
+        <div class="modal-header">
+          <h5 class="modal-title" id="printLoanModalLabel">Comprovante de Empréstimo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="loanReceiptContent">
+            <!-- Conteúdo preenchido via JS -->
+          </div>
+          <div class="mt-4">
+            <label for="userSignature" class="form-label">Assinatura do Usuário:</label>
+            <div style="border:1px solid #ccc; height:60px; margin-bottom:10px;">
+              <canvas id="signaturePad" width="350" height="60" style="width:100%;height:60px;"></canvas>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="clearSignature()">Limpar Assinatura</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="printLoanReceipt()">Imprimir</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Configurações do sistema
@@ -865,6 +893,11 @@
         form.reset();
         bootstrap.Modal.getInstance(document.getElementById('addLoanModal')).hide();
         loadLoans();
+
+        // Mostrar comprovante
+        const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
+        const bookDocForReceipt = await db.collection('livros').doc(bookId).get();
+        await showPrintLoanModal(loanData, userDocForReceipt.data(), bookDocForReceipt.data());
 
       } catch (error) {
         console.error('Erro ao registrar empréstimo:', error);
@@ -1248,47 +1281,121 @@
       document.querySelector('.search-box').style.display = '';
       await loadLoans(status);
     }
-  </script>
-  <script>
-// --- Controle de permissão para registrar empréstimo ---
 
-// Função para obter usuário logado do localStorage
-function getUsuarioLogado() {
-  try {
-    return JSON.parse(localStorage.getItem('usuarioLogado'));
-  } catch {
-    return null;
-  }
-}
+    // --- Controle de permissão para registrar empréstimo ---
 
-// Função para verificar se o usuário pode registrar empréstimo
-function podeRegistrarEmprestimo() {
-  const user = getUsuarioLogado();
-  // Só permite se for colaborador (não aluno)
-  return user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao);
-}
+    // Função para obter usuário logado do localStorage
+    function getUsuarioLogado() {
+      try {
+        return JSON.parse(localStorage.getItem('usuarioLogado'));
+      } catch {
+        return null;
+      }
+    }
 
-// Ao carregar a página, verifica permissão e esconde botão se não for colaborador
-document.addEventListener('DOMContentLoaded', function() {
-  const btn = document.querySelector('.add-button[data-bs-target="#addLoanModal"]');
-  if (!podeRegistrarEmprestimo()) {
-    if (btn) btn.style.display = 'none';
-  }
-});
+    // Função para verificar se o usuário pode registrar empréstimo
+    function podeRegistrarEmprestimo() {
+      const user = getUsuarioLogado();
+      // Só permite se for colaborador (não aluno)
+      return user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao);
+    }
 
-// Bloqueia o submit do formulário se não for colaborador
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('addLoanForm');
-  if (form) {
-    form.addEventListener('submit', function(e) {
+    // Ao carregar a página, verifica permissão e esconde botão se não for colaborador
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.querySelector('.add-button[data-bs-target="#addLoanModal"]');
       if (!podeRegistrarEmprestimo()) {
-        e.preventDefault();
-        showAlert('danger', 'Apenas colaboradores podem registrar empréstimos.');
-        return false;
+        if (btn) btn.style.display = 'none';
       }
     });
-  }
-});
-</script>
+
+    // Bloqueia o submit do formulário se não for colaborador
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('addLoanForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          if (!podeRegistrarEmprestimo()) {
+            e.preventDefault();
+            showAlert('danger', 'Apenas colaboradores podem registrar empréstimos.');
+            return false;
+          }
+        });
+      }
+    });
+
+    // Função para mostrar o comprovante após registrar empréstimo
+    async function showPrintLoanModal(loanData, userData, bookData) {
+      const content = `
+        <p><strong>Usuário:</strong> ${userData.nome} (${userData.email})</p>
+        <p><strong>Livro:</strong> ${bookData.titulo}</p>
+        <p><strong>Quantidade:</strong> ${loanData.quantity}</p>
+        <p><strong>Data do Empréstimo:</strong> ${loanData.loanDate}</p>
+        <p><strong>Data de Devolução:</strong> ${loanData.returnDate}</p>
+      `;
+      document.getElementById('loanReceiptContent').innerHTML = content;
+      // Limpa assinatura
+      clearSignature();
+      new bootstrap.Modal(document.getElementById('printLoanModal')).show();
+    }
+
+    // Função de impressão
+    function printLoanReceipt() {
+      const printContents = document.getElementById('printArea').innerHTML;
+      const win = window.open('', '', 'height=600,width=800');
+      win.document.write('<html><head><title>Comprovante de Empréstimo</title>');
+      win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">');
+      win.document.write('</head><body>');
+      win.document.write(printContents);
+      win.document.write('</body></html>');
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 500);
+    }
+
+    // Assinatura digital simples com canvas
+    let signaturePad, signatureCtx, drawing = false;
+    document.addEventListener('DOMContentLoaded', function() {
+      const canvas = document.getElementById('signaturePad');
+      if (canvas) {
+        signaturePad = canvas;
+        signatureCtx = canvas.getContext('2d');
+        signaturePad.addEventListener('mousedown', () => drawing = true);
+        signaturePad.addEventListener('mouseup', () => drawing = false);
+        signaturePad.addEventListener('mouseout', () => drawing = false);
+        signaturePad.addEventListener('mousemove', drawSignature);
+        // Touch events para mobile
+        signaturePad.addEventListener('touchstart', () => drawing = true);
+        signaturePad.addEventListener('touchend', () => drawing = false);
+        signaturePad.addEventListener('touchcancel', () => drawing = false);
+        signaturePad.addEventListener('touchmove', drawSignatureTouch);
+      }
+    });
+    function drawSignature(e) {
+      if (!drawing) return;
+      signatureCtx.lineWidth = 2;
+      signatureCtx.lineCap = 'round';
+      signatureCtx.strokeStyle = '#222';
+      const rect = signaturePad.getBoundingClientRect();
+      signatureCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      signatureCtx.stroke();
+      signatureCtx.beginPath();
+      signatureCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+    function drawSignatureTouch(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = signaturePad.getBoundingClientRect();
+      signatureCtx.lineWidth = 2;
+      signatureCtx.lineCap = 'round';
+      signatureCtx.strokeStyle = '#222';
+      signatureCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+      signatureCtx.stroke();
+      signatureCtx.beginPath();
+      signatureCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    }
+    function clearSignature() {
+      if (signatureCtx) signatureCtx.clearRect(0, 0, signaturePad.width, signaturePad.height);
+    }
+  </script>
 </body>
 </html>
