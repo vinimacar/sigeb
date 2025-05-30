@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" />
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
   <style>
     :root {
@@ -262,6 +263,15 @@
   </style>
 </head>
 <body>
+  <nav class="navbar navbar-dark" style="background: linear-gradient(90deg, #16213e 60%, #4facfe 100%); box-shadow: 0 2px 12px #0002;">
+    <div class="container-fluid justify-content-end">
+      <span id="userLogInfo" class="navbar-text" style="color:#fff; font-size:1rem; font-weight:500;">
+        <!-- Usuário logado aparecerá aqui -->
+      </span>
+      <button id="logoutBtn" class="btn btn-sm btn-outline-light ms-3">Sair</button>
+    </div>
+  </nav>
+
   <div class="sidebar">
     <div class="sidebar-header">
       <h3>SIGEB</h3>
@@ -347,7 +357,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
     // Configuração do Firebase (use a mesma do seu projeto)
     const firebaseConfig = {
@@ -363,7 +374,32 @@
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
-    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Exibe log do usuário logado
+    auth.onAuthStateChanged(async function(user) {
+      const userLogInfo = document.getElementById('userLogInfo');
+      if (user) {
+        // Busca nome do usuário no banco, se existir
+        let nome = '';
+        try {
+          const snap = await db.ref('usuarios/' + user.uid).once('value');
+          nome = snap.val() && snap.val().nome ? snap.val().nome : '';
+        } catch {}
+        userLogInfo.textContent = nome
+          ? `Logado como: ${nome} (${user.email})`
+          : `Logado como: ${user.email}`;
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = async function() {
+      await auth.signOut();
+      window.location.href = "index.html";
+    };
 
     async function atualizarDashboard() {
       // Livros
@@ -496,5 +532,3 @@
   </script>
 </body>
 </html>
-
-
