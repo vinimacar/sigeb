@@ -21,22 +21,32 @@
       --transition: all 0.3s cubic-bezier(.4,1,.7,1.1);
     }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    html, body {
+      height: 100vh;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      color: var(--text-light);
       margin: 0;
       padding: 0;
+      overflow: hidden; /* Remove barra de rolagem */
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
       overflow-x: hidden;
+      min-height: 100vh;
+      height: 100vh;
+      background: var(--primary);
     }
 
     .hero-container {
       position: relative;
       overflow: hidden;
-      padding: 4rem 0 2rem 0;
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
       z-index: 1;
     }
 
@@ -264,9 +274,12 @@
               <label for="loginEmail" class="form-label" style="color:#fff;">E-mail</label>
               <input type="email" class="form-control" id="loginEmail" required autocomplete="username">
             </div>
-            <div class="mb-3">
+            <div class="mb-3 position-relative">
               <label for="loginPassword" class="form-label" style="color:#fff;">Senha</label>
               <input type="password" class="form-control" id="loginPassword" required autocomplete="current-password">
+              <span class="toggle-password" toggle="#loginPassword" style="position:absolute;top:38px;right:16px;cursor:pointer;color:#4facfe;font-size:1.3rem;">
+                <i class="bx bx-show"></i>
+              </span>
             </div>
             <button type="submit" class="btn btn-primary w-100">Entrar</button>
             <div id="loginError" class="mt-2 text-danger" style="display:none;"></div>
@@ -288,15 +301,20 @@
               <input type="email" class="form-control" id="registerEmail" required autocomplete="username">
             </div>
             
-            <div class="mb-3">
+            <div class="mb-3 position-relative">
               <label for="registerPassword" class="form-label" style="color:#fff;">Senha</label>
               <input type="password" class="form-control" id="registerPassword" required autocomplete="new-password" minlength="6">
+              <span class="toggle-password" toggle="#registerPassword" style="position:absolute;top:38px;right:16px;cursor:pointer;color:#4facfe;font-size:1.3rem;">
+                <i class="bx bx-show"></i>
+              </span>
               <small class="text-muted">Mínimo 6 caracteres</small>
             </div>
-            
-            <div class="mb-3">
+            <div class="mb-3 position-relative">
               <label for="confirmPassword" class="form-label" style="color:#fff;">Confirme a Senha</label>
               <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password">
+              <span class="toggle-password" toggle="#confirmPassword" style="position:absolute;top:38px;right:16px;cursor:pointer;color:#4facfe;font-size:1.3rem;">
+                <i class="bx bx-show"></i>
+              </span>
               <div id="passwordMatch" class="mt-1" style="font-size: 0.8rem; display: none;"></div>
             </div>
             
@@ -336,6 +354,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="text-center mt-5 py-4" style="background:rgba(22,33,62,0.95); color:#e0e0e0;">
+    <div>
+      Desenvolvedores: Vinicius Silva, Maria Souza, João Pereira<br>
+      © 2025 SIGEB - Todos os direitos reservados<br>
+      Contato WhatsApp: 
+      <a href="https://wa.me/5534999188660" target="_blank" style="color:#4facfe; text-decoration:underline;">
+        (99) 99999-9999
+      </a>
+    </div>
+  </footer>
 
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
@@ -462,6 +492,23 @@
           alert(msg);
         });
     };
+
+    // Mostrar/ocultar senha
+    document.querySelectorAll('.toggle-password').forEach(function(el) {
+      el.addEventListener('click', function() {
+        const input = document.querySelector(this.getAttribute('toggle'));
+        const icon = this.querySelector('i');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('bx-show');
+          icon.classList.add('bx-hide');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('bx-hide');
+          icon.classList.add('bx-show');
+        }
+      });
+    });
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
