@@ -390,6 +390,9 @@
         userLogInfo.textContent = nome
           ? `Logado como: ${nome} (${user.email})`
           : `Logado como: ${user.email}`;
+      // Atualiza dashboard e atividades sempre que logar
+      atualizarDashboard();
+      carregarAtividadesRecentes();
       } else {
         window.location.href = "index.html";
       }
@@ -401,103 +404,113 @@
       window.location.href = "index.html";
     };
 
-    async function atualizarDashboard() {
+    // Atualiza todos os dados do dashboard em tempo real
+    function atualizarDashboard() {
       // Livros
-      const livrosSnap = await db.collection('livros').get();
-      document.getElementById('totalLivros').textContent = livrosSnap.size;
+      db.ref('livros').on('value', snapshot => {
+        const livros = snapshot.val();
+        document.getElementById('totalLivros').textContent = livros ? Object.keys(livros).length : 0;
+      });
 
       // Usuários
-      const usuariosSnap = await db.collection('usuarios').get();
-      document.getElementById('totalUsuarios').textContent = usuariosSnap.size;
+      db.ref('usuarios').on('value', snapshot => {
+        const usuarios = snapshot.val();
+        document.getElementById('totalUsuarios').textContent = usuarios ? Object.keys(usuarios).length : 0;
+      });
 
       // Empréstimos ativos
-      const emprestimosSnap = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
-      document.getElementById('totalEmprestimos').textContent = emprestimosSnap.size;
+      db.ref('emprestimos').on('value', snapshot => {
+        let totalEmprestimos = 0;
+        let totalReservas = 0;
+        snapshot.forEach(child => {
+          const data = child.val();
+          if (data.status === 'EMPRESTADO') totalEmprestimos++;
+          if (data.status === 'RESERVADO') totalReservas++;
+        });
+        document.getElementById('totalEmprestimos').textContent = totalEmprestimos;
+        document.getElementById('totalReservas').textContent = totalReservas;
+      });
 
-      // Reservas pendentes
-      const reservasSnap = await db.collection('emprestimos').where('status', '==', 'RESERVADO').get();
-      document.getElementById('totalReservas').textContent = reservasSnap.size;
-
-      // Buscar e exibir nome da escola cadastrada
-      const escolaSnap = await db.collection('configuracoes').doc('escola').get();
-      let nomeEscola = 'Escola não cadastrada';
-      if (escolaSnap.exists && escolaSnap.data().nome) {
-        nomeEscola = escolaSnap.data().nome;
-      }
-      document.getElementById('nomeEscola').textContent = nomeEscola;
+      // Nome da escola (se existir)
+      db.ref('configuracoes/escola').on('value', snapshot => {
+        const escola = snapshot.val();
+        document.getElementById('nomeEscola').textContent = escola && escola.nome ? escola.nome : 'Escola não cadastrada';
+      });
     }
 
-    // Função para buscar e exibir atividades recentes
-    async function carregarAtividadesRecentes() {
+    // Busca e exibe as 5 atividades recentes (últimos empréstimos/reservas/devoluções)
+    function carregarAtividadesRecentes() {
       const container = document.getElementById('recentActivities');
-      container.innerHTML = '';
+      db.ref('emprestimos').orderByChild('createdAt').limitToLast(5).on('value', async snapshot => {
+        const atividades = [];
+        snapshot.forEach(child => {
+          atividades.push({ id: child.key, ...child.val() });
+        });
+        atividades.reverse(); // Mais recente primeiro
 
-      // Busca os 5 últimos empréstimos
-      const emprestimosSnap = await db.collection('emprestimos')
-        .orderBy('createdAt', 'desc')
-        .limit(5)
-        .get();
-
-      if (emprestimosSnap.empty) {
-        container.innerHTML = `
-          <div class="activity-item">
-            <div class="activity-icon"><i class='bx bx-info-circle'></i></div>
-            <div class="activity-details">
-              <h4>Sem atividades recentes</h4>
-              <p>Nenhuma movimentação registrada.</p>
+        if (atividades.length === 0) {
+          container.innerHTML = `
+            <div class="activity-item">
+              <div class="activity-icon"><i class='bx bx-info-circle'></i></div>
+              <div class="activity-details">
+                <h4>Sem atividades recentes</h4>
+                <p>Nenhuma movimentação registrada.</p>
+              </div>
             </div>
-          </div>
-        `;
-        return;
-      }
-
-      for (const doc of emprestimosSnap.docs) {
-        const data = doc.data();
-        let icon = 'bxs-bookmark';
-        let title = 'Empréstimo realizado';
-        let desc = '';
-
-        // Busca usuário e livro para detalhar a atividade
-        const [userDoc, bookDoc] = await Promise.all([
-          db.collection('usuarios').doc(data.userId).get(),
-          db.collection('livros').doc(data.bookId).get()
-        ]);
-        const user = userDoc.exists ? userDoc.data().nome : 'Usuário';
-        const book = bookDoc.exists ? bookDoc.data().titulo : 'Livro';
-
-        if (data.status === 'EMPRESTADO') {
-          icon = 'bxs-bookmark';
-          title = 'Empréstimo realizado';
-          desc = `${user} pegou emprestado "${book}"`;
-        } else if (data.status === 'DEVOLVIDO') {
-          icon = 'bxs-book';
-          title = 'Livro devolvido';
-          desc = `${user} devolveu "${book}"`;
-        } else if (data.status === 'RESERVADO') {
-          icon = 'bxs-time';
-          title = 'Reserva realizada';
-          desc = `${user} reservou "${book}"`;
-        } else {
-          desc = `${user} movimentou "${book}"`;
+          `;
+          return;
         }
 
-        container.innerHTML += `
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class='bx ${icon}'></i>
+        container.innerHTML = '';
+        for (const data of atividades) {
+          let icon = 'bxs-bookmark';
+          let title = 'Empréstimo realizado';
+          let desc = '';
+
+          // Busca usuário e livro para detalhar a atividade
+          let user = 'Usuário';
+          let book = 'Livro';
+          try {
+            const [userSnap, bookSnap] = await Promise.all([
+              db.ref('usuarios/' + data.userId).once('value'),
+              db.ref('livros/' + data.bookId).once('value')
+            ]);
+            if (userSnap.exists() && userSnap.val().nome) user = userSnap.val().nome;
+            if (bookSnap.exists() && bookSnap.val().titulo) book = bookSnap.val().titulo;
+          } catch {}
+
+          if (data.status === 'EMPRESTADO') {
+            icon = 'bxs-bookmark';
+            title = 'Empréstimo realizado';
+            desc = `${user} pegou emprestado "${book}"`;
+          } else if (data.status === 'DEVOLVIDO') {
+            icon = 'bxs-book';
+            title = 'Livro devolvido';
+            desc = `${user} devolveu "${book}"`;
+          } else if (data.status === 'RESERVADO') {
+            icon = 'bxs-time';
+            title = 'Reserva realizada';
+            desc = `${user} reservou "${book}"`;
+          } else {
+            desc = `${user} movimentou "${book}"`;
+          }
+
+          container.innerHTML += `
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class='bx ${icon}'></i>
+              </div>
+              <div class="activity-details">
+                <h4>${title}</h4>
+                <p>${desc}</p>
+              </div>
             </div>
-            <div class="activity-details">
-              <h4>${title}</h4>
-              <p>${desc}</p>
-            </div>
-          </div>
-        `;
-      }
+          `;
+        }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      atualizarDashboard();
-      carregarAtividadesRecentes();
       AOS.init({
         duration: 800,
         once: true,
@@ -507,7 +520,6 @@
       const toggleSidebar = () => {
         const sidebar = document.querySelector('.sidebar');
         const mainContent = document.querySelector('.main-content');
-        
         if (window.innerWidth <= 768) {
           sidebar.classList.toggle('active');
           mainContent.style.marginLeft = sidebar.classList.contains('active') ? '250px' : '0';
@@ -532,3 +544,4 @@
   </script>
 </body>
 </html>
+
