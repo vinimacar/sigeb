@@ -270,6 +270,10 @@
           <input type="text" class="form-control" id="schoolSite" placeholder="https://www.escola.com">
         </div>
         <div class="mb-3">
+          <label class="form-label">CEP *</label>
+          <input type="text" class="form-control" id="schoolCEP" placeholder="00000-000" required maxlength="9">
+        </div>
+        <div class="mb-3">
           <label class="form-label">Endereço *</label>
           <input type="text" class="form-control" id="schoolAddress" placeholder="Rua, avenida, etc." required>
         </div>
@@ -280,10 +284,6 @@
         <div class="mb-3">
           <label class="form-label">Bairro *</label>
           <input type="text" class="form-control" id="schoolNeighborhood" placeholder="Bairro" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">CEP *</label>
-          <input type="text" class="form-control" id="schoolCEP" placeholder="00000-000" required>
         </div>
         <div class="mb-3">
           <label class="form-label">Cidade *</label>
@@ -393,6 +393,27 @@
         alert('Cadastro da escola salvo com sucesso!');
       } catch (err) {
         alert('Erro ao salvar cadastro da escola.');
+      }
+    });
+
+    document.getElementById('schoolCEP').addEventListener('blur', async function() {
+      const cep = this.value.replace(/\D/g, '');
+      if (cep.length !== 8) return;
+
+      // Busca no ViaCEP
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await res.json();
+        if (data.erro) {
+          alert('CEP não encontrado.');
+          return;
+        }
+        document.getElementById('schoolAddress').value = data.logradouro || '';
+        document.getElementById('schoolNeighborhood').value = data.bairro || '';
+        document.getElementById('schoolCity').value = data.localidade || '';
+        document.getElementById('schoolUF').value = data.uf || '';
+      } catch {
+        alert('Erro ao buscar o CEP.');
       }
     });
   </script>
