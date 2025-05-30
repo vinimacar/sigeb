@@ -254,22 +254,76 @@
   </style>
 </head>
 <body style="height: 100vh; min-height: 100vh; overflow: hidden;">
-  <div class="container-fluid hero-container d-flex flex-column justify-content-center align-items-center" style="min-height:100vh; height:100vh; overflow: hidden; padding-top: 0;">
-    <div class="logo-container mb-3" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+  <div class="container-fluid hero-container d-flex flex-column justify-content-center align-items-center" style="min-height:100vh; height:100vh; overflow:hidden; padding:0;">
+    <div class="logo-container mb-2" style="margin-bottom: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center;">
       <div class="logo-glow"></div>
-      <img src="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" alt="Logo do SIGEB" class="school-logo" data-aos="zoom-in" style="box-shadow: 0 0 40px 10px var(--accent2), 0 8px 32px rgba(0,0,0,0.25); border: 5px solid #fff;">
-      <h1 class="hero-title" style="margin-top: 1.2rem; margin-bottom: 0.5rem; font-size: 3.5rem; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 4px 24px var(--accent2), 0 2px 10px rgba(0,0,0,0.12); letter-spacing: 3px;">SIGEB</h1>
+      <img src="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" alt="Logo do SIGEB" class="school-logo" style="width:120px;height:120px;box-shadow:0 0 20px 5px var(--accent2);border:3px solid #fff;">
+      <h1 class="hero-title" style="margin-top:0.7rem;margin-bottom:0.2rem;font-size:2rem;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 8px var(--accent2),0 1px 4px rgba(0,0,0,0.12);letter-spacing:2px;">SIGEB</h1>
+    </div>
+    <div class="w-100 d-flex flex-column align-items-center" style="max-width:320px;">
+      <div id="login-container" style="width:100%;display:block;">
+        <form id="loginForm" class="p-2 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Login</h5>
+          <div class="mb-2">
+            <label for="loginEmail" class="form-label" style="color:#fff;font-size:0.95rem;">E-mail</label>
+            <input type="email" class="form-control form-control-sm" id="loginEmail" required autocomplete="username">
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="loginPassword" class="form-label" style="color:#fff;font-size:0.95rem;">Senha</label>
+            <input type="password" class="form-control form-control-sm" id="loginPassword" required autocomplete="current-password">
+            <span class="toggle-password" toggle="#loginPassword" style="position:absolute;top:32px;right:12px;cursor:pointer;color:#4facfe;font-size:1.1rem;">
+              <i class="bx bx-show"></i>
+            </span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Entrar</button>
+          <div id="loginError" class="mt-1 text-danger" style="display:none;font-size:0.9rem;"></div>
+          <div class="text-center mt-2">
+            <button type="button" id="showRegisterBtn" class="btn btn-link p-0" style="color:#4facfe;font-size:0.95rem;">Não tem conta? Cadastre-se</button>
+          </div>
+          <div class="text-center mt-1">
+            <button type="button" id="forgotPasswordBtn" class="btn btn-link p-0" style="color:#4facfe;font-size:0.95rem;">Esqueceu a senha?</button>
+          </div>
+        </form>
+      </div>
+      <div id="register-container" style="width:100%;display:none;">
+        <form id="registerForm" class="p-2 rounded" style="background:rgba(255,255,255,0.07);box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Cadastro</h5>
+          <div class="mb-2">
+            <label for="registerEmail" class="form-label" style="color:#fff;font-size:0.95rem;">E-mail</label>
+            <input type="email" class="form-control form-control-sm" id="registerEmail" required autocomplete="username">
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="registerPassword" class="form-label" style="color:#fff;font-size:0.95rem;">Senha</label>
+            <input type="password" class="form-control form-control-sm" id="registerPassword" required autocomplete="new-password" minlength="6">
+            <span class="toggle-password" toggle="#registerPassword" style="position:absolute;top:32px;right:12px;cursor:pointer;color:#4facfe;font-size:1.1rem;">
+              <i class="bx bx-show"></i>
+            </span>
+            <small class="text-muted" style="font-size:0.85rem;">Mínimo 6 caracteres</small>
+          </div>
+          <div class="mb-2 position-relative">
+            <label for="confirmPassword" class="form-label" style="color:#fff;font-size:0.95rem;">Confirme a Senha</label>
+            <input type="password" class="form-control form-control-sm" id="confirmPassword" required autocomplete="new-password">
+            <span class="toggle-password" toggle="#confirmPassword" style="position:absolute;top:32px;right:12px;cursor:pointer;color:#4facfe;font-size:1.1rem;">
+              <i class="bx bx-show"></i>
+            </span>
+            <div id="passwordMatch" class="mt-1" style="font-size:0.8rem; display:none;"></div>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm w-100">Cadastrar</button>
+          <div id="registerError" class="mt-1 text-danger" style="display:none;font-size:0.9rem;"></div>
+          <div id="registerSuccess" class="mt-1 text-success" style="display:none;font-size:0.9rem;"></div>
+          <div class="text-center mt-2">
+            <button type="button" id="backToLoginBtn" class="btn btn-link p-0" style="color:#4facfe;font-size:0.95rem;">Já tem conta? Fazer login</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
   <!-- Footer -->
-  <footer class="text-center py-2 w-100" style="background:rgba(22,33,62,0.85); color:#e0e0e0; position:absolute; left:0; right:0; bottom:0; font-size:0.85rem;">
+  <footer class="text-center py-1 w-100" style="background:rgba(22,33,62,0.7); color:#e0e0e0; position:absolute; left:0; right:0; bottom:0; font-size:0.75rem;">
     <div>
-      Desenvolvido por: VMC Soluções em Aplicações Web<br>
-      © 2025 SIGEB - Todos os direitos reservados<br>
-      Contato WhatsApp: 
-      <a href="https://wa.me/5534999188660" target="_blank" style="color:#4facfe; text-decoration:underline;">
-        (99) 99999-9999
-      </a>
+      Desenvolvido por: VMC Soluções<br>
+      © 2025 SIGEB<br>
+      WhatsApp: <a href="https://wa.me/5534999188660" target="_blank" style="color:#4facfe; text-decoration:underline;">(99) 99999-9999</a>
     </div>
   </footer>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
