@@ -365,7 +365,15 @@
         await auth.signInWithEmailAndPassword(email, password);
         window.location.href = 'dashboard.html';
       } catch (error) {
-        errorDiv.textContent = 'E-mail ou senha inválidos.';
+        let msg = 'E-mail ou senha inválidos.';
+        if (error.code === 'auth/user-not-found') {
+          msg = 'Usuário não cadastrado.';
+        } else if (error.code === 'auth/wrong-password') {
+          msg = 'Senha incorreta.';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'E-mail inválido.';
+        }
+        errorDiv.textContent = msg;
         errorDiv.style.display = 'block';
       }
     });
@@ -604,6 +612,5 @@ document.getElementById('registerForm').addEventListener('submit', async functio
 </script>
 </body>
 </html>
-
 
 
