@@ -215,18 +215,18 @@
     const escolasContainer = document.getElementById('escolasContainer');
     let escolaSelecionada = null;
 
-    // Busca as escolas do Firestore e exibe como cards para seleção
-    firebase.firestore().collection('escolas').get().then(snapshot => {
+    // Busca as escolas do Realtime Database e exibe como cards para seleção
+    db.ref('escolas').once('value').then(snapshot => {
       let html = '<label class="form-label mb-2">Selecione a escola que você pertence:</label><div class="row">';
-      snapshot.forEach(doc => {
-        const escola = doc.data();
+      snapshot.forEach(childSnap => {
+        const escola = childSnap.val();
         html += `
           <div class="col-md-6 mb-3">
-            <div class="card escola-card" data-id="${doc.id}" style="cursor:pointer; border:2px solid #4facfe;">
+            <div class="card escola-card" data-id="${childSnap.key}" style="cursor:pointer; border:2px solid #4facfe;">
               <div class="card-body">
                 <h5 class="card-title mb-1">${escola.nome}</h5>
                 <div style="font-size:0.95rem;">
-                  <b>Código:</b> ${doc.id}<br>
+                  <b>Código:</b> ${childSnap.key}<br>
                   <b>Cidade:</b> ${escola.cidade || ''} - ${escola.uf || ''}
                 </div>
               </div>
@@ -398,4 +398,3 @@
   </script>
 </body>
 </html>
-
