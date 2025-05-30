@@ -266,23 +266,28 @@
             <label for="registerEmail" class="form-label">E-mail</label>
             <input type="email" class="form-control form-control-sm" id="registerEmail" required autocomplete="username">
           </div>
-          <div class="mb-2 position-relative">
-            <label for="registerPassword" class="form-label">Senha</label>
-            <input type="password" class="form-control form-control-sm" id="registerPassword" required autocomplete="new-password" minlength="6">
-            <span class="toggle-password" toggle="#registerPassword">
-              <i class="bx bx-show"></i>
-            </span>
-            <small class="text-muted" style="font-size:0.85rem;">Mínimo 6 caracteres</small>
+          <div class="mb-2">
+            <button type="button" id="continueRegisterBtn" class="btn btn-success btn-sm w-100">Continuar cadastro</button>
           </div>
-          <div class="mb-2 position-relative">
-            <label for="confirmPassword" class="form-label">Confirme a Senha</label>
-            <input type="password" class="form-control form-control-sm" id="confirmPassword" required autocomplete="new-password">
-            <span class="toggle-password" toggle="#confirmPassword">
-              <i class="bx bx-show"></i>
-            </span>
-            <div id="passwordMatch" class="mt-1" style="font-size:0.8rem; display:none;"></div>
+          <div id="registerStep2" style="display:none;">
+            <div class="mb-2 position-relative">
+              <label for="registerPassword" class="form-label">Senha</label>
+              <input type="password" class="form-control form-control-sm" id="registerPassword" required autocomplete="new-password" minlength="6">
+              <span class="toggle-password" toggle="#registerPassword">
+                <i class="bx bx-show"></i>
+              </span>
+              <small class="text-muted" style="font-size:0.85rem;">Mínimo 6 caracteres</small>
+            </div>
+            <div class="mb-2 position-relative">
+              <label for="confirmPassword" class="form-label">Confirme a Senha</label>
+              <input type="password" class="form-control form-control-sm" id="confirmPassword" required autocomplete="new-password">
+              <span class="toggle-password" toggle="#confirmPassword">
+                <i class="bx bx-show"></i>
+              </span>
+              <div id="passwordMatch" class="mt-1" style="font-size:0.8rem; display:none;"></div>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm w-100">Cadastrar</button>
           </div>
-          <button type="submit" class="btn btn-secondary btn-sm w-100">Cadastrar</button>
           <div id="registerError" class="mt-1 text-danger" style="display:none;font-size:0.9rem;"></div>
           <div id="registerSuccess" class="mt-1 text-success" style="display:none;font-size:0.9rem;"></div>
           <div class="text-center mt-2">
@@ -392,6 +397,28 @@
 
     // Exemplo de uso do logout (adicione um botão de logout e chame logout() no click):
     // <button onclick="logout()">Sair</button>
+
+    // Cadastro em duas etapas: primeiro e-mail, depois senha
+    document.getElementById('continueRegisterBtn').onclick = function() {
+      const email = document.getElementById('registerEmail').value.trim();
+      const errorDiv = document.getElementById('registerError');
+      errorDiv.style.display = 'none';
+      if (!email) {
+        errorDiv.textContent = 'Digite um e-mail válido para continuar.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      // Validação simples de e-mail
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        errorDiv.textContent = 'Digite um e-mail válido.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      document.getElementById('registerEmail').setAttribute('readonly', 'readonly');
+      document.getElementById('continueRegisterBtn').style.display = 'none';
+      document.getElementById('registerStep2').style.display = 'block';
+    };
 
     // Cadastro de novo usuário
     document.getElementById('registerForm').addEventListener('submit', async function(e) {
