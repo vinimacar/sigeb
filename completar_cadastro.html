@@ -60,6 +60,8 @@
 <body>
   <div class="cadastro-container">
     <h3 class="mb-4 text-center">Completar Cadastro</h3>
+    <!-- Adicione este bloco antes do formulário de cadastro -->
+    <div id="escolasContainer" class="mb-4"></div>
     <form id="completarCadastroForm" autocomplete="off">
       <div class="row">
         <div class="mb-3 col-md-12">
@@ -152,6 +154,41 @@
       }
     });
 
+    // Busca as escolas do Firestore e exibe como cards para seleção
+    const escolasContainer = document.getElementById('escolasContainer');
+    let escolaSelecionada = null;
+
+    firebase.firestore().collection('escolas').get().then(snapshot => {
+      let html = '<label class="form-label mb-2">Selecione a escola que você pertence:</label><div class="row">';
+      snapshot.forEach(doc => {
+        const escola = doc.data();
+        html += `
+          <div class="col-md-6 mb-3">
+            <div class="card escola-card" data-id="${doc.id}" style="cursor:pointer; border:2px solid #4facfe;">
+              <div class="card-body">
+                <h5 class="card-title mb-1">${escola.nome}</h5>
+                <div style="font-size:0.95rem;">
+                  <b>Código:</b> ${doc.id}<br>
+                  <b>Cidade:</b> ${escola.cidade || ''} - ${escola.uf || ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      escolasContainer.innerHTML = html;
+
+      // Seleção visual do card
+      document.querySelectorAll('.escola-card').forEach(card => {
+        card.onclick = function() {
+          document.querySelectorAll('.escola-card').forEach(c => c.style.boxShadow = '');
+          this.style.boxShadow = '0 0 0 3px #00f2fe';
+          escolaSelecionada = this.getAttribute('data-id');
+        };
+      });
+    });
+
     // Após garantir que o usuário está logado, busque a escola vinculada
     auth.onAuthStateChanged(async function(user) {
       if (!user) {
@@ -186,6 +223,16 @@
 
     document.getElementById('completarCadastroForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      const msgDiv = document.getElementById('cadastroMsg');
+      msgDiv.textContent = '';
+      msgDiv.className = 'mt-3 text-center';
+
+      if (!escolaSelecionada) {
+        msgDiv.textContent = "Selecione a escola que você pertence.";
+        msgDiv.classList.add('text-danger');
+        return;
+      }
+
       const nome = document.getElementById('nome').value.trim();
       const telefone = document.getElementById('telefone').value.trim();
       const cpf = document.getElementById('cpf').value.trim();
@@ -198,9 +245,6 @@
       const bairro = document.getElementById('bairro').value.trim();
       const cidade = document.getElementById('cidade').value.trim();
       const estado = document.getElementById('estado').value.trim();
-      const msgDiv = document.getElementById('cadastroMsg');
-      msgDiv.textContent = '';
-      msgDiv.className = 'mt-3 text-center';
 
       const user = auth.currentUser;
       if (!user) {
@@ -223,10 +267,10 @@
           bairro: bairro,
           cidade: cidade,
           estado: estado,
+          escolaId: escolaSelecionada, // salva a escola escolhida
           cadastroCompleto: true
         });
 
-        // Verifica função para acesso
         if (["bibliotecario", "diretor", "administrador"].includes(funcao)) {
           msgDiv.textContent = "Cadastro completo com sucesso!";
           msgDiv.classList.add('text-success');
@@ -259,6 +303,17 @@
       if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2');
       e.target.value = v;
     });
+
+    // Supondo que você já tenha o escolaId do usuário logado
+    db.collection('livros').where('escolaId', '==', escolaId).get().then(snapshot => {
+      // Lógica para exibir os livros da escola
+    });
+
+    db.collection('livros').add({
+  titulo: 'Livro Exemplo',
+  autor: 'Autor',
+  escolaId: escolaId // sempre vincule!
+});
   </script>
 </body>
 </html>
