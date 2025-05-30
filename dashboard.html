@@ -336,6 +336,11 @@
         <h3 id="totalReservas">...</h3>
         <p>Reservas Pendentes</p>
       </div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="500">
+        <i class='bx bx-info-circle tooltip-info' title="Empréstimos em atraso"></i>
+        <h3 id="totalAtrasados">...</h3>
+        <p>Empréstimos Atrasados</p>
+      </div>
     </div>
 
     <div class="recent-activities" data-aos="fade-up" data-aos-delay="500">
@@ -418,17 +423,27 @@
         document.getElementById('totalUsuarios').textContent = usuarios ? Object.keys(usuarios).length : 0;
       });
 
-      // Empréstimos ativos
+      // Empréstimos ativos, reservas e atrasados
       db.ref('emprestimos').on('value', snapshot => {
         let totalEmprestimos = 0;
         let totalReservas = 0;
+        let totalAtrasados = 0;
+        const hoje = new Date();
         snapshot.forEach(child => {
           const data = child.val();
-          if (data.status === 'EMPRESTADO') totalEmprestimos++;
+          if (data.status === 'EMPRESTADO') {
+            totalEmprestimos++;
+            // Verifica atraso
+            if (data.dataDevolucao) {
+              const dataDevolucao = new Date(data.dataDevolucao);
+              if (dataDevolucao < hoje) totalAtrasados++;
+            }
+          }
           if (data.status === 'RESERVADO') totalReservas++;
         });
         document.getElementById('totalEmprestimos').textContent = totalEmprestimos;
         document.getElementById('totalReservas').textContent = totalReservas;
+        document.getElementById('totalAtrasados').textContent = totalAtrasados;
       });
 
       // Nome da escola (se existir)
