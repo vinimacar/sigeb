@@ -277,6 +277,7 @@
         html += '</tbody></table>';
       }
       document.getElementById('reportResult').innerHTML = html || '<p>Nenhum dado encontrado.</p>';
+      document.getElementById('btnBaixarPDF').disabled = !table; // Habilita se houver tabela
     });
 
     // Função para baixar o relatório em PDF
