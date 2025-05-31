@@ -327,7 +327,7 @@
       else if (tipo === 'usuarios') title = 'Relatório de Usuários';
       else if (tipo === 'emprestimos') title = 'Relatório de Empréstimos';
 
-      getBase64Image('logo.png', function(logoBase64) {
+      getBase64Image('imagens/logo.png', function(logoBase64) {
         const doc = new jspdf.jsPDF('l', 'pt', 'a4');
         // Adiciona a logo (ajuste x, y, largura, altura conforme necessário)
         doc.addImage(logoBase64, 'PNG', 40, 10, 60, 30);
