@@ -182,13 +182,12 @@
         const snapshot = await query.get();
         html = `<h5>Relatório de Usuários</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Nome</th><th>Email</th><th>Cargo</th><th>Função</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>`;
+        <tr><th>Nome</th><th>Email</th><th>Função</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>`;
         snapshot.forEach(doc => {
           const d = doc.data();
           html += `<tr>
             <td>${d.nome || ''}</td>
             <td>${d.email || ''}</td>
-            <td>${d.cargo || ''}</td>
             <td>${d.funcao || ''}</td>
             <td>${d.status || ''}</td>
             <td>${d.dataCadastro ? new Date(d.dataCadastro.seconds*1000).toLocaleDateString() : ''}</td>
