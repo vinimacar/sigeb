@@ -280,7 +280,7 @@
     });
 
     // Função para baixar o relatório em PDF
-    document.getElementById('btnBaixarPDF').addEventListener('click', function() {
+    document.getElementById('btnBaixarPDF').addEventListener('click', async function() {
       const tipo = document.getElementById('reportType').value;
       const reportDiv = document.getElementById('reportResult');
       const table = reportDiv.querySelector('table');
@@ -289,20 +289,64 @@
         return;
       }
 
-      const doc = new jspdf.jsPDF('l', 'pt', 'a4');
+      // Nome da escola
+      const nomeEscola = 'Escola Exemplo';
+
+      // Captura usuário logado
+      let usuarioLogado = '';
+      if (auth.currentUser) {
+        const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
+        usuarioLogado = userDoc.exists ? userDoc.data().nome : auth.currentUser.email;
+      } else {
+        usuarioLogado = 'Desconhecido';
+      }
+
+      // Data e hora atual
+      const dataHora = new Date();
+      const dataHoraStr = dataHora.toLocaleString();
+
+      // Carrega a logo como base64
+      function getBase64Image(url, callback) {
+        var img = new window.Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          var dataURL = canvas.toDataURL('image/png');
+          callback(dataURL);
+        };
+        img.src = url;
+      }
+
       let title = '';
       if (tipo === 'livros') title = 'Relatório de Livros';
       else if (tipo === 'usuarios') title = 'Relatório de Usuários';
       else if (tipo === 'emprestimos') title = 'Relatório de Empréstimos';
 
-      doc.text(title, 40, 40);
-      doc.autoTable({
-        html: table,
-        startY: 60,
-        styles: { font: 'helvetica', fontSize: 10 },
-        headStyles: { fillColor: [79, 172, 254] }
+      getBase64Image('logo.png', function(logoBase64) {
+        const doc = new jspdf.jsPDF('l', 'pt', 'a4');
+        // Adiciona a logo (ajuste x, y, largura, altura conforme necessário)
+        doc.addImage(logoBase64, 'PNG', 40, 10, 60, 30);
+
+        doc.setFontSize(14);
+        doc.text(nomeEscola, 120, 30);
+        doc.setFontSize(12);
+        doc.text(title, 120, 50);
+        doc.setFontSize(10);
+        doc.text(`Usuário: ${usuarioLogado}`, 120, 65);
+        doc.text(`Data/Hora: ${dataHoraStr}`, 300, 65);
+
+        doc.autoTable({
+          html: table,
+          startY: 80,
+          styles: { font: 'helvetica', fontSize: 10 },
+          headStyles: { fillColor: [79, 172, 254] }
+        });
+        doc.save(`${title.replace(/\s/g, '_').toLowerCase()}.pdf`);
       });
-      doc.save(`${title.replace(/\s/g, '_').toLowerCase()}.pdf`);
     });
 
     // Função para buscar e mostrar os empréstimos atrasados na barra
@@ -361,5 +405,8 @@
   </script>
 </body>
 </html>
+
+
+
 
 
