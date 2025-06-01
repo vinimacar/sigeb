@@ -904,34 +904,35 @@
           }
         }
 
-        // Registra todos os empréstimos em uma transação
+        // Registra o empréstimo em uma transação
         await db.runTransaction(async (transaction) => {
+          // Atualiza a quantidade de cada livro
           for (const loan of loans) {
             const bookRef = db.collection('livros').doc(loan.bookId);
             const bookDoc = await transaction.get(bookRef);
             transaction.update(bookRef, {
               quantidade: bookDoc.data().quantidade - loan.quantity
             });
-            const loanRef = db.collection('emprestimos').doc();
-            transaction.set(loanRef, {
-              userId,
-              bookId: loan.bookId,
-              quantity: loan.quantity,
-              loanDate,
-              returnDate,
-              status: 'EMPRESTADO',
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
           }
+          // Cria um único documento de empréstimo com todos os livros
+          const loanRef = db.collection('emprestimos').doc();
+          transaction.set(loanRef, {
+            userId,
+            books: loans, // array de livros e quantidades
+            loanDate,
+            returnDate,
+            status: 'EMPRESTADO',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
         });
 
-        // Envia email para cada livro
+        // Envia email para cada livro (opcional: pode enviar um único email com todos os livros)
         for (const loan of loans) {
           const bookDoc = await db.collection('livros').doc(loan.bookId).get();
           await sendLoanEmail(userId, bookDoc.data().titulo, loan.quantity, loanDate, returnDate);
         }
 
-        showAlert('success', 'Empréstimo(s) registrado(s) com sucesso! Um email de confirmação foi enviado.');
+        showAlert('success', 'Empréstimo registrado com sucesso! Um email de confirmação foi enviado.');
         form.reset();
         // Remove linhas extras
         document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
