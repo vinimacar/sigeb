@@ -936,7 +936,7 @@
         // Remove linhas extras
         document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
         document.querySelector('.availableQuantity').textContent = '-';
-        bootstrap.Modal.getInstance(document.getElementById('addLoanModal')).hide();
+        closeAddLoanModal();
         loadLoans();
 
         // Mostra comprovante do primeiro livro
@@ -1446,6 +1446,17 @@
     function clearSignature() {
       if (signatureCtx) signatureCtx.clearRect(0, 0, signaturePad.width, signaturePad.height);
     }
+
+    // Antes de fechar o modal, remova o foco de qualquer campo dentro dele
+    function closeAddLoanModal() {
+      const modal = document.getElementById('addLoanModal');
+      const focused = modal.querySelector(':focus');
+      if (focused) focused.blur();
+      bootstrap.Modal.getInstance(modal).hide();
+    }
+
+    // Substitua onde você fecha o modal por:
+    closeAddLoanModal();
   </script>
 </body>
 </html>
