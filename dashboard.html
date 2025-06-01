@@ -436,13 +436,30 @@
         const hoje = new Date();
         snapshot.forEach(child => {
           const data = child.data();
+          // Suporte para múltiplos livros por empréstimo (aba emprestimos.html)
+          let booksArray = [];
+          if (Array.isArray(data.books)) {
+            booksArray = data.books;
+          } else if (data.bookId && data.quantity) {
+            booksArray = [{ bookId: data.bookId, quantity: data.quantity }];
+          }
+
+          // Conta empréstimos ativos
           if (data.status === 'EMPRESTADO') {
-            totalEmprestimos++;
+            // Soma todas as quantidades dos livros deste empréstimo
+            let totalQtd = 0;
+            booksArray.forEach(item => {
+              totalQtd += item.quantity || 1;
+            });
+            totalEmprestimos += totalQtd;
+
             // Verifica atraso
-            if (data.dataDevolucao) {
-              const dataDevolucao = new Date(data.dataDevolucao);
+            if (data.returnDate) {
+              // data.returnDate no formato dd/mm/yyyy
+              const [d, m, y] = data.returnDate.split('/');
+              const dataDevolucao = new Date(`${y}-${m}-${d}`);
               if (dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)) {
-                totalAtrasados++;
+                totalAtrasados += totalQtd;
               }
             }
           }
