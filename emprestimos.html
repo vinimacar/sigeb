@@ -766,6 +766,7 @@
     // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
     async function searchUsers() {
       const searchTerm = document.getElementById('userSearch').value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
       const resultsDiv = document.getElementById('userSearchResults');
       resultsDiv.innerHTML = '';
       resultsDiv.classList.remove('show');
@@ -773,10 +774,16 @@
       if (searchTerm.length < 2) return;
 
       try {
-        // Busca por nome
+        // Busca por nome (original e minúsculo)
         const queryByName = db.collection('usuarios')
           .where('nome', '>=', searchTerm)
           .where('nome', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByNameLower = db.collection('usuarios')
+          .where('nome', '>=', searchTermLower)
+          .where('nome', '<=', searchTermLower + '\uf8ff')
           .limit(10)
           .get();
 
@@ -787,11 +794,12 @@
           .limit(10)
           .get();
 
-        const [nameSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByMatricula]);
+        const [nameSnapshot, nameLowerSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByNameLower, queryByMatricula]);
 
         // Usar Map para evitar duplicatas
         const usersMap = new Map();
         nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        nameLowerSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
         matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
 
         if (usersMap.size === 0) {
@@ -840,14 +848,22 @@
         resultsDiv = inputOrBtn.parentElement.parentElement.querySelector('.bookSearchResults');
       }
       const searchTerm = input.value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
       resultsDiv.innerHTML = '';
       resultsDiv.classList.remove('show');
       if (searchTerm.length < 2) return;
 
       try {
+        // Busca por título (original e minúsculo)
         const queryByTitle = db.collection('livros')
           .where('titulo', '>=', searchTerm)
           .where('titulo', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByTitleLower = db.collection('livros')
+          .where('titulo', '>=', searchTermLower)
+          .where('titulo', '<=', searchTermLower + '\uf8ff')
           .limit(10)
           .get();
 
@@ -857,9 +873,10 @@
           .limit(10)
           .get();
 
-        const [titleSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByISBN]);
+        const [titleSnapshot, titleLowerSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByTitleLower, queryByISBN]);
         const booksMap = new Map();
         titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        titleLowerSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
         isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
 
         if (booksMap.size === 0) {
@@ -991,10 +1008,7 @@
           });
         });
 
-        // Envia um único email com todos os livros
-        await sendLoanEmailMulti(userId, loans, loanDate, returnDate);
-
-        showAlert('success', 'Empréstimo registrado com sucesso! Um email de confirmação foi enviado.');
+        showAlert('success', 'Empréstimo registrado com sucesso!');
         form.reset();
         // Remove linhas extras
         document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
@@ -1445,6 +1459,26 @@
       document.getElementById('loanReceiptContent').innerHTML = content;
       // Limpa assinatura
       clearSignature();
+
+      // Adiciona botão WhatsApp se houver telefone cadastrado
+      let whatsappBtn = '';
+      if (userData.telefone) {
+        // Formata telefone para padrão internacional (ex: 5511999999999)
+        let phone = userData.telefone.replace(/\D/g, '');
+        if (phone.length === 11 && !phone.startsWith('55')) {
+          phone = '55' + phone;
+        }
+        const msg = encodeURIComponent(
+          `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivro: ${bookData.titulo}\nQuantidade: ${loanData.quantity}\nData do Empréstimo: ${loanData.loanDate}\nData de Devolução: ${loanData.returnDate}\n\nPor favor, devolva o livro na data correta.`
+        );
+        whatsappBtn = `
+          <a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn btn-success mb-2">
+            <i class="bx bxl-whatsapp"></i> Enviar comprovante por WhatsApp
+          </a>
+        `;
+      }
+      document.getElementById('loanReceiptContent').insertAdjacentHTML('beforeend', whatsappBtn);
+
       new bootstrap.Modal(document.getElementById('printLoanModal')).show();
     }
 
