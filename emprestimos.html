@@ -1452,11 +1452,12 @@
       const modal = document.getElementById('addLoanModal');
       const focused = modal.querySelector(':focus');
       if (focused) focused.blur();
-      bootstrap.Modal.getInstance(modal).hide();
+      // Corrige erro: só chama hide() se houver instância do modal
+      const modalInstance = bootstrap.Modal.getInstance(modal);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
     }
-
-    // Substitua onde você fecha o modal por:
-    closeAddLoanModal();
   </script>
 </body>
 </html>
