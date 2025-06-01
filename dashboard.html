@@ -331,11 +331,6 @@
         <h3 id="totalEmprestimos">...</h3>
         <p>Empréstimos Ativos</p>
       </div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="400">
-        <i class='bx bx-info-circle tooltip-info' title="Livros aguardando retirada"></i>
-        <h3 id="totalReservas">...</h3>
-        <p>Reservas Pendentes</p>
-      </div>
       <div class="stat-card" data-aos="fade-up" data-aos-delay="500">
         <i class='bx bx-info-circle tooltip-info' title="Empréstimos em atraso"></i>
         <h3 id="totalAtrasados">...</h3>
@@ -459,73 +454,82 @@
     // Busca e exibe as 5 atividades recentes (últimos empréstimos/reservas/devoluções)
     async function carregarAtividadesRecentes() {
       const container = document.getElementById('recentActivities');
-      db.collection('emprestimos').orderBy('createdAt').limit(5).onSnapshot(async snapshot => {
-        const atividades = [];
-        snapshot.forEach(child => {
-          atividades.push({ id: child.id, ...child.data() });
-        });
-        atividades.reverse(); // Mais recente primeiro
+      db.collection('emprestimos')
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .onSnapshot(async snapshot => {
+          const atividades = [];
+          snapshot.forEach(child => {
+            atividades.push({ id: child.id, ...child.data() });
+          });
 
-        if (atividades.length === 0) {
-          container.innerHTML = `
-            <div class="activity-item">
-              <div class="activity-icon"><i class='bx bx-info-circle'></i></div>
-              <div class="activity-details">
-                <h4>Sem atividades recentes</h4>
-                <p>Nenhuma movimentação registrada.</p>
+          if (atividades.length === 0) {
+            container.innerHTML = `
+              <div class="activity-item">
+                <div class="activity-icon"><i class='bx bx-info-circle'></i></div>
+                <div class="activity-details">
+                  <h4>Sem atividades recentes</h4>
+                  <p>Nenhuma movimentação registrada.</p>
+                </div>
               </div>
-            </div>
-          `;
-          return;
-        }
-
-        container.innerHTML = '';
-        for (const data of atividades) {
-          let icon = 'bxs-bookmark';
-          let title = 'Empréstimo realizado';
-          let desc = '';
-
-          // Busca usuário e livro para detalhar a atividade
-          let user = 'Usuário';
-          let book = 'Livro';
-          try {
-            const [userSnap, bookSnap] = await Promise.all([
-              db.collection('usuarios').doc(data.userId).get(),
-              db.collection('livros').doc(data.bookId).get()
-            ]);
-            if (userSnap.exists && userSnap.data().nome) user = userSnap.data().nome;
-            if (bookSnap.exists && bookSnap.data().titulo) book = bookSnap.data().titulo;
-          } catch {}
-
-          if (data.status === 'EMPRESTADO') {
-            icon = 'bxs-bookmark';
-            title = 'Empréstimo realizado';
-            desc = `${user} pegou emprestado "${book}"`;
-          } else if (data.status === 'DEVOLVIDO') {
-            icon = 'bxs-book';
-            title = 'Livro devolvido';
-            desc = `${user} devolveu "${book}"`;
-          } else if (data.status === 'RESERVADO') {
-            icon = 'bxs-time';
-            title = 'Reserva realizada';
-            desc = `${user} reservou "${book}"`;
-          } else {
-            desc = `${user} movimentou "${book}"`;
+            `;
+            return;
           }
 
-          container.innerHTML += `
-            <div class="activity-item">
-              <div class="activity-icon">
-                <i class='bx ${icon}'></i>
+          container.innerHTML = '';
+          for (const data of atividades) {
+            let icon = 'bxs-bookmark';
+            let title = 'Empréstimo realizado';
+            let desc = '';
+            let dataMov = '';
+
+            // Busca usuário e livro para detalhar a atividade
+            let user = 'Usuário';
+            let book = 'Livro';
+            try {
+              const [userSnap, bookSnap] = await Promise.all([
+                db.collection('usuarios').doc(data.userId).get(),
+                db.collection('livros').doc(data.bookId).get()
+              ]);
+              if (userSnap.exists && userSnap.data().nome) user = userSnap.data().nome;
+              if (bookSnap.exists && bookSnap.data().titulo) book = bookSnap.data().titulo;
+            } catch {}
+
+            // Data da movimentação
+            if (data.createdAt && data.createdAt.seconds) {
+              const dt = new Date(data.createdAt.seconds * 1000);
+              dataMov = `<span style="color:#888;font-size:0.85em;">${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            }
+
+            if (data.status === 'EMPRESTADO') {
+              icon = 'bxs-bookmark';
+              title = 'Empréstimo realizado';
+              desc = `${user} pegou emprestado "${book}"`;
+            } else if (data.status === 'DEVOLVIDO') {
+              icon = 'bxs-book';
+              title = 'Livro devolvido';
+              desc = `${user} devolveu "${book}"`;
+            } else if (data.status === 'RESERVADO') {
+              icon = 'bxs-time';
+              title = 'Reserva realizada';
+              desc = `${user} reservou "${book}"`;
+            } else {
+              desc = `${user} movimentou "${book}"`;
+            }
+
+            container.innerHTML += `
+              <div class="activity-item">
+                <div class="activity-icon">
+                  <i class='bx ${icon}'></i>
+                </div>
+                <div class="activity-details">
+                  <h4>${title}</h4>
+                  <p>${desc} ${dataMov}</p>
+                </div>
               </div>
-              <div class="activity-details">
-                <h4>${title}</h4>
-                <p>${desc}</p>
-              </div>
-            </div>
-          `;
-        }
-      });
+            `;
+          }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
