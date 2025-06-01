@@ -236,6 +236,8 @@
           <th>Livro</th>
           <th>Data Empréstimo</th>
           <th>Data Devolução</th>
+          <th>loanDate</th>
+          <th>returnDate</th>
           <th>Status</th>
         </tr></thead><tbody>`;
 
@@ -248,8 +250,8 @@
           // Determina status real
           let status = d.status;
           if (d.status === 'EMPRESTADO' && d.dataDevolucao && d.dataDevolucao.seconds) {
-            const returnDate = new Date(d.dataDevolucao.seconds * 1000);
-            if (returnDate < new Date(today.setHours(0,0,0,0))) {
+            const returnDateObj = new Date(d.dataDevolucao.seconds * 1000);
+            if (returnDateObj < new Date(today.setHours(0,0,0,0))) {
               status = 'ATRASADO';
             }
           }
@@ -258,7 +260,7 @@
           if (situacao === 'ativo' && status !== 'EMPRESTADO') continue;
           if (situacao === 'atrasado' && status !== 'ATRASADO') continue;
 
-          // Mostra datas de empréstimo e devolução
+          // Mostra datas de empréstimo e devolução (Firestore Timestamp)
           const dataEmprestimo = d.dataEmprestimo && d.dataEmprestimo.seconds
             ? new Date(d.dataEmprestimo.seconds * 1000).toLocaleDateString()
             : '';
@@ -266,11 +268,17 @@
             ? new Date(d.dataDevolucao.seconds * 1000).toLocaleDateString()
             : '';
 
+          // Mostra loanDate e returnDate (strings)
+          const loanDate = d.loanDate || '';
+          const returnDate = d.returnDate || '';
+
           html += `<tr>
             <td>${usuarioNome || ''}</td>
             <td>${livroTitulo || ''}</td>
             <td>${dataEmprestimo}</td>
             <td>${dataDevolucao}</td>
+            <td>${loanDate}</td>
+            <td>${returnDate}</td>
             <td>${status || ''}</td>
           </tr>`;
         }
@@ -387,3 +395,5 @@
   </script>
 </body>
 </html>
+
+
