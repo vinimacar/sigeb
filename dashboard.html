@@ -445,8 +445,8 @@
       });
 
       // Nome da escola (se existir)
-      db.ref('configuracoes/escola').on('value', snapshot => {
-        const escola = snapshot.val();
+      db.collection('configuracoes').doc('escola').onSnapshot(snapshot => {
+        const escola = snapshot.exists ? snapshot.data() : null;
         document.getElementById('nomeEscola').textContent = escola && escola.nome ? escola.nome : 'Escola não cadastrada';
       });
     }
