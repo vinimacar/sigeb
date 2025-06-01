@@ -679,6 +679,71 @@
       }
     }
 
+    // Nova função para enviar email com todos os livros do empréstimo
+    async function sendLoanEmailMulti(userId, books, loanDate, returnDate) {
+      try {
+        const userDoc = await db.collection('usuarios').doc(userId).get();
+        const userData = userDoc.data();
+
+        if (!userData.email) {
+          console.error('Email do usuário não encontrado');
+          return;
+        }
+
+        // Monta a lista de livros para o email
+        let booksList = '';
+        for (const item of books) {
+          const bookDoc = await db.collection('livros').doc(item.bookId).get();
+          const bookData = bookDoc.data();
+          booksList += `<li>${bookData.titulo} - Quantidade: ${item.quantity}</li>`;
+        }
+
+        const emailContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+              <h1 style="color: white; margin: 0; text-align: center;">${SYSTEM_CONFIG.systemName}</h1>
+              <h2 style="color: white; margin: 10px 0 0; text-align: center; font-size: 1.2em;">${SYSTEM_CONFIG.schoolName}</h2>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+              <h2 style="color: #1a1a2e; margin-top: 0;">Comprovante de Empréstimo</h2>
+              <p><strong>Usuário:</strong> ${userData.nome}</p>
+              <p><strong>Email:</strong> ${userData.email}</p>
+              <p><strong>Livros:</strong></p>
+              <ul>${booksList}</ul>
+              <p><strong>Data do Empréstimo:</strong> ${loanDate}</p>
+              <p><strong>Data de Devolução:</strong> ${returnDate}</p>
+            </div>
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+              <p style="color: #2e7d32; margin: 0;">
+                ⚠️ Por favor, mantenha este comprovante para referência futura.
+              </p>
+            </div>
+            <div style="text-align: center; color: #666;">
+              <p>Este é um email automático, por favor não responda.</p>
+              <p>${SYSTEM_CONFIG.schoolName}</p>
+              <p>${SYSTEM_CONFIG.systemName}</p>
+            </div>
+          </div>
+        `;
+
+        await emailjs.send(
+          "YOUR_SERVICE_ID",
+          "YOUR_TEMPLATE_ID",
+          {
+            to_email: userData.email,
+            to_name: userData.nome,
+            html_content: emailContent,
+            subject: `${SYSTEM_CONFIG.schoolName} - Comprovante de Empréstimo`
+          }
+        );
+
+        console.log('Email de confirmação enviado com sucesso');
+      } catch (error) {
+        console.error('Erro ao enviar email:', error);
+        showAlert('warning', 'O empréstimo foi registrado, mas houve um erro ao enviar o email de confirmação');
+      }
+    }
+
     // Inicializar Flatpickr (calendário)
     document.addEventListener('DOMContentLoaded', function() {
       flatpickr("#loanDate", {
@@ -926,11 +991,8 @@
           });
         });
 
-        // Envia email para cada livro (opcional: pode enviar um único email com todos os livros)
-        for (const loan of loans) {
-          const bookDoc = await db.collection('livros').doc(loan.bookId).get();
-          await sendLoanEmail(userId, bookDoc.data().titulo, loan.quantity, loanDate, returnDate);
-        }
+        // Envia um único email com todos os livros
+        await sendLoanEmailMulti(userId, loans, loanDate, returnDate);
 
         showAlert('success', 'Empréstimo registrado com sucesso! Um email de confirmação foi enviado.');
         form.reset();
@@ -940,7 +1002,7 @@
         closeAddLoanModal();
         loadLoans();
 
-        // Mostra comprovante do primeiro livro
+        // Mostra comprovante do primeiro livro (opcional: pode adaptar para mostrar todos)
         const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
         const bookDocForReceipt = await db.collection('livros').doc(loans[0].bookId).get();
         await showPrintLoanModal({
