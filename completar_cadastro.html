@@ -188,7 +188,7 @@
   </div>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
     // Configuração do Firebase (mesma do index.html)
     const firebaseConfig = {
@@ -201,9 +201,11 @@
       appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
       measurementId: "G-VJBDW2B7HZ"
     };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const auth = firebase.auth();
-    const db = firebase.database();
+    const db = firebase.firestore();
 
     // Garante que o usuário está logado
     auth.onAuthStateChanged(function(user) {
@@ -215,18 +217,18 @@
     const escolasContainer = document.getElementById('escolasContainer');
     let escolaSelecionada = null;
 
-    // Busca as escolas do Realtime Database e exibe como cards para seleção
-    db.ref('escolas').once('value').then(snapshot => {
+    // Busca as escolas do Firestore e exibe como cards para seleção
+    db.collection('escolas').get().then(snapshot => {
       let html = '<label class="form-label mb-2">Selecione a escola que você pertence:</label><div class="row">';
-      snapshot.forEach(childSnap => {
-        const escola = childSnap.val();
+      snapshot.forEach(doc => {
+        const escola = doc.data();
         html += `
           <div class="col-md-6 mb-3">
-            <div class="card escola-card" data-id="${childSnap.key}" style="cursor:pointer; border:2px solid #4facfe;">
+            <div class="card escola-card" data-id="${doc.id}" style="cursor:pointer; border:2px solid #4facfe;">
               <div class="card-body">
                 <h5 class="card-title mb-1">${escola.nome}</h5>
                 <div style="font-size:0.95rem;">
-                  <b>Código:</b> ${childSnap.key}<br>
+                  <b>Código:</b> ${doc.id}<br>
                   <b>Cidade:</b> ${escola.cidade || ''} - ${escola.uf || ''}
                 </div>
               </div>
@@ -245,38 +247,6 @@
           escolaSelecionada = this.getAttribute('data-id');
         };
       });
-    });
-
-    // Após garantir que o usuário está logado, busque a escola vinculada
-    auth.onAuthStateChanged(async function(user) {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-      try {
-        // Busca os dados do usuário no banco
-        const snap = await db.ref('usuarios/' + user.uid).once('value');
-        const usuario = snap.val();
-        if (usuario && usuario.escolaId) {
-          // Busca o nome da escola vinculada
-          const escolaSnap = await db.ref('configuracoes/escola/' + usuario.escolaId).once('value');
-          const escola = escolaSnap.val();
-          if (escola && escola.nome) {
-            // Exibe o nome da escola em algum lugar do formulário, por exemplo acima do botão Salvar
-            let escolaDiv = document.getElementById('escolaVinculada');
-            if (!escolaDiv) {
-              escolaDiv = document.createElement('div');
-              escolaDiv.id = 'escolaVinculada';
-              escolaDiv.className = 'mb-3 text-center';
-              const form = document.getElementById('completarCadastroForm');
-              form.insertBefore(escolaDiv, form.querySelector('button[type="submit"]'));
-            }
-            escolaDiv.innerHTML = `<strong>Escola vinculada:</strong> ${escola.nome}`;
-          }
-        }
-      } catch (e) {
-        // Se não encontrar escola, não exibe nada
-      }
     });
 
     function validarCPF(cpf) {
@@ -335,7 +305,7 @@
       }
 
       try {
-        await db.ref('usuarios/' + user.uid).update({
+        await db.collection('usuarios').doc(user.uid).set({
           nome: nome,
           telefone: telefone,
           cpf: cpf,
@@ -349,8 +319,9 @@
           cidade: cidade,
           estado: estado,
           escolaId: escolaSelecionada, // salva a escola escolhida
-          cadastroCompleto: true
-        });
+          cadastroCompleto: true,
+          email: user.email
+        }, { merge: true });
 
         if (["bibliotecario", "diretor", "administrador"].includes(funcao)) {
           msgDiv.textContent = "Cadastro completo com sucesso!";
@@ -384,17 +355,6 @@
       if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2');
       e.target.value = v;
     });
-
-    // Supondo que você já tenha o escolaId do usuário logado
-    db.collection('livros').where('escolaId', '==', escolaId).get().then(snapshot => {
-      // Lógica para exibir os livros da escola
-    });
-
-    db.collection('livros').add({
-  titulo: 'Livro Exemplo',
-  autor: 'Autor',
-  escolaId: escolaId // sempre vincule!
-});
   </script>
 </body>
 </html>
