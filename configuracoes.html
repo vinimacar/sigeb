@@ -356,7 +356,8 @@
     // Cadastro da escola
     document.getElementById('schoolForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      // Novo campo obrigatório: código único da escola
+
+      // O ID da escola será o valor do campo schoolId (código único)
       const schoolId = document.getElementById('schoolId').value.trim();
       const name = document.getElementById('schoolName').value.trim();
       const cnpj = document.getElementById('schoolCNPJ').value.trim();
@@ -378,8 +379,9 @@
       }
 
       try {
-        // Salva os dados da escola em uma coleção separada por escola
+        // Salva os dados da escola usando o ID como identificador do documento
         await db.collection('escolas').doc(schoolId).set({
+          id: schoolId,
           nome: name,
           cnpj: cnpj,
           diretor: director,
