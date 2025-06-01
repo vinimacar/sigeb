@@ -577,7 +577,7 @@
 
     // Inicializar Email.js
     (function() {
-      emailjs.init("YOUR_EMAIL_JS_PUBLIC_KEY");
+      emailjs.init("SEU_PUBLIC_KEY_DO_EMAILJS");
     })();
 
     // Template do email de empréstimo
@@ -662,8 +662,8 @@
           .replace('{{returnDate}}', returnDate);
 
         await emailjs.send(
-          "YOUR_SERVICE_ID",
-          "YOUR_TEMPLATE_ID",
+          "SEU_SERVICE_ID_DO_EMAILJS",
+          "SEU_TEMPLATE_ID_DO_EMAILJS",
           {
             to_email: userData.email,
             to_name: userData.nome,
@@ -727,8 +727,8 @@
         `;
 
         await emailjs.send(
-          "YOUR_SERVICE_ID",
-          "YOUR_TEMPLATE_ID",
+          "SEU_SERVICE_ID_DO_EMAILJS",
+          "SEU_TEMPLATE_ID_DO_EMAILJS",
           {
             to_email: userData.email,
             to_name: userData.nome,
@@ -1215,8 +1215,8 @@
           .replace('{{newReturnDate}}', newReturnDate);
 
         await emailjs.send(
-          "YOUR_SERVICE_ID",
-          "YOUR_TEMPLATE_ID",
+          "SEU_SERVICE_ID_DO_EMAILJS",
+          "SEU_TEMPLATE_ID_DO_EMAILJS",
           {
             to_email: userData.email,
             to_name: userData.nome,
