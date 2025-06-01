@@ -469,10 +469,10 @@
       });
 
       // Nome da escola (se existir)
-      db.collection('configuracoes').doc('escola').onSnapshot(snapshot => {
-        const escola = snapshot.exists ? snapshot.data() : null;
-        document.getElementById('nomeEscola').textContent = escola && escola.nome ? escola.nome : 'Escola não cadastrada';
-      });
+      // db.collection('configuracoes').doc('escola').onSnapshot(snapshot => {
+      //   const escola = snapshot.exists ? snapshot.data() : null;
+      //   document.getElementById('nomeEscola').textContent = escola && escola.nome ? escola.nome : 'Escola não cadastrada';
+      // });
     }
 
     // Busca e exibe as 5 atividades recentes (últimos empréstimos/reservas/devoluções)
