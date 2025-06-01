@@ -9,31 +9,30 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: #f5f7fa;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #e0e0e0;
+      color: #222;
       margin: 0;
     }
     .cadastro-container {
-      background: rgba(255,255,255,0.10);
+      background: #fff;
       padding: 2.5rem 2rem;
-      border-radius: 22px;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       max-width: 540px;
       width: 100%;
-      border: 1.5px solid #00f2fe;
-      backdrop-filter: blur(2px);
+      border: 1px solid #e3e6ed;
     }
     .form-label {
-      color: #fff;
+      color: #222;
       font-weight: 500;
       letter-spacing: 0.5px;
     }
     .btn-gradient {
-      background: linear-gradient(90deg, #00f2fe, #4facfe);
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
       color: #fff;
       border: none;
       padding: 0.9rem 2.2rem;
@@ -46,58 +45,23 @@
       box-shadow: 0 2px 8px rgba(0,242,254,0.08);
     }
     .btn-gradient:hover, .btn-gradient:focus {
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      transform: translateY(-2px) scale(1.03);
+      background: linear-gradient(90deg, #00f2fe, #4facfe);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(0,242,254,0.18);
+      box-shadow: 0 4px 16px rgba(0,242,254,0.13);
     }
-    .form-control {
-      background: rgba(255,255,255,0.18);
-      color: #fff;
-      border: 1.5px solid #4facfe;
-      border-radius: 12px;
+    .form-control, .form-select, select.form-control {
+      background: #f8fafc;
+      color: #222;
+      border: 1.5px solid #e3e6ed;
+      border-radius: 10px;
       font-size: 1rem;
       transition: border-color 0.2s;
     }
-    .form-control:focus {
-      background: rgba(255,255,255,0.22);
-      color: #fff;
-      border-color: #00f2fe;
-      box-shadow: 0 0 0 2px #00f2fe33;
-    }
-    .form-select, select.form-control {
-      background: rgba(255,255,255,0.18);
-      color: #fff;
-      border: 1.5px solid #4facfe;
-      border-radius: 12px;
-      font-size: 1rem;
-    }
-    .form-select:focus, select.form-control:focus {
-      border-color: #00f2fe;
-      background: rgba(255,255,255,0.22);
-      color: #fff;
-      box-shadow: 0 0 0 2px #00f2fe33;
-    }
-    .card.escola-card {
-      background: rgba(0,242,254,0.08);
-      border: 2px solid #4facfe;
-      border-radius: 14px;
-      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s, color 0.2s;
-      cursor: pointer;
-      color: #fff;
-      min-height: 110px;
-    }
-    .card.escola-card:hover, .card.escola-card.selected {
-      box-shadow: 0 0 0 3px #00f2fe, 0 4px 16px rgba(0,242,254,0.13);
-      border-color: #00f2fe;
-      background: rgba(0,242,254,0.16);
-      color: #1a1a2e !important; /* Letras escuras ao passar o mouse ou selecionar */
-    }
-    .card.escola-card:hover .card-title,
-    .card.escola-card.selected .card-title,
-    .card.escola-card:hover .card-body,
-    .card.escola-card.selected .card-body {
-      color: #1a1a2e !important;
+    .form-control:focus, .form-select:focus, select.form-control:focus {
+      background: #fff;
+      color: #222;
+      border-color: #4facfe;
+      box-shadow: 0 0 0 2px #4facfe33;
     }
     .text-danger, .text-success {
       font-weight: 500;
@@ -108,9 +72,6 @@
       .cadastro-container {
         padding: 1.2rem 0.5rem;
         max-width: 98vw;
-      }
-      .card.escola-card {
-        min-height: 90px;
       }
     }
   </style>
@@ -167,7 +128,36 @@
         </div>
         <div class="mb-3 col-md-6">
           <label for="estado" class="form-label">Estado</label>
-          <input type="text" class="form-control" id="estado" name="estado" required>
+          <select class="form-control" id="estado" name="estado" required>
+            <option value="">Selecione o estado</option>
+            <option value="AC">Acre</option>
+            <option value="AL">Alagoas</option>
+            <option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option>
+            <option value="BA">Bahia</option>
+            <option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option>
+            <option value="ES">Espírito Santo</option>
+            <option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option>
+            <option value="MT">Mato Grosso</option>
+            <option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option>
+            <option value="PA">Pará</option>
+            <option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option>
+            <option value="PE">Pernambuco</option>
+            <option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option>
+            <option value="RN">Rio Grande do Norte</option>
+            <option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option>
+            <option value="RR">Roraima</option>
+            <option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option>
+            <option value="SE">Sergipe</option>
+            <option value="TO">Tocantins</option>
+          </select>
         </div>
         <div class="mb-3 col-md-6">
           <label for="funcao" class="form-label">Função</label>
@@ -184,6 +174,10 @@
           <select class="form-control" id="escolaSelect" required>
             <option value="">Carregando escolas...</option>
           </select>
+        </div>
+        <div class="mb-3 col-md-6">
+          <label for="cnpj" class="form-label">CNPJ</label>
+          <input type="text" class="form-control" id="cnpj" name="cnpj" maxlength="18" placeholder="00.000.000/0000-00" autocomplete="off">
         </div>
       </div>
       <button type="submit" class="btn btn-gradient mt-3">Salvar</button>
@@ -282,6 +276,7 @@
       const bairro = document.getElementById('bairro').value.trim();
       const cidade = document.getElementById('cidade').value.trim();
       const estado = document.getElementById('estado').value.trim();
+      const cnpj = document.getElementById('cnpj').value.trim();
 
       const user = auth.currentUser;
       if (!user) {
@@ -306,7 +301,8 @@
           estado: estado,
           escolaId: escolaSelecionada, // salva a escola escolhida
           cadastroCompleto: true,
-          email: user.email
+          email: user.email,
+          cnpj: cnpj // salva o CNPJ
         }, { merge: true });
 
         if (["bibliotecario", "diretor", "administrador"].includes(funcao)) {
@@ -339,6 +335,26 @@
     document.getElementById('cep').addEventListener('input', function(e) {
       let v = e.target.value.replace(/\D/g, '');
       if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2');
+      e.target.value = v;
+    });
+
+    // Máscara para CNPJ (formato 00.000.000/0000-00)
+    document.getElementById('cnpj').addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g, '');
+      v = v.slice(0, 14); // Garante no máximo 14 dígitos
+      if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+      if (v.length > 5) v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      if (v.length > 8) v = v.replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3/$4');
+      if (v.length > 12) v = v.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, '$1.$2.$3/$4-$5');
+      e.target.value = v;
+    });
+
+    // Máscara para telefone (formato (99) 99999-9999, até 11 dígitos)
+    document.getElementById('telefone').addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g, '');
+      v = v.slice(0, 11); // Limita a 11 dígitos
+      if (v.length > 2) v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+      if (v.length > 7) v = v.replace(/(\d{5})(\d{1,4})$/, '$1-$2');
       e.target.value = v;
     });
   </script>
