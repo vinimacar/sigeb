@@ -617,6 +617,36 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     Enviar mensagem pelo WhatsApp
   </a>
 </div>
+<!-- Adicione o botão Google abaixo do botão de login tradicional -->
+<div class="text-center mt-2">
+  <button type="button" id="googleLoginBtn" class="btn btn-light w-100" style="border:1px solid #ccc;">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:22px; margin-right:8px; vertical-align:middle;">
+    Entrar com Google
+  </button>
+</div>
+
+<script>
+  // Login com Google
+  document.getElementById('googleLoginBtn').onclick = async function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      const result = await auth.signInWithPopup(provider);
+      // Salva usuário no banco se for novo
+      if (result.additionalUserInfo.isNewUser) {
+        await db.ref('usuarios/' + result.user.uid).set({
+          email: result.user.email,
+          nome: result.user.displayName || '',
+          tipo: 'usuario',
+          cadastroCompleto: true,
+          dataCadastro: new Date().toISOString()
+        });
+      }
+      window.location.href = 'dashboard.html';
+    } catch (error) {
+      alert('Erro ao fazer login com Google: ' + (error.message || 'Tente novamente.'));
+    }
+  };
+</script>
 </body>
 </html>
 
