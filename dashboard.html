@@ -382,18 +382,26 @@
     auth.onAuthStateChanged(async function(user) {
       const userLogInfo = document.getElementById('userLogInfo');
       if (user) {
-        // Busca nome do usuário no banco, se existir
         let nome = '';
+        let escolaNome = '';
         try {
           const snap = await db.collection('usuarios').doc(user.uid).get();
           nome = snap.exists && snap.data().nome ? snap.data().nome : '';
+          // Busca o ID da escola do usuário (ex: campo escolaId)
+          const escolaId = snap.exists && snap.data().escolaId ? snap.data().escolaId : null;
+          if (escolaId) {
+            const escolaSnap = await db.collection('escolas').doc(escolaId).get();
+            escolaNome = escolaSnap.exists && escolaSnap.data().nome ? escolaSnap.data().nome : '';
+          }
         } catch {}
-        userLogInfo.textContent = nome
-          ? `Logado como: ${nome} (${user.email})`
-          : `Logado como: ${user.email}`;
-      // Atualiza dashboard e atividades sempre que logar
-      atualizarDashboard();
-      carregarAtividadesRecentes();
+
+        userLogInfo.textContent =
+          (escolaNome ? `[${escolaNome}] ` : '') +
+          (nome ? `Logado como: ${nome} (${user.email})` : `Logado como: ${user.email}`);
+
+        // Atualiza dashboard e atividades sempre que logar
+        atualizarDashboard();
+        carregarAtividadesRecentes();
       } else {
         window.location.href = "index.html";
       }
