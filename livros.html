@@ -13,78 +13,7 @@
   <!-- SheetJS (xlsx) para geração de XLS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Firebase SDK (modular) -->
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import {
-    getFirestore, collection, getDocs, query, where, orderBy, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-  import {
-    getAuth, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-    authDomain: "sigeb-ccd3f.firebaseapp.com",
-    databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-    projectId: "sigeb-ccd3f",
-    storageBucket: "sigeb-ccd3f.appspot.com",
-    messagingSenderId: "209689711066",
-    appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-    measurementId: "G-VJBDW2B7HZ"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-
-  // Variável global para armazenar o escolaId
-  let escolaIdUsuario = null;
-
-  // Buscar escolaId do usuário logado (modular)
-  async function buscarEscolaIdUsuario() {
-    return new Promise((resolve) => {
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          const userDocRef = doc(db, 'usuarios', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists() && userDocSnap.data().escolaId) {
-            escolaIdUsuario = userDocSnap.data().escolaId;
-            resolve(escolaIdUsuario);
-          } else {
-            escolaIdUsuario = null;
-            resolve(null);
-          }
-        } else {
-          escolaIdUsuario = null;
-          resolve(null);
-        }
-      });
-    });
-  }
-
-  // Exemplo de função para carregar livros
-  async function loadBooks() {
-    const bookGrid = document.querySelector('.book-grid');
-    bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
-    const livrosCol = collection(db, 'livros');
-    const livrosSnapshot = await getDocs(livrosCol);
-    bookGrid.innerHTML = '';
-    livrosSnapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      const card = document.createElement('div');
-      card.className = 'book-card';
-      card.innerHTML = `<h4>${data.titulo}</h4>
-        <p>${Array.isArray(data.autores) ? data.autores.join(', ') : data.autores}</p>
-        <p><small>ISBN: ${data.isbn || ''}</small></p>
-        <span class="book-status ${data.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
-          ${data.quantidade > 0 ? 'Disponível' : 'Indisponível'}
-        </span>`;
-      bookGrid.appendChild(card);
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', loadBooks);
-  </script>
+  <!-- Removido script duplicado de inicialização do Firebase para evitar erro de variável redeclarada -->
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -647,7 +576,78 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, where, orderBy, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.appspot.com",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Variável global para armazenar o escolaId
+    let escolaIdUsuario = null;
+
+    // Buscar escolaId do usuário logado (modular)
+    async function buscarEscolaIdUsuario() {
+      return new Promise((resolve) => {
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const userDocRef = doc(db, 'usuarios', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists() && userDocSnap.data().escolaId) {
+              escolaIdUsuario = userDocSnap.data().escolaId;
+              resolve(escolaIdUsuario);
+            } else {
+              escolaIdUsuario = null;
+              resolve(null);
+            }
+          } else {
+            escolaIdUsuario = null;
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    // Exemplo de função para carregar livros
+    async function loadBooks() {
+      const bookGrid = document.querySelector('.book-grid');
+      bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
+      const livrosCol = collection(db, 'livros');
+      const livrosSnapshot = await getDocs(livrosCol);
+      bookGrid.innerHTML = '';
+      livrosSnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.innerHTML = `<h4>${data.titulo}</h4>
+          <p>${Array.isArray(data.autores) ? data.autores.join(', ') : data.autores}</p>
+          <p><small>ISBN: ${data.isbn || ''}</small></p>
+          <span class="book-status ${data.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
+            ${data.quantidade > 0 ? 'Disponível' : 'Indisponível'}
+          </span>`;
+        bookGrid.appendChild(card);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadBooks);
+
     // Função para carregar livros do Firebase com filtros e busca
     async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
       const bookGrid = document.querySelector('.book-grid');
@@ -1175,7 +1175,3 @@
   </script>
 </body>
 </html>
-
-
-
-
