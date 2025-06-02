@@ -629,9 +629,8 @@
     async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
       const bookGrid = document.querySelector('.book-grid');
       try {
-        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>'; // Feedback de carregamento
+        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
 
-        // Use o padrão modular do Firestore:
         let q = query(collection(db, 'livros'), orderBy('titulo'));
         if (selectedGenre) {
           q = query(q, where('generos', 'array-contains', selectedGenre));
@@ -640,7 +639,6 @@
         const snapshot = await getDocs(q);
         let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Filtragem no lado do cliente para título, autor e editora
         if (filterTitulo.trim()) {
           const lowerTitulo = filterTitulo.toLowerCase().trim();
           booksToDisplay = booksToDisplay.filter(book =>
@@ -683,9 +681,8 @@
     async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
       const bookGrid = document.querySelector('.book-grid');
       try {
-        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>'; // Feedback de carregamento
+        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
 
-        // Use o padrão modular do Firestore:
         let q = query(collection(db, 'livros'), orderBy('titulo'));
         if (selectedGenre) {
           q = query(q, where('generos', 'array-contains', selectedGenre));
@@ -694,7 +691,6 @@
         const snapshot = await getDocs(q);
         let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Filtragem no lado do cliente para título, autor e editora
         if (filterTitulo.trim()) {
           const lowerTitulo = filterTitulo.toLowerCase().trim();
           booksToDisplay = booksToDisplay.filter(book =>
