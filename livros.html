@@ -249,6 +249,12 @@
       pointer-events: auto !important;
       transition: none !important;
     }
+    .genre-filter,
+    #generos,
+    #editGenero,
+    .genre-badge {
+      font-family: 'Poppins', sans-serif !important;
+    }
   </style>
 </head>
 <body>
@@ -791,6 +797,15 @@
       }
 
       try {
+        // Garante que o escolaId está carregado
+        if (!escolaIdUsuario) {
+          await buscarEscolaIdUsuario();
+        }
+        if (!escolaIdUsuario) {
+          showAlert('danger', 'Não foi possível identificar a escola do usuário logado.');
+          return;
+        }
+
         const ean = document.getElementById('ean').value;
         const titulo = document.getElementById('titulo').value;
         const autores = document.getElementById('autores').value.split(';').map(a => a.trim());
@@ -805,7 +820,7 @@
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         await db.collection('livros').add({
-          ean, // Novo campo EAN
+          ean,
           titulo,
           autores,
           editora,
@@ -818,6 +833,7 @@
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
+          escolaId: escolaIdUsuario, // <-- VINCULA O LIVRO À ESCOLA
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -1079,12 +1095,35 @@
         saveBookBtn.style.display = 'inline-block';
       }
     });
+
+    let escolaIdUsuario = null;
+
+    // Buscar escolaId do usuário logado
+    async function buscarEscolaIdUsuario() {
+      return new Promise((resolve) => {
+        firebase.auth().onAuthStateChanged(async (user) => {
+          if (user) {
+            const userDoc = await db.collection('usuarios').doc(user.uid).get();
+            if (userDoc.exists && userDoc.data().escolaId) {
+              escolaIdUsuario = userDoc.data().escolaId;
+              resolve(escolaIdUsuario);
+            } else {
+              escolaIdUsuario = null;
+              resolve(null);
+            }
+          } else {
+            escolaIdUsuario = null;
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    // Ao carregar a página, buscar escolaId do usuário
+    document.addEventListener('DOMContentLoaded', async function() {
+      await buscarEscolaIdUsuario();
+      // ...restante da inicialização...
+    });
   </script>
 </body>
 </html>
-
-
-
-
-
-
