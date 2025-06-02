@@ -838,7 +838,10 @@
 
       // Carrega os usuários ao iniciar
       document.addEventListener('DOMContentLoaded', loadUsers);
-      document.getElementById('addUserForm').addEventListener('submit', handleUserSubmission);
+      const addUserForm = document.getElementById('addUserForm');
+      if (addUserForm) {
+        addUserForm.addEventListener('submit', handleUserSubmission);
+      }
 
       // Limpa o formulário e o campo usuarioId ao fechar o modal
       document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
@@ -1386,4 +1389,3 @@
   </script>
 </body>
 </html>
-
