@@ -1031,8 +1031,8 @@
         });
       }
 
-      // Substitua o evento do campo de busca para usar apenas o filtro por nome
-      document.querySelector('.search-box input').removeEventListener('input', filterUsers); // Remove filtro antigo, se existir
+      // Substitua este trecho para evitar o erro de referência ao filterUsers
+      // document.querySelector('.search-box input').removeEventListener('input', filterUsers); // Remove filtro antigo, se existir
       document.querySelector('.search-box input').addEventListener('input', filterUsersByName);
 
       // Carrega os usuários ao iniciar
@@ -1194,9 +1194,13 @@
         })();
       }
 
+      // Botão "Mostrar Todos" limpa o filtro e mostra todos os usuários
       document.getElementById('showAllUsersBtn').addEventListener('click', function() {
-        loadUsers();
         document.querySelector('.search-box input').value = '';
+        // Mostra todas as linhas da tabela
+        document.querySelectorAll('.users-table tbody tr').forEach(tr => {
+          tr.style.display = '';
+        });
       });
     </script>
 
