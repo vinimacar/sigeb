@@ -225,6 +225,53 @@
   </div>
 
   <div class="main-content">
+    <div id="usuario-logado" class="mb-3" style="text-align: right; font-weight: 500; color: #16213e;"></div>
+
+    <script>
+      // Exibe o usuário logado no topo da tela
+      // let usuarioLogado = null; // REMOVIDO: já declarado em outro bloco
+      async function mostrarUsuarioLogado() {
+        // Tenta recuperar do localStorage
+        if (!usuarioLogado) {
+          try {
+            const userStr = localStorage.getItem('usuarioLogado');
+            if (userStr) {
+              usuarioLogado = JSON.parse(userStr);
+            }
+          } catch {}
+        }
+        // Se não tiver no localStorage, pega do último login (prompt)
+        if (!usuarioLogado || !usuarioLogado.nome) {
+          // Pega do Firestore após login
+          let autenticado = false;
+          while (!autenticado) {
+            const username = prompt('Usuário (colaborador):');
+            const senha = prompt('Senha:');
+            if (!username || !senha) {
+              alert('Usuário e senha são obrigatórios.');
+              continue;
+            }
+            const user = await autenticarColaborador(username, senha);
+            if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+              usuarioLogado = user;
+              localStorage.setItem('usuarioLogado', JSON.stringify(user));
+              autenticado = true;
+            } else {
+              alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
+            }
+          }
+        }
+        // Mostra na tela
+        if (usuarioLogado && usuarioLogado.nome) {
+          document.getElementById('usuario-logado').innerHTML =
+            `<i class='bx bxs-user'></i> Usuário logado: <span style="color:#4facfe">${usuarioLogado.nome}</span> (${usuarioLogado.funcao || ''})`;
+        }
+      }
+
+      // Chame ao carregar a página
+      document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
+    </script>
+
     <div class="page-header">
       <div>
         <h2>Gerenciamento de Usuários</h2>
@@ -1127,6 +1174,49 @@
           }
         }
       });
+
+      // Exibe o usuário logado no topo da tela
+      let usuarioLogado = null;
+      async function mostrarUsuarioLogado() {
+        // Tenta recuperar do localStorage
+        if (!usuarioLogado) {
+          try {
+            const userStr = localStorage.getItem('usuarioLogado');
+            if (userStr) {
+              usuarioLogado = JSON.parse(userStr);
+            }
+          } catch {}
+        }
+        // Se não tiver no localStorage, pega do último login (prompt)
+        if (!usuarioLogado || !usuarioLogado.nome) {
+          // Pega do Firestore após login
+          let autenticado = false;
+          while (!autenticado) {
+            const username = prompt('Usuário (colaborador):');
+            const senha = prompt('Senha:');
+            if (!username || !senha) {
+              alert('Usuário e senha são obrigatórios.');
+              continue;
+            }
+            const user = await autenticarColaborador(username, senha);
+            if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+              usuarioLogado = user;
+              localStorage.setItem('usuarioLogado', JSON.stringify(user));
+              autenticado = true;
+            } else {
+              alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
+            }
+          }
+        }
+        // Mostra na tela
+        if (usuarioLogado && usuarioLogado.nome) {
+          document.getElementById('usuario-logado').innerHTML =
+            `<i class='bx bxs-user'></i> Usuário logado: <span style="color:#4facfe">${usuarioLogado.nome}</span> (${usuarioLogado.funcao || ''})`;
+        }
+      }
+
+      // Chame ao carregar a página
+      document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
     </script>
 
     <style>
@@ -1447,4 +1537,3 @@
   </script>
 </body>
 </html>
-
