@@ -42,6 +42,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <!-- Importação do SheetJS para geração de relatórios XLS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -424,6 +426,13 @@
       </div>
     </div>
     <!-- Fim da lista dos últimos 15 empréstimos -->
+
+    <!-- Adicione um botão para gerar relatório XLS na interface, por exemplo após a tabela de empréstimos: -->
+    <div class="d-flex justify-content-end my-3">
+      <button class="btn btn-success" id="btnExportLoansXLS">
+        <i class="bx bxs-file-export"></i> Exportar XLS
+      </button>
+    </div>
   </div>
 
   <!-- Modal Novo Empréstimo -->
@@ -1245,6 +1254,68 @@
         showAlert('warning', 'A renovação foi registrada, mas houve um erro ao enviar o email de confirmação');
       }
     }
+
+    // Função para exportar empréstimos para XLS
+    async function exportLoansToXLS() {
+      try {
+        const loansRef = db.collection('emprestimos');
+        const snapshot = await loansRef.orderBy('createdAt', 'desc').get();
+
+        const data = [];
+        for (const doc of snapshot.docs) {
+          const loan = doc.data();
+          // Busca usuário e livro(s)
+          let userName = '', userEmail = '';
+          let bookTitles = '';
+          if (loan.userId) {
+            const userDoc = await db.collection('usuarios').doc(loan.userId).get();
+            if (userDoc.exists) {
+              userName = userDoc.data().nome || '';
+              userEmail = userDoc.data().email || '';
+            }
+          }
+          // Suporte para múltiplos livros
+          if (Array.isArray(loan.books)) {
+            const titles = [];
+            for (const item of loan.books) {
+              const bookDoc = await db.collection('livros').doc(item.bookId).get();
+              if (bookDoc.exists) {
+                titles.push(`${bookDoc.data().titulo} (Qtd: ${item.quantity})`);
+              }
+            }
+            bookTitles = titles.join('; ');
+          } else if (loan.bookId) {
+            const bookDoc = await db.collection('livros').doc(loan.bookId).get();
+            if (bookDoc.exists) {
+              bookTitles = bookDoc.data().titulo;
+            }
+          }
+          data.push({
+            'Usuário': userName,
+            'Email': userEmail,
+            'Livro(s)': bookTitles,
+            'Data Empréstimo': loan.loanDate || '',
+            'Data Devolução': loan.returnDate || '',
+            'Status': loan.status || '',
+          });
+        }
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Empréstimos');
+        XLSX.writeFile(workbook, 'relatorio_emprestimos.xlsx');
+      } catch (error) {
+        showAlert('danger', 'Erro ao gerar relatório XLS');
+      }
+    }
+
+    // Adiciona o evento ao botão
+    document.addEventListener('DOMContentLoaded', function() {
+      const btnExport = document.getElementById('btnExportLoansXLS');
+      if (btnExport) {
+        btnExport.addEventListener('click', exportLoansToXLS);
+      }
+    });
 
     // Mostrar alertas
     function showAlert(type, message) {
