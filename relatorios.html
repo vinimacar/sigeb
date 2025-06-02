@@ -236,8 +236,6 @@
           <th>Livro</th>
           <th>Data Empréstimo</th>
           <th>Data Devolução</th>
-          <th>loanDate</th>
-          <th>returnDate</th>
           <th>Status</th>
         </tr></thead><tbody>`;
 
@@ -260,23 +258,13 @@
           if (situacao === 'ativo' && status !== 'EMPRESTADO') continue;
           if (situacao === 'atrasado' && status !== 'ATRASADO') continue;
 
-          // Mostra datas de empréstimo e devolução (Firestore Timestamp)
-          const dataEmprestimo = d.dataEmprestimo && d.dataEmprestimo.seconds
-            ? new Date(d.dataEmprestimo.seconds * 1000).toLocaleDateString()
-            : '';
-          const dataDevolucao = d.dataDevolucao && d.dataDevolucao.seconds
-            ? new Date(d.dataDevolucao.seconds * 1000).toLocaleDateString()
-            : '';
-
-          // Mostra loanDate e returnDate (strings)
+          // Mostra loanDate e returnDate nas colunas principais
           const loanDate = d.loanDate || '';
           const returnDate = d.returnDate || '';
 
           html += `<tr>
             <td>${usuarioNome || ''}</td>
             <td>${livroTitulo || ''}</td>
-            <td>${dataEmprestimo}</td>
-            <td>${dataDevolucao}</td>
             <td>${loanDate}</td>
             <td>${returnDate}</td>
             <td>${status || ''}</td>
@@ -395,5 +383,8 @@
   </script>
 </body>
 </html>
+
+
+
 
 
