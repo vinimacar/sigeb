@@ -1144,7 +1144,14 @@
       const addBookForm = document.getElementById('addBookForm');
       const saveBookBtn = document.getElementById('saveBookBtn');
       if (addBookForm && saveBookBtn) {
+        // Remove qualquer estilo inline que possa esconder o botão
         saveBookBtn.style.display = 'inline-block';
+        saveBookBtn.style.position = 'static'; // Torna o botão estático
+        saveBookBtn.style.bottom = '';
+        saveBookBtn.style.right = '';
+        saveBookBtn.style.left = '';
+        saveBookBtn.style.top = '';
+        saveBookBtn.style.margin = '';
       }
     });
 
