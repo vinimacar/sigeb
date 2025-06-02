@@ -249,18 +249,10 @@
       <button class="btn btn-success me-2" id="importXlsBtn" type="button">
         <i class='bx bx-upload'></i> Importar Alunos XLS
       </button>
-      <button class="btn btn-primary me-2" id="addColaboradorBtn" type="button" data-bs-toggle="modal" data-bs-target="#addColaboradorModal">
+      <button class="btn btn-primary" id="addColaboradorBtn" type="button" data-bs-toggle="modal" data-bs-target="#addColaboradorModal">
         <i class='bx bx-user-plus'></i> Cadastrar Colaborador
       </button>
-      <button class="btn btn-info" id="gerenciarColaboradoresBtn" type="button" data-bs-toggle="modal" data-bs-target="#gerenciarColaboradoresModal">
-        <i class='bx bx-group'></i> Gerenciar Colaboradores
-      </button>
     </div>
-
-    <!-- Adicione o botão onde desejar, por exemplo, acima da tabela -->
-    <button class="btn btn-secondary mb-3" id="showAllUsersBtn">
-      <i class='bx bx-list-ul'></i> Mostrar Todos
-    </button>
 
     <div class="users-table">
       <div class="table-responsive">
@@ -603,100 +595,7 @@
       </div>
     </div>
 
-    <!-- Modal Gerenciar Colaboradores -->
-    <div class="modal fade" id="gerenciarColaboradoresModal" tabindex="-1" aria-labelledby="gerenciarColaboradoresModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="gerenciarColaboradoresModalLabel">Perfis dos Colaboradores</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            <div class="table-responsive">
-              <table class="table table-bordered align-middle">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Função</th>
-                    <th>Email</th>
-                    <th>Telefone</th>
-                    <th>Usuário</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="colaboradoresTableBody">
-                  <!-- Conteúdo dinâmico via JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Adicione logo após a div .main-content para exibir o usuário logado -->
-    <div id="usuarioLogadoInfo" class="alert alert-info d-flex align-items-center mb-3" style="display:none;">
-      <i class='bx bxs-user me-2'></i>
-      <span id="usuarioLogadoNome"></span>
-    </div>
-
     <script>
-      // Salvar usuário logado no localStorage após autenticação
-      async function autenticarColaborador(username, senha) {
-        const hash = await hashPassword(senha);
-        const snapshot = await db.collection('usuarios')
-          .where('credenciais.username', '==', username)
-          .where('credenciais.password', '==', hash)
-          .get();
-        if (!snapshot.empty) {
-          const user = snapshot.docs[0].data();
-          user.id = snapshot.docs[0].id;
-          localStorage.setItem('usuarioLogado', JSON.stringify(user));
-          return user;
-        } else {
-          return null;
-        }
-      }
-
-      // Exibir usuário logado na tela
-      function mostrarUsuarioLogado() {
-        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-        if (user) {
-          document.getElementById('usuarioLogadoNome').textContent = `Usuário logado: ${user.nome} (${user.funcao})`;
-          document.getElementById('usuarioLogadoInfo').style.display = 'flex';
-        }
-      }
-
-      // Registrar operação do usuário logado
-      async function registrarOperacao(acao, detalhes = '') {
-        const user = JSON.parse(localStorage.getItem('usuarioLogado'));
-        if (!user) return;
-        await db.collection('logs').add({
-          usuarioId: user.id,
-          nome: user.nome,
-          funcao: user.funcao,
-          acao,
-          detalhes,
-          dataHora: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
-
-      // Exemplo de uso: registre operações nas funções de CRUD
-      // Exemplo para deletar usuário:
-      async function deleteUser(id) {
-        if (!confirm('Tem certeza que deseja deletar este usuário?')) return;
-        try {
-          await db.collection('usuarios').doc(id).delete();
-          showAlert('success', 'Usuário deletado com sucesso!');
-          await registrarOperacao('Deletou usuário', `ID: ${id}`);
-          loadUsers();
-        } catch (error) {
-          console.error('Erro ao deletar usuário:', error);
-          showAlert('danger', 'Erro ao deletar usuário.');
-        }
-      }
-
       // Função para buscar CEP
       async function buscarCEP() {
         const cep = document.getElementById('cep').value.replace(/\D/g, '');
@@ -813,6 +712,29 @@
         const tbody = document.querySelector('.users-table tbody');
         tbody.innerHTML = '';
 
+        // --- Carrega todos os empréstimos ativos ---
+        let emprestimosPorMatricula = {};
+        try {
+          // Firestore
+          const emprestimosSnapshot = await db.collection('emprestimos').where('status', '==', 'Ativo').get();
+          emprestimosSnapshot.forEach(doc => {
+            const emp = doc.data();
+            if (emp.matricula) {
+              emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
+            }
+          });
+          // Se usar Realtime Database, use:
+          // const emprestimosSnap = await firebase.database().ref('emprestimos').once('value');
+          // emprestimosSnap.forEach(child => {
+          //   const emp = child.val();
+          //   if (emp.status === 'Ativo' && emp.matricula) {
+          //     emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
+          //   }
+          // });
+        } catch (e) {
+          console.error('Erro ao buscar empréstimos:', e);
+        }
+
         // --- Firestore (importação XLS) ---
         let firestoreUsers = [];
         try {
@@ -824,7 +746,7 @@
               email: user.email,
               matricula: user.matricula || '',
               status: user.status || 'Ativo',
-              livrosEmprestados: user.livrosEmprestados || 0,
+              livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
               id: doc.id
             });
           });
@@ -838,14 +760,13 @@
           const snapshot = await firebase.database().ref('usuarios').once('value');
           snapshot.forEach(child => {
             const user = child.val();
-            // Só mostra usuários com cadastro completo
             if (user.cadastroCompleto) {
               realtimeUsers.push({
                 nome: user.nome,
                 email: user.email,
                 matricula: user.matricula || '',
                 status: 'Ativo',
-                livrosEmprestados: 0,
+                livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
                 id: child.key
               });
             }
@@ -885,145 +806,47 @@
           `;
           tbody.appendChild(tr);
         });
-  
-        // Adiciona eventos aos botões de editar e deletar
-        tbody.querySelectorAll('.edit-button').forEach(btn => {
-          btn.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');
-            editUser(id);
-          });
-        });
-        tbody.querySelectorAll('.delete-button').forEach(btn => {
-          btn.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');
-            deleteUser(id);
-          });
-        });
       }
 
-      // Função para editar usuário (corrigida para funcionar com todos os registros)
+      // Função para editar usuário
       async function editUser(id) {
-        try {
-          // Busca no Firestore
-          let doc = await db.collection('usuarios').doc(id).get();
-          let user = null;
-          let origem = 'firestore';
-          if (doc.exists) {
-            user = doc.data();
-          } else {
-            // Busca no Realtime Database
-            const snapshot = await firebase.database().ref('usuarios/' + id).once('value');
-            if (snapshot.exists()) {
-              user = snapshot.val();
-              origem = 'realtime';
-            }
-          }
-          if (!user) {
-            showAlert('danger', 'Usuário não encontrado.');
-            return;
-          }
+        const doc = await db.collection('usuarios').doc(id).get();
+        if (!doc.exists) return;
+        const user = doc.data();
 
-          document.getElementById('usuarioId').value = id;
-          document.getElementById('usuarioId').setAttribute('data-origem', origem); // Salva origem
-          document.getElementById('nome').value = user.nome || '';
-          document.getElementById('funcao').value = user.funcao || '';
-          document.getElementById('endereco').value = user.endereco?.logradouro || '';
-          document.getElementById('numero').value = user.endereco?.numero || '';
-          document.getElementById('cep').value = user.endereco?.cep || '';
-          document.getElementById('bairro').value = user.endereco?.bairro || '';
-          document.getElementById('cidade').value = user.endereco?.cidade || '';
-          document.getElementById('uf').value = user.endereco?.uf || '';
-          document.getElementById('telefone').value = user.telefone || '';
-          document.getElementById('email').value = user.email || '';
-          document.getElementById('status').value = user.status || 'Ativo';
-          if (user.credenciais) {
-            document.getElementById('username').value = user.credenciais.username || '';
-            document.getElementById('password').value = '';
-          }
-          toggleLoginCredentials();
-
-          new bootstrap.Modal(document.getElementById('addUserModal')).show();
-        } catch (error) {
-          showAlert('danger', 'Erro ao carregar dados do usuário.');
-          console.error(error);
+        document.getElementById('usuarioId').value = id;
+        document.getElementById('nome').value = user.nome || '';
+        document.getElementById('funcao').value = user.funcao || '';
+        document.getElementById('endereco').value = user.endereco?.logradouro || '';
+        document.getElementById('numero').value = user.endereco?.numero || '';
+        document.getElementById('cep').value = user.endereco?.cep || '';
+        document.getElementById('bairro').value = user.endereco?.bairro || '';
+        document.getElementById('cidade').value = user.endereco?.cidade || '';
+        document.getElementById('uf').value = user.endereco?.uf || '';
+        document.getElementById('telefone').value = user.telefone || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('status').value = user.status || 'Ativo'; // <-- Adicionado aqui
+        if (user.credenciais) {
+          document.getElementById('username').value = user.credenciais.username || '';
         }
+        toggleLoginCredentials();
+
+        // Abre o modal
+        new bootstrap.Modal(document.getElementById('addUserModal')).show();
       }
 
-      // Função para salvar (adicionar/editar) usuário
-      async function handleUserSubmission(event) {
-        event.preventDefault();
-        const form = event.target;
-        if (!form.checkValidity()) {
-          form.classList.add('was-validated');
-          return;
-        }
-
-        const id = document.getElementById('usuarioId').value;
-        const origem = document.getElementById('usuarioId').getAttribute('data-origem') || 'firestore';
-        const usuario = {
-          nome: document.getElementById('nome').value,
-          funcao: document.getElementById('funcao').value,
-          email: document.getElementById('email').value,
-          telefone: document.getElementById('telefone').value,
-          status: document.getElementById('status').value,
-          matricula: document.getElementById('matricula') ? document.getElementById('matricula').value : '',
-          endereco: {
-            logradouro: document.getElementById('endereco').value,
-            numero: document.getElementById('numero').value,
-            cep: document.getElementById('cep').value,
-            bairro: document.getElementById('bairro').value,
-            cidade: document.getElementById('cidade').value,
-            uf: document.getElementById('uf').value
-          }
-        };
-
-        if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(usuario.funcao)) {
-          usuario.credenciais = {
-            username: document.getElementById('username').value,
-            password: await hashPassword(document.getElementById('password').value)
-          };
-        }
-
-        // Adicione este código para incluir o campo escolaId
-        const escolaSelect = document.getElementById('userEscolaId');
-        if (escolaSelect) {
-          usuario.escolaId = escolaSelect.value;
-        }
-
-        try {
-          if (id) {
-            if (origem === 'firestore') {
-              // Editar usuário Firestore
-              await db.collection('usuarios').doc(id).update(usuario);
-              showAlert('success', 'Usuário atualizado com sucesso!');
-              await registrarOperacao('Editou usuário', `ID: ${id}`);
-            } else {
-              // Editar usuário Realtime Database
-              await firebase.database().ref('usuarios/' + id).update(usuario);
-              showAlert('success', 'Usuário atualizado com sucesso!');
-            }
-          } else {
-            usuario.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
-            const ref = await db.collection('usuarios').add(usuario);
-            showAlert('success', 'Usuário cadastrado com sucesso!');
-            await registrarOperacao('Cadastrou usuário', `ID: ${ref.id}`);
-          }
-          bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-          form.reset();
-          form.classList.remove('was-validated');
-          loadUsers();
-        } catch (error) {
-          console.error('Erro ao salvar usuário:', error);
-          showAlert('danger', 'Erro ao salvar usuário.');
-        }
-      }
-
-      // Função para filtrar usuários por nome (campo de busca)
-      function filterUsersByName() {
+      // Adicione esta função para filtrar usuários
+      function filterUsers() {
         const search = document.querySelector('.search-box input').value.trim().toLowerCase();
         document.querySelectorAll('.users-table tbody tr').forEach(tr => {
           const nome = tr.children[0].textContent.toLowerCase();
-          if (nome.includes(search)) {
+          const email = tr.children[1].textContent.toLowerCase();
+          const matricula = tr.children[2].textContent.toLowerCase();
+          if (
+            nome.includes(search) ||
+            email.includes(search) ||
+            matricula.includes(search)
+          ) {
             tr.style.display = '';
           } else {
             tr.style.display = 'none';
@@ -1031,9 +854,8 @@
         });
       }
 
-      // Substitua este trecho para evitar o erro de referência ao filterUsers
-      // document.querySelector('.search-box input').removeEventListener('input', filterUsers); // Remove filtro antigo, se existir
-      document.querySelector('.search-box input').addEventListener('input', filterUsersByName);
+      // Adicione o evento ao campo de busca
+      document.querySelector('.search-box input').addEventListener('input', filterUsers);
 
       // Carrega os usuários ao iniciar
       document.addEventListener('DOMContentLoaded', loadUsers);
@@ -1073,7 +895,7 @@
         }
       });
 
-      // Limpa o formulário and o campo usuarioId ao fechar o modal
+      // Limpa o formulário e o campo usuarioId ao fechar o modal
       document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('addUserForm').reset();
         document.getElementById('usuarioId').value = '';
@@ -1110,97 +932,24 @@
 
       // Validação de login de colaborador ao iniciar o sistema
       document.addEventListener('DOMContentLoaded', async function() {
-        // Só executa se não houver usuário logado
-        if (!localStorage.getItem('usuarioLogado')) {
-          let autenticado = false;
-          let cancelado = false;
-          while (!autenticado && !cancelado) {
-            const username = prompt('Usuário (colaborador):');
-            // Se o usuário clicar em "Cancelar" no prompt, username será null
-            if (username === null) {
-              cancelado = true;
-              break;
-            }
-            const senha = prompt('Senha:');
-            if (senha === null) {
-              cancelado = true;
-              break;
-            }
-            if (!username || !senha) {
-              alert('Usuário e senha são obrigatórios.');
-              continue;
-            }
-            const user = await autenticarColaborador(username, senha);
-            if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-              autenticado = true;
-              // Salva no localStorage para manter sessão
-              localStorage.setItem('usuarioLogado', JSON.stringify(user));
-              mostrarUsuarioLogado();
-            } else {
-              alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
-            }
+        // Exemplo simples de tela de login (pode ser substituído por um modal ou página dedicada)
+        let autenticado = false;
+        while (!autenticado) {
+          const username = prompt('Usuário (colaborador):');
+          const senha = prompt('Senha:');
+          if (!username || !senha) {
+            alert('Usuário e senha são obrigatórios.');
+            continue;
           }
-          // Se cancelado, permite navegação normalmente (não faz nada)
+          // Função já definida no seu código
+          const user = await autenticarColaborador(username, senha);
+          if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+            autenticado = true;
+            // Opcional: salvar sessão/localStorage
+          } else {
+            alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
+          }
         }
-      });
-
-      // Função para carregar colaboradores no modal
-      async function loadColaboradores() {
-        const tbody = document.getElementById('colaboradoresTableBody');
-        tbody.innerHTML = '';
-        try {
-          const snapshot = await db.collection('usuarios')
-            .where('funcao', 'in', ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'])
-            .get();
-          snapshot.forEach(doc => {
-            const c = doc.data();
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${c.nome || ''}</td>
-              <td>${c.funcao || ''}</td>
-              <td>${c.email || ''}</td>
-              <td>${c.telefone || ''}</td>
-              <td>${c.credenciais?.username || ''}</td>
-              <td><span class="user-status ${c.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${c.status || 'Ativo'}</span></td>
-              <td>
-                <button class="btn btn-sm btn-primary me-1" onclick="editUser('${doc.id}')"><i class='bx bx-edit-alt'></i></button>
-                <button class="btn btn-sm btn-danger" onclick="deleteUser('${doc.id}')"><i class='bx bx-trash'></i></button>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
-        } catch (e) {
-          tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Erro ao carregar colaboradores.</td></tr>';
-        }
-      }
-
-      // Carregar colaboradores ao abrir o modal
-      document.getElementById('gerenciarColaboradoresModal').addEventListener('show.bs.modal', loadColaboradores);
-
-      // Chame mostrarUsuarioLogado ao carregar a página
-      document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
-
-      // Preencher o select de escolas no formulário de cadastro/edição de usuário
-      const escolaSelect = document.getElementById('userEscolaId');
-      if (escolaSelect) {
-        // Corrige o erro: await só pode ser usado dentro de função async
-        (async function() {
-          const escolasSnap = await db.collection('escolas').get();
-          escolaSelect.innerHTML = '<option value="">Selecione a escola</option>';
-          escolasSnap.forEach(doc => {
-            const escola = doc.data();
-            escolaSelect.innerHTML += `<option value="${doc.id}">${escola.nome}</option>`;
-          });
-        })();
-      }
-
-      // Botão "Mostrar Todos" limpa o filtro e mostra todos os usuários
-      document.getElementById('showAllUsersBtn').addEventListener('click', function() {
-        document.querySelector('.search-box input').value = '';
-        // Mostra todas as linhas da tabela
-        document.querySelectorAll('.users-table tbody tr').forEach(tr => {
-          tr.style.display = '';
-        });
       });
     </script>
 
@@ -1259,11 +1008,267 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     // Importar usuários via XLS/XLSX
-    document.getElementById('importXlsBtn').addEventListener('click', function() {
-      document.getElementById('xlsInput').click();
+    async function solicitarSenhaImportacao() {
+      return new Promise((resolve) => {
+        const senha = prompt('Digite a senha de administrador para importar usuários:');
+        // Agora a senha é "1234"
+        if (senha === '1234') {
+          resolve(true);
+        } else {
+          alert('Senha incorreta. Importação cancelada.');
+          resolve(false);
+        }
+      });
+    }
+
+    document.getElementById('importXlsBtn').addEventListener('click', async function() {
+      const autorizado = await solicitarSenhaImportacao();
+      if (autorizado) {
+        document.getElementById('xlsInput').click();
+      }
     });
 
-    // Crie um modal
+    // Crie um modal para confirmação visual dos dados importados
+    function criarModalConfirmacaoImportacao(usuarios, onConfirm) {
+      // Remove modal antigo se existir
+      const oldModal = document.getElementById('modalConfirmImport');
+      if (oldModal) oldModal.remove();
+
+      // Cria HTML do modal
+      const modal = document.createElement('div');
+      modal.className = 'modal fade';
+      modal.id = 'modalConfirmImport';
+      modal.tabIndex = -1;
+      modal.innerHTML = `
+        <div class="modal-dialog modal-xl">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Confirmar Importação de Usuários</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div style="max-height:350px;overflow:auto;">
+                <table class="table table-bordered table-sm">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Matrícula</th>
+                      <th>Status</th>
+                      <th>Função</th>
+                      <th>Telefone</th>
+                      <th>Endereço</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${usuarios.map(u => `
+                      <tr>
+                        <td>${u.nome || ''}</td>
+                        <td>${u.email || ''}</td>
+                        <td>${u.matricula || ''}</td>
+                        <td>${u.status || ''}</td>
+                        <td>${u.funcao || ''}</td>
+                        <td>${u.telefone || ''}</td>
+                        <td>${u.endereco ? [
+                          u.endereco.logradouro, u.endereco.numero, u.endereco.bairro, u.endereco.cidade, u.endereco.uf, u.endereco.cep
+                        ].filter(Boolean).join(', ') : ''}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div id="importProgress" class="my-3" style="display:none;">
+                <div class="progress">
+                  <div class="progress-bar" role="progressbar" style="width:0%">0%</div>
+                </div>
+                <div class="mt-2 text-center" id="importProgressText"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" id="btnConfirmarImportacao">Confirmar Importação</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Mostra o modal
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
+
+      // Ao clicar em confirmar, chama o callback
+      document.getElementById('btnConfirmarImportacao').onclick = async function() {
+        document.getElementById('importProgress').style.display = 'block';
+        this.disabled = true;
+        await onConfirm(bsModal, usuarios);
+      };
+    }
+
+    document.getElementById('xlsInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = file.name.toLowerCase();
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          let usuariosRaw = [];
+          if (fileName.endsWith('.csv')) {
+            // CSV com tabulação (Excel exporta assim para colunas)
+            usuariosRaw = csvToArray(e.target.result, "\t");
+            // Se não encontrar, tenta ponto e vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ";");
+            }
+            // Se não encontrar, tenta vírgula
+            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+              usuariosRaw = csvToArray(e.target.result, ",");
+            }
+          } else {
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            // Remove as linhas em branco
+            for (let i = json.length - 1; i >= 0; i--) {
+              if (json[i].every(cell => cell === null || cell === '')) {
+                json.splice(i, 1);
+              }
+            }
+            // Converte para objeto com chaves
+            const cabecalhos = json[0].map(cabecalho => cabecalho.trim().toLowerCase());
+            json.slice(1).forEach(linha => {
+              const usuario = {};
+              linha.forEach((valor, index) => {
+                usuario[cabecalhos[index]] = valor;
+              });
+              usuariosRaw.push(usuario);
+            });
+          }
+
+          // Validação simples dos dados
+          const usuariosValidos = usuariosRaw.filter(u => u.nome && u.email && u.matricula);
+          if (usuariosValidos.length === 0) {
+            alert('Nenhum usuário válido encontrado no arquivo.');
+            return;
+          }
+
+          // Mostra modal de confirmação
+          criarModalConfirmacaoImportacao(usuariosValidos, async (modal, usuarios) => {
+            // Atualiza barra de progresso
+            const updateProgress = (percent) => {
+              const progressBar = document.querySelector('.progress-bar');
+              const progressText = document.getElementById('importProgressText');
+              progressBar.style.width = `${percent}%`;
+              progressText.textContent = `${percent}% concluído`;
+            };
+
+            // Limpa usuários existentes (exceto admin)
+            try {
+              const snapshot = await db.collection('usuarios').get();
+              const deletarUsuarios = snapshot.docs.filter(doc => doc.data().matricula !== 'admin');
+              for (const doc of deletarUsuarios) {
+                await db.collection('usuarios').doc(doc.id).delete();
+              }
+              console.log('Usuários existentes removidos com sucesso.');
+            } catch (error) {
+              console.error('Erro ao remover usuários existentes:', error);
+              showAlert('danger', 'Erro ao remover usuários existentes. Importação cancelada.');
+              modal.hide();
+              return;
+            }
+
+            // Importa usuários válidos
+            for (let i = 0; i < usuarios.length; i++) {
+              const usuario = usuarios[i];
+              try {
+                await db.collection('usuarios').add({
+                  nome: usuario.nome,
+                  email: usuario.email,
+                  matricula: usuario.matricula,
+                  status: usuario.status || 'Ativo',
+                  funcao: usuario.funcao || 'ALUNO',
+                  telefone: usuario.telefone || '',
+                  endereco: {
+                    logradouro: usuario.endereco || '',
+                    numero: usuario.numero || '',
+                    cep: usuario.cep || '',
+                    bairro: usuario.bairro || '',
+                    cidade: usuario.cidade || '',
+                    uf: usuario.uf || ''
+                  },
+                  livrosEmprestados: 0,
+                  dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                updateProgress(Math.round(((i + 1) / usuarios.length) * 100));
+                await new Promise(resolve => setTimeout(resolve, 100)); // Simula atraso
+              } catch (error) {
+                console.error('Erro ao importar usuário:', usuario, error);
+                showAlert('danger', `Erro ao importar usuário ${usuario.nome}.`);
+              }
+            }
+
+            showAlert('success', 'Importação concluída com sucesso!');
+            modal.hide();
+            loadUsers();
+          });
+        } catch (error) {
+          console.error('Erro ao ler arquivo:', error);
+          alert('Erro ao ler arquivo. Por favor, tente novamente.');
+        }
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    // Função para converter CSV para array de objetos
+    function csvToArray(strData, strDelimiter) {
+      // Delimitador padrão
+      strDelimiter = (strDelimiter || ",");
+      
+      // Cria expressão regular para parsing do CSV
+      const objPattern = new RegExp(
+        (
+          // Delimitadores iniciais
+          "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+          // Captura os campos entre delimitadores
+          "([^\"\\" + strDelimiter + "\\r\\n]*|" +
+          // Campos com aspas
+          "\"([^\"]*(?:\"\"[^\"]*)*)\")"
+        ),
+        "gi"
+        );
+        
+      // Armazena os dados
+      const arrData = [[]];
+      
+      let arrMatches = null;
+      
+      // Executa o parsing
+      while (arrMatches = objPattern.exec(strData)) {
+        const strMatchedDelimiter = arrMatches[1];
+        let strMatchedValue;
+        
+        // Verifica se é um delimitador de nova linha
+        if (strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter) {
+          // Nova linha - cria um novo array para os dados
+          arrData.push([]);
+        }
+        
+        // Verifica se o campo está entre aspas
+        if (arrMatches[2]) {
+          strMatchedValue = arrMatches[2].replace(/""/g, '"');
+        } else {
+          strMatchedValue = arrMatches[3] || '';
+        }
+        
+        // Adiciona o valor ao último array
+        arrData[arrData.length - 1].push(strMatchedValue);
+      }
+      
+      // Remove arrays vazios
+      return arrData.filter(arr => arr.length > 0);
+    }
   </script>
 </body>
 </html>
+
