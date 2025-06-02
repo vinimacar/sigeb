@@ -645,22 +645,32 @@
 
         if (filterTitulo.trim()) {
           const lowerTitulo = filterTitulo.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.titulo && book.titulo.toLowerCase().includes(lowerTitulo)
-          );
+          booksToDisplay = booksToDisplay.filter(book => {
+            if (typeof book.titulo === 'string') {
+              return book.titulo.toLowerCase().includes(lowerTitulo);
+            }
+            return false;
+          });
         }
         if (filterAutor.trim()) {
           const lowerAutor = filterAutor.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.autores && Array.isArray(book.autores) &&
-            book.autores.some(author => author.toLowerCase().includes(lowerAutor))
-          );
+          booksToDisplay = booksToDisplay.filter(book => {
+            if (Array.isArray(book.autores)) {
+              return book.autores.some(author => author.toLowerCase().includes(lowerAutor));
+            } else if (typeof book.autores === 'string') {
+              return book.autores.toLowerCase().includes(lowerAutor);
+            }
+            return false;
+          });
         }
         if (filterEditora.trim()) {
           const lowerEditora = filterEditora.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.editora && book.editora.toLowerCase().includes(lowerEditora)
-          );
+          booksToDisplay = booksToDisplay.filter(book => {
+            if (typeof book.editora === 'string') {
+              return book.editora.toLowerCase().includes(lowerEditora);
+            }
+            return false;
+          });
         }
 
         bookGrid.innerHTML = '';
@@ -955,7 +965,14 @@
         }
         if (filterAutor.trim()) {
             const lowerAutor = filterAutor.toLowerCase().trim();
-            books = books.filter(book => book.autores && Array.isArray(book.autores) && book.autores.some(author => author.toLowerCase().includes(lowerAutor)));
+            books = books.filter(book => {
+              if (Array.isArray(book.autores)) {
+                return book.autores.some(author => author.toLowerCase().includes(lowerAutor));
+              } else if (typeof book.autores === 'string') {
+                return book.autores.toLowerCase().includes(lowerAutor);
+              }
+              return false;
+            });
         }
         if (filterEditora.trim()) {
             const lowerEditora = filterEditora.toLowerCase().trim();
