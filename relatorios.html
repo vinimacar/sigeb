@@ -329,24 +329,19 @@
 
     // Função para buscar e mostrar os empréstimos atrasados na barra
     async function mostrarBarraAtrasados() {
-      const query = await db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get();
+      // Busca apenas empréstimos com status ATRASADO
+      const query = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
       if (!query.empty) {
         let textos = [];
         // Pré-carrega nomes dos usuários e livros
         const userIds = new Set();
         const bookIds = new Set();
         const atrasados = [];
-        const today = new Date();
         query.forEach(doc => {
           const d = doc.data();
-          if (d.dataDevolucao && d.dataDevolucao.seconds) {
-            const returnDate = new Date(d.dataDevolucao.seconds * 1000);
-            if (returnDate < new Date(today.setHours(0,0,0,0))) {
-              atrasados.push(doc);
-              if (!d.usuarioNome && d.userId) userIds.add(d.userId);
-              if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
-            }
-          }
+          atrasados.push(doc);
+          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
+          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
         });
         const usuariosMap = {};
         if (userIds.size > 0) {
@@ -383,8 +378,4 @@
   </script>
 </body>
 </html>
-
-
-
-
 
