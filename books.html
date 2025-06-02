@@ -291,7 +291,7 @@
             }
         });
 
-        async function loadBooks() {
+        async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
             try {
                 const livrosRef = collection(db, 'livros');
                 const q = query(livrosRef, orderBy('titulo'));
@@ -488,5 +488,6 @@
     </script>
 </body>
 </html>
+
 
 
