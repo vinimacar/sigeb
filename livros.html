@@ -308,6 +308,10 @@
       <button class="add-button" id="searchButton">
         <i class='bx bx-search'></i>
       </button>
+      <button class="add-button" id="showAllBooksButton">
+        <i class='bx bx-list-ul'></i>
+        Mostrar Todos
+      </button>
     </div>
 
     <div class="book-grid">
@@ -969,6 +973,7 @@
       const genreFilter = document.getElementById('genreFilter');
       const searchButton = document.getElementById('searchButton');
       const printReportButton = document.getElementById('printReportButton');
+      const showAllBooksButton = document.getElementById('showAllBooksButton');
 
       let searchDebounceTimer;
 
@@ -1067,6 +1072,17 @@
       if (editBookForm) {
         editBookForm.addEventListener('submit', handleEditSubmission);
       }
+
+      if (showAllBooksButton) {
+        showAllBooksButton.addEventListener('click', () => {
+          loadBooks('', '', '', '');
+          // Limpa filtros visuais se quiser:
+          document.getElementById('filterTitulo').value = '';
+          document.getElementById('filterAutor').value = '';
+          document.getElementById('filterEditora').value = '';
+          document.getElementById('genreFilter').value = '';
+        });
+      }
     });
 
     // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
@@ -1143,7 +1159,7 @@
     // Ao carregar a página, buscar escolaId do usuário
     document.addEventListener('DOMContentLoaded', async function() {
       await buscarEscolaIdUsuario();
-      // ...restante da inicialização...
+      loadBooks();
     });
   </script>
 </body>
