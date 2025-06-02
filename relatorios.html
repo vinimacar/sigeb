@@ -141,6 +141,23 @@
     const storage = firebase.storage();
     const analytics = firebase.analytics();
 
+    // Variável global para armazenar o nome da escola do usuário logado
+    let nomeEscola = 'Escola Exemplo';
+
+    // Buscar a escola vinculada ao usuário logado
+    async function buscarEscolaUsuario() {
+      if (auth.currentUser) {
+        const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
+        if (userDoc.exists && userDoc.data().escolaId) {
+          const escolaId = userDoc.data().escolaId;
+          const escolaDoc = await db.collection('escolas').doc(escolaId).get();
+          if (escolaDoc.exists && escolaDoc.data().nome) {
+            nomeEscola = escolaDoc.data().nome;
+          }
+        }
+      }
+    }
+
     // Alternar filtros conforme tipo de relatório
     document.getElementById('reportType').addEventListener('change', function() {
       document.getElementById('livrosFilters').classList.add('d-none');
@@ -290,9 +307,6 @@
         return;
       }
 
-      // Nome da escola
-      const nomeEscola = 'Escola Exemplo';
-
       // Captura usuário logado
       let usuarioLogado = '';
       if (auth.currentUser) {
@@ -377,11 +391,15 @@
     }
 
     // Chama ao carregar a página
-    document.addEventListener('DOMContentLoaded', mostrarBarraAtrasados);
+    document.addEventListener('DOMContentLoaded', async () => {
+      await auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          await buscarEscolaUsuario();
+        }
+        mostrarBarraAtrasados();
+      });
+    });
   </script>
 </body>
 </html>
-
-
-
 
