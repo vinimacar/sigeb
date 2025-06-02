@@ -1178,12 +1178,15 @@
       // Preencher o select de escolas no formulário de cadastro/edição de usuário
       const escolaSelect = document.getElementById('userEscolaId');
       if (escolaSelect) {
-        const escolasSnap = await db.collection('escolas').get();
-        escolaSelect.innerHTML = '<option value="">Selecione a escola</option>';
-        escolasSnap.forEach(doc => {
-          const escola = doc.data();
-          escolaSelect.innerHTML += `<option value="${doc.id}">${escola.nome}</option>`;
-        });
+        // Corrige o erro: await só pode ser usado dentro de função async
+        (async function() {
+          const escolasSnap = await db.collection('escolas').get();
+          escolaSelect.innerHTML = '<option value="">Selecione a escola</option>';
+          escolasSnap.forEach(doc => {
+            const escola = doc.data();
+            escolaSelect.innerHTML += `<option value="${doc.id}">${escola.nome}</option>`;
+          });
+        })();
       }
 
     </script>
@@ -1267,4 +1270,3 @@
   </script>
 </body>
 </html>
-  
