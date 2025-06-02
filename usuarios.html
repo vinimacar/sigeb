@@ -806,6 +806,26 @@
           `;
           tbody.appendChild(tr);
         });
+
+        // Adiciona eventos aos botões de editar e excluir
+        tbody.querySelectorAll('.edit-button').forEach(btn => {
+          btn.onclick = async function() {
+            const cred = await solicitarCredenciais();
+            if (cred) {
+              editUser(this.dataset.id);
+            }
+          };
+        });
+        tbody.querySelectorAll('.delete-button').forEach(btn => {
+          btn.onclick = async function() {
+            const cred = await solicitarCredenciais();
+            if (cred && confirm('Tem certeza que deseja excluir este usuário?')) {
+              await db.collection('usuarios').doc(this.dataset.id).delete();
+              showAlert('success', 'Usuário excluído com sucesso!');
+              loadUsers();
+            }
+          };
+        });
       }
 
       // Função para editar usuário
@@ -909,6 +929,158 @@
         document.getElementById('addColaboradorForm').reset();
         document.getElementById('addColaboradorForm').classList.remove('was-validated');
       });
+
+      // Função para autenticar colaborador pelo username e senha (já existe no seu código)
+      async function autenticarColaborador(username, senha) {
+        const hash = await hashPassword(senha);
+        const snapshot = await db.collection('usuarios')
+          .where('credenciais.username', '==', username)
+          .where('credenciais.password', '==', hash)
+          .get();
+        if (!snapshot.empty) {
+          return snapshot.docs[0].data();
+        } else {
+          return null;
+        }
+      }
+
+      // Função para solicitar credenciais antes de editar/excluir
+      async function solicitarCredenciais() {
+        const username = prompt('Usuário (colaborador):');
+        const senha = prompt('Senha:');
+        if (!username || !senha) {
+          alert('Usuário e senha são obrigatórios.');
+          return null;
+        }
+        const user = await autenticarColaborador(username, senha);
+        if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+          return user;
+        } else {
+          alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
+          return null;
+        }
+      }
+
+      // Atualize o loadUsers para adicionar eventos nos botões
+      async function loadUsers() {
+        const tbody = document.querySelector('.users-table tbody');
+        tbody.innerHTML = '';
+
+        // --- Carrega todos os empréstimos ativos ---
+        let emprestimosPorMatricula = {};
+        try {
+          // Firestore
+          const emprestimosSnapshot = await db.collection('emprestimos').where('status', '==', 'Ativo').get();
+          emprestimosSnapshot.forEach(doc => {
+            const emp = doc.data();
+            if (emp.matricula) {
+              emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
+            }
+          });
+          // Se usar Realtime Database, use:
+          // const emprestimosSnap = await firebase.database().ref('emprestimos').once('value');
+          // emprestimosSnap.forEach(child => {
+          //   const emp = child.val();
+          //   if (emp.status === 'Ativo' && emp.matricula) {
+          //     emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
+          //   }
+          // });
+        } catch (e) {
+          console.error('Erro ao buscar empréstimos:', e);
+        }
+
+        // --- Firestore (importação XLS) ---
+        let firestoreUsers = [];
+        try {
+          const snapshot = await db.collection('usuarios').get();
+          snapshot.forEach(doc => {
+            const user = doc.data();
+            firestoreUsers.push({
+              nome: user.nome,
+              email: user.email,
+              matricula: user.matricula || '',
+              status: user.status || 'Ativo',
+              livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
+              id: doc.id
+            });
+          });
+        } catch (e) {
+          console.error('Erro ao buscar usuários do Firestore:', e);
+        }
+
+        // --- Realtime Database (cadastro pelo site) ---
+        let realtimeUsers = [];
+        try {
+          const snapshot = await firebase.database().ref('usuarios').once('value');
+          snapshot.forEach(child => {
+            const user = child.val();
+            if (user.cadastroCompleto) {
+              realtimeUsers.push({
+                nome: user.nome,
+                email: user.email,
+                matricula: user.matricula || '',
+                status: 'Ativo',
+                livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
+                id: child.key
+              });
+            }
+          });
+        } catch (e) {
+          console.error('Erro ao buscar usuários do Realtime Database:', e);
+        }
+
+        // Mescla os dois arrays, evitando duplicidade por matrícula
+        const todosUsuarios = [...firestoreUsers];
+        const matriculasFS = new Set(firestoreUsers.map(u => u.matricula));
+        realtimeUsers.forEach(u => {
+          if (!matriculasFS.has(u.matricula)) {
+            todosUsuarios.push(u);
+          }
+        });
+
+        // Renderiza na tabela
+        todosUsuarios.forEach(user => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.nome || ''}</td>
+            <td>${user.email || ''}</td>
+            <td>${user.matricula || ''}</td>
+            <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
+            <td>${user.livrosEmprestados || 0}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="action-button edit-button" data-id="${user.id}">
+                  <i class='bx bx-edit-alt'></i>
+                </button>
+                <button class="action-button delete-button" data-id="${user.id}">
+                  <i class='bx bx-trash'></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Adiciona eventos aos botões de editar e excluir
+        tbody.querySelectorAll('.edit-button').forEach(btn => {
+          btn.onclick = async function() {
+            const cred = await solicitarCredenciais();
+            if (cred) {
+              editUser(this.dataset.id);
+            }
+          };
+        });
+        tbody.querySelectorAll('.delete-button').forEach(btn => {
+          btn.onclick = async function() {
+            const cred = await solicitarCredenciais();
+            if (cred && confirm('Tem certeza que deseja excluir este usuário?')) {
+              await db.collection('usuarios').doc(this.dataset.id).delete();
+              showAlert('success', 'Usuário excluído com sucesso!');
+              loadUsers();
+            }
+          };
+        });
+      }
 
       // Função para autenticar colaborador pelo username e senha
       async function autenticarColaborador(username, senha) {
@@ -1271,4 +1443,3 @@
   </script>
 </body>
 </html>
-
