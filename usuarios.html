@@ -1389,7 +1389,78 @@
       // Remove arrays vazios
       return arrData.filter(arr => arr.length > 0);
     }
+
+    // Função para salvar/atualizar usuário ao submeter o formulário do modal
+    async function handleUserSubmission(event) {
+      event.preventDefault();
+      const form = event.target;
+      form.classList.add('was-validated');
+      if (!form.checkValidity()) return;
+
+      const id = document.getElementById('usuarioId').value;
+      const nome = document.getElementById('nome').value.trim();
+      const funcao = document.getElementById('funcao').value;
+      const endereco = document.getElementById('endereco').value.trim();
+      const numero = document.getElementById('numero').value.trim();
+      const cep = document.getElementById('cep').value.trim();
+      const bairro = document.getElementById('bairro').value.trim();
+      const cidade = document.getElementById('cidade').value.trim();
+      const uf = document.getElementById('uf').value;
+      const telefone = document.getElementById('telefone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const status = document.getElementById('status').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      // Monta objeto usuário
+      const usuario = {
+        nome,
+        funcao,
+        endereco: {
+          logradouro: endereco,
+          numero,
+          cep,
+          bairro,
+          cidade,
+          uf
+        },
+        telefone,
+        email,
+        status,
+        livrosEmprestados: 0,
+        dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      // Adiciona credenciais se necessário
+      if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(funcao)) {
+        if (!username || !password) {
+          showAlert('danger', 'Usuário e senha são obrigatórios para colaboradores.');
+          return;
+        }
+        usuario.credenciais = {
+          username,
+          password: await hashPassword(password)
+        };
+      }
+
+      try {
+        if (id) {
+          // Atualiza usuário existente
+          await db.collection('usuarios').doc(id).update(usuario);
+          showAlert('success', 'Usuário atualizado com sucesso!');
+        } else {
+          // Cria novo usuário
+          await db.collection('usuarios').add(usuario);
+          showAlert('success', 'Usuário cadastrado com sucesso!');
+        }
+        // Fecha modal
+        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+        loadUsers();
+      } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+        showAlert('danger', 'Erro ao salvar usuário.');
+      }
+    }
   </script>
 </body>
 </html>
-
