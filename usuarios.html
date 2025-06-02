@@ -263,7 +263,6 @@
               <th>Email</th>
               <th>Matrícula</th>
               <th>Status</th>
-              <th>Livros Emprestados</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -273,7 +272,6 @@
               <td>maria.silva@email.com</td>
               <td>2023001</td>
               <td><span class="user-status status-ativo">Ativo</span></td>
-              <td>2</td>
               <td>
                 <div class="action-buttons">
                   <button class="action-button edit-button">
@@ -290,7 +288,6 @@
               <td>joao.santos@email.com</td>
               <td>2023002</td>
               <td><span class="user-status status-ativo">Ativo</span></td>
-              <td>1</td>
               <td>
                 <div class="action-buttons">
                   <button class="action-button edit-button">
@@ -307,7 +304,6 @@
               <td>ana.oliveira@email.com</td>
               <td>2023003</td>
               <td><span class="user-status status-inativo">Inativo</span></td>
-              <td>0</td>
               <td>
                 <div class="action-buttons">
                   <button class="action-button edit-button">
@@ -746,7 +742,6 @@
               email: user.email,
               matricula: user.matricula || '',
               status: user.status || 'Ativo',
-              livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
               id: doc.id
             });
           });
@@ -766,7 +761,6 @@
                 email: user.email,
                 matricula: user.matricula || '',
                 status: 'Ativo',
-                livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
                 id: child.key
               });
             }
@@ -784,6 +778,13 @@
           }
         });
 
+        // Ordena os usuários por nome (ordem alfabética)
+        todosUsuarios.sort((a, b) => {
+          if (!a.nome) return 1;
+          if (!b.nome) return -1;
+          return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+        });
+
         // Renderiza na tabela
         todosUsuarios.forEach(user => {
           const tr = document.createElement('tr');
@@ -792,7 +793,6 @@
             <td>${user.email || ''}</td>
             <td>${user.matricula || ''}</td>
             <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
-            <td>${user.livrosEmprestados || 0}</td>
             <td>
               <div class="action-buttons">
                 <button class="action-button edit-button" data-id="${user.id}">
@@ -1000,7 +1000,6 @@
               email: user.email,
               matricula: user.matricula || '',
               status: user.status || 'Ativo',
-              livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
               id: doc.id
             });
           });
@@ -1020,7 +1019,6 @@
                 email: user.email,
                 matricula: user.matricula || '',
                 status: 'Ativo',
-                livrosEmprestados: emprestimosPorMatricula[user.matricula] || 0,
                 id: child.key
               });
             }
@@ -1038,6 +1036,13 @@
           }
         });
 
+        // Ordena os usuários por nome (ordem alfabética)
+        todosUsuarios.sort((a, b) => {
+          if (!a.nome) return 1;
+          if (!b.nome) return -1;
+          return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+        });
+
         // Renderiza na tabela
         todosUsuarios.forEach(user => {
           const tr = document.createElement('tr');
@@ -1046,7 +1051,6 @@
             <td>${user.email || ''}</td>
             <td>${user.matricula || ''}</td>
             <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
-            <td>${user.livrosEmprestados || 0}</td>
             <td>
               <div class="action-buttons">
                 <button class="action-button edit-button" data-id="${user.id}">
@@ -1443,3 +1447,4 @@
   </script>
 </body>
 </html>
+
