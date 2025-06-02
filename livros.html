@@ -689,8 +689,6 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadBooks);
-
     // Função para criar card do livro
     function createBookCard(id, book) {
       const card = document.createElement('div');
@@ -720,23 +718,24 @@
     }
 
     // Função para editar livro
-    async function editBook(id) {
+    window.editBook = async function(id) {
       try {
-        const doc = await db.collection('livros').doc(id).get();
-        if (!doc.exists) {
+        const docRef = doc(db, 'livros', id);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
           showAlert('danger', 'Livro não encontrado');
           return;
         }
 
-        const book = doc.data();
+        const book = docSnap.data();
         document.getElementById('editBookId').value = id;
         document.getElementById('editTitulo').value = book.titulo;
         document.getElementById('editISBN').value = book.isbn || '';
-        document.getElementById('editAutores').value = book.autores;
+        document.getElementById('editAutores').value = Array.isArray(book.autores) ? book.autores.join(', ') : book.autores;
         document.getElementById('editEditora').value = book.editora;
         document.getElementById('editAno').value = book.ano;
         document.getElementById('editEdicao').value = book.edicao || '';
-        document.getElementById('editGenero').value = book.genero;
+        document.getElementById('editGenero').value = book.genero || '';
         document.getElementById('editQuantidade').value = book.quantidade;
         document.getElementById('editDescricao').value = book.descricao || '';
         
@@ -746,7 +745,7 @@
         console.error('Erro ao carregar dados do livro:', error);
         showAlert('danger', 'Erro ao carregar dados do livro');
       }
-    }
+    };
 
     // Função para salvar edições
     async function handleEditSubmission(event) {
@@ -760,22 +759,25 @@
 
       try {
         const id = document.getElementById('editBookId').value;
-        
+        let autores = document.getElementById('editAutores').value;
+        // Garante que autores seja array
+        autores = autores.split(',').map(a => a.trim()).filter(a => a);
+
         const bookData = {
           titulo: document.getElementById('editTitulo').value,
           isbn: document.getElementById('editISBN').value,
-          autores: document.getElementById('editAutores').value,
+          autores: autores,
           editora: document.getElementById('editEditora').value,
           ano: parseInt(document.getElementById('editAno').value),
           edicao: document.getElementById('editEdicao').value,
           genero: document.getElementById('editGenero').value,
           quantidade: parseInt(document.getElementById('editQuantidade').value),
           descricao: document.getElementById('editDescricao').value,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: serverTimestamp()
         };
 
         // Atualizar no Firestore
-        await db.collection('livros').doc(id).update(bookData);
+        await updateDoc(doc(db, 'livros', id), bookData);
 
         showAlert('success', 'Livro atualizado com sucesso!');
         bootstrap.Modal.getInstance(document.getElementById('editBookModal')).hide();
@@ -788,18 +790,18 @@
     }
 
     // Função para excluir livro
-    async function deleteBook(id) {
+    window.deleteBook = async function(id) {
       if (!confirm('Tem certeza que deseja excluir este livro?')) return;
 
       try {
-        await db.collection('livros').doc(id).delete();
+        await deleteDoc(doc(db, 'livros', id));
         showAlert('success', 'Livro excluído com sucesso!');
         loadBooks();
       } catch (error) {
         console.error('Erro ao excluir livro:', error);
         showAlert('danger', 'Erro ao excluir livro');
       }
-    }
+    };
 
     // Mostrar alertas
     function showAlert(type, message) {
@@ -845,7 +847,7 @@
 
         const ean = document.getElementById('ean').value;
         const titulo = document.getElementById('titulo').value;
-        const autores = document.getElementById('autores').value.split(';').map(a => a.trim());
+        const autores = document.getElementById('autores').value.split(';').map(a => a.trim()).filter(a => a);
         const editora = document.getElementById('editora').value;
         const anoPublicacao = parseInt(document.getElementById('anoPublicacao').value);
         const edicao = document.getElementById('edicao').value || null;
@@ -856,7 +858,7 @@
 
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
-        await db.collection('livros').add({
+        await addDoc(collection(db, 'livros'), {
           ean,
           titulo,
           autores,
@@ -870,9 +872,9 @@
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
-          escolaId: escolaIdUsuario, // <-- VINCULA O LIVRO À ESCOLA
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          escolaId: escolaIdUsuario,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
 
         showAlert('success', 'Livro adicionado com sucesso!');
@@ -945,40 +947,39 @@
 
     // Função para obter os livros filtrados atualmente
     async function getFilteredBooks() {
-        const filterTitulo = document.getElementById('filterTitulo') ? document.getElementById('filterTitulo').value : '';
-        const filterAutor = document.getElementById('filterAutor') ? document.getElementById('filterAutor').value : '';
-        const filterEditora = document.getElementById('filterEditora') ? document.getElementById('filterEditora').value : '';
-        const selectedGenre = document.getElementById('genreFilter') ? document.getElementById('genreFilter').value : '';
+      const filterTitulo = document.getElementById('filterTitulo') ? document.getElementById('filterTitulo').value : '';
+      const filterAutor = document.getElementById('filterAutor') ? document.getElementById('filterAutor').value : '';
+      const filterEditora = document.getElementById('filterEditora') ? document.getElementById('filterEditora').value : '';
+      const selectedGenre = document.getElementById('genreFilter') ? document.getElementById('genreFilter').value : '';
 
-        let query = db.collection('livros').orderBy('titulo');
+      let q = query(collection(db, 'livros'), orderBy('titulo'));
+      if (selectedGenre) {
+        q = query(q, where('generos', 'array-contains', selectedGenre));
+      }
 
-        if (selectedGenre) {
-            query = query.where('generos', 'array-contains', selectedGenre);
-        }
+      const snapshot = await getDocs(q);
+      let books = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const snapshot = await query.get();
-        let books = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        if (filterTitulo.trim()) {
-            const lowerTitulo = filterTitulo.toLowerCase().trim();
-            books = books.filter(book => book.titulo && book.titulo.toLowerCase().includes(lowerTitulo));
-        }
-        if (filterAutor.trim()) {
-            const lowerAutor = filterAutor.toLowerCase().trim();
-            books = books.filter(book => {
-              if (Array.isArray(book.autores)) {
-                return book.autores.some(author => author.toLowerCase().includes(lowerAutor));
-              } else if (typeof book.autores === 'string') {
-                return book.autores.toLowerCase().includes(lowerAutor);
-              }
-              return false;
-            });
-        }
-        if (filterEditora.trim()) {
-            const lowerEditora = filterEditora.toLowerCase().trim();
-            books = books.filter(book => book.editora && book.editora.toLowerCase().includes(lowerEditora));
-        }
-        return books;
+      if (filterTitulo.trim()) {
+        const lowerTitulo = filterTitulo.toLowerCase().trim();
+        books = books.filter(book => book.titulo && book.titulo.toLowerCase().includes(lowerTitulo));
+      }
+      if (filterAutor.trim()) {
+        const lowerAutor = filterAutor.toLowerCase().trim();
+        books = books.filter(book => {
+          if (Array.isArray(book.autores)) {
+            return book.autores.some(author => author.toLowerCase().includes(lowerAutor));
+          } else if (typeof book.autores === 'string') {
+            return book.autores.toLowerCase().includes(lowerAutor);
+          }
+          return false;
+        });
+      }
+      if (filterEditora.trim()) {
+        const lowerEditora = filterEditora.toLowerCase().trim();
+        books = books.filter(book => book.editora && book.editora.toLowerCase().includes(lowerEditora));
+      }
+      return books;
     }
 
 
@@ -1035,7 +1036,6 @@
             return;
           }
           // Modal para escolher o formato do relatório
-          const formatModal = new bootstrap.Modal(document.createElement('div'), {}); // Placeholder
           const modalContent = `
             <div class="modal" tabindex="-1" id="reportFormatModal">
               <div class="modal-dialog modal-sm">
@@ -1055,7 +1055,7 @@
           `;
           const modalElement = document.createElement('div');
           modalElement.innerHTML = modalContent;
-          document.body.appendChild(modalElement.firstChild); // Adiciona o modal ao body
+          document.body.appendChild(modalElement.firstChild);
 
           const reportModal = new bootstrap.Modal(document.getElementById('reportFormatModal'));
           reportModal.show();
@@ -1063,14 +1063,13 @@
           document.getElementById('generatePdfBtn').addEventListener('click', () => {
             generatePdfReport(books);
             reportModal.hide();
-            document.getElementById('reportFormatModal').remove(); // Limpa o modal da DOM
+            document.getElementById('reportFormatModal').remove();
           });
           document.getElementById('generateXlsBtn').addEventListener('click', () => {
             generateXlsReport(books);
             reportModal.hide();
-            document.getElementById('reportFormatModal').remove(); // Limpa o modal da DOM
+            document.getElementById('reportFormatModal').remove();
           });
-           // Limpar o modal da DOM quando fechado pelo 'x' ou clique fora
           document.getElementById('reportFormatModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
           });
@@ -1092,12 +1091,10 @@
 
       if (showAllBooksButton) {
         showAllBooksButton.addEventListener('click', () => {
-          // Limpa filtros visuais
           document.getElementById('filterTitulo').value = '';
           document.getElementById('filterAutor').value = '';
           document.getElementById('filterEditora').value = '';
           document.getElementById('genreFilter').value = '';
-          // Atualiza os livros exibidos
           loadBooks('', '', '', '');
         });
       }
@@ -1136,7 +1133,6 @@
       }
     }
 
-    // Adiciona o evento ao sair do campo ISBN
     document.addEventListener('DOMContentLoaded', function() {
       const isbnInput = document.getElementById('isbn');
       if (isbnInput) {
@@ -1144,7 +1140,6 @@
       }
     });
 
-    // Garante que o botão "Salvar Livro" sempre aparece
     document.addEventListener('DOMContentLoaded', function() {
       const addBookForm = document.getElementById('addBookForm');
       const saveBookBtn = document.getElementById('saveBookBtn');
@@ -1152,27 +1147,6 @@
         saveBookBtn.style.display = 'inline-block';
       }
     });
-
-    // Buscar escolaId do usuário logado
-    async function buscarEscolaIdUsuario() {
-      return new Promise((resolve) => {
-        firebase.auth().onAuthStateChanged(async (user) => {
-          if (user) {
-            const userDoc = await db.collection('usuarios').doc(user.uid).get();
-            if (userDoc.exists && userDoc.data().escolaId) {
-              escolaIdUsuario = userDoc.data().escolaId;
-              resolve(escolaIdUsuario);
-            } else {
-              escolaIdUsuario = null;
-              resolve(null);
-            }
-          } else {
-            escolaIdUsuario = null;
-            resolve(null);
-          }
-        });
-      });
-    }
 
     // Ao carregar a página, buscar escolaId do usuário
     document.addEventListener('DOMContentLoaded', async function() {
