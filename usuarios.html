@@ -653,14 +653,17 @@
       });
 
       // Máscara para telefone do colaborador
-      document.getElementById('colabTelefone').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length <= 11) {
-          value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
-          value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-          e.target.value = value;
-        }
-      });
+      const colabTelefoneInput = document.getElementById('colabTelefone');
+      if (colabTelefoneInput) {
+        colabTelefoneInput.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/\D/g, '');
+          if (value.length <= 11) {
+            value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+            value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+            e.target.value = value;
+          }
+        });
+      }
 
       // Função para hash da senha (exemplo simples - em produção usar bcrypt ou similar)
       async function hashPassword(password) {
@@ -1389,3 +1392,4 @@
   </script>
 </body>
 </html>
+
