@@ -677,57 +677,6 @@
 
     document.addEventListener('DOMContentLoaded', loadBooks);
 
-    // Função para carregar livros do Firebase com filtros e busca
-    async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
-      const bookGrid = document.querySelector('.book-grid');
-      try {
-        bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
-
-        let q = query(collection(db, 'livros'), orderBy('titulo'));
-        if (selectedGenre) {
-          q = query(q, where('generos', 'array-contains', selectedGenre));
-        }
-
-        const snapshot = await getDocs(q);
-        let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        if (filterTitulo.trim()) {
-          const lowerTitulo = filterTitulo.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.titulo && book.titulo.toLowerCase().includes(lowerTitulo)
-          );
-        }
-        if (filterAutor.trim()) {
-          const lowerAutor = filterAutor.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.autores && Array.isArray(book.autores) &&
-            book.autores.some(author => author.toLowerCase().includes(lowerAutor))
-          );
-        }
-        if (filterEditora.trim()) {
-          const lowerEditora = filterEditora.toLowerCase().trim();
-          booksToDisplay = booksToDisplay.filter(book =>
-            book.editora && book.editora.toLowerCase().includes(lowerEditora)
-          );
-        }
-
-        bookGrid.innerHTML = ''; // Limpar antes de adicionar novos cards ou mensagem
-
-        if (booksToDisplay.length === 0) {
-          bookGrid.innerHTML = '<p class="text-center p-4">Nenhum livro encontrado com os critérios selecionados.</p>';
-        } else {
-          booksToDisplay.forEach(bookData => {
-            const card = createBookCard(bookData.id, bookData);
-            bookGrid.appendChild(card);
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao carregar livros:', error);
-        bookGrid.innerHTML = '<p class="text-center text-danger p-4">Erro ao carregar livros. Tente novamente mais tarde.</p>';
-        showAlert('danger', 'Erro ao carregar livros: ' + error.message);
-      }
-    }
-
     // Função para criar card do livro
     function createBookCard(id, book) {
       const card = document.createElement('div');
