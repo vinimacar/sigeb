@@ -1393,6 +1393,13 @@
     // Função para salvar/atualizar usuário ao submeter o formulário do modal
     async function handleUserSubmission(event) {
       event.preventDefault();
+
+      // Verifica permissão do usuário logado
+      if (!usuarioLogado || !['BIBLIOTECARIO', 'DIRETOR', 'SUPERVISOR', 'ADMINISTRADOR'].includes(usuarioLogado.funcao)) {
+        showAlert('danger', 'Você não tem permissão para registrar novos usuários.');
+        return;
+      }
+
       const form = event.target;
       form.classList.add('was-validated');
       if (!form.checkValidity()) return;
@@ -1464,3 +1471,4 @@
   </script>
 </body>
 </html>
+
