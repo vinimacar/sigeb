@@ -15,9 +15,7 @@
   <!-- Firebase SDK (modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, query, where, orderBy, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getStorage } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
@@ -33,42 +31,16 @@
     // Inicialização dos serviços Firebase (modular)
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
-    const storage = getStorage(app);
 
-    // Exemplo: buscar escolaId do usuário logado (modular)
-    let escolaIdUsuario = null;
-    async function buscarEscolaIdUsuario() {
-      return new Promise((resolve) => {
-        onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            const userRef = doc(db, "usuarios", user.uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists() && userSnap.data().escolaId) {
-              escolaIdUsuario = userSnap.data().escolaId;
-              resolve(escolaIdUsuario);
-            } else {
-              escolaIdUsuario = null;
-              resolve(null);
-            }
-          } else {
-            escolaIdUsuario = null;
-            resolve(null);
-          }
-        });
+    async function carregarLivros() {
+      const livrosCol = collection(db, 'livros');
+      const livrosSnapshot = await getDocs(livrosCol);
+      livrosSnapshot.forEach(doc => {
+        console.log(doc.id, doc.data());
       });
     }
 
-    // Exemplo de uso do onAuthStateChanged
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("Usuário logado:", user.uid);
-      } else {
-        console.log("Nenhum usuário logado.");
-      }
-    });
-
-    // Continue a conversão dos demais usos do Firebase para o padrão modular conforme necessário.
+    carregarLivros();
   </script>
   <style>
     body {
@@ -1160,5 +1132,4 @@
   </script>
 </body>
 </html>
-
 
