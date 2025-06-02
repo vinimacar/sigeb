@@ -1092,12 +1092,13 @@
 
       if (showAllBooksButton) {
         showAllBooksButton.addEventListener('click', () => {
-          loadBooks('', '', '', '');
-          // Limpa filtros visuais se quiser:
+          // Limpa filtros visuais
           document.getElementById('filterTitulo').value = '';
           document.getElementById('filterAutor').value = '';
           document.getElementById('filterEditora').value = '';
           document.getElementById('genreFilter').value = '';
+          // Atualiza os livros exibidos
+          loadBooks('', '', '', '');
         });
       }
     });
