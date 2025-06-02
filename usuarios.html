@@ -685,33 +685,10 @@
         setTimeout(() => alertDiv.remove(), 5000);
       }
 
-      // Função para carregar usuários do Firestore e renderizar na tabela
+      // Função para carregar todos os usuários do Firestore e Realtime Database e renderizar na tabela
       async function loadUsers() {
         const tbody = document.querySelector('.users-table tbody');
         tbody.innerHTML = '';
-
-        // --- Carrega todos os empréstimos ativos ---
-        let emprestimosPorMatricula = {};
-        try {
-          // Firestore
-          const emprestimosSnapshot = await db.collection('emprestimos').where('status', '==', 'Ativo').get();
-          emprestimosSnapshot.forEach(doc => {
-            const emp = doc.data();
-            if (emp.matricula) {
-              emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
-            }
-          });
-          // Se usar Realtime Database, use:
-          // const emprestimosSnap = await firebase.database().ref('emprestimos').once('value');
-          // emprestimosSnap.forEach(child => {
-          //   const emp = child.val();
-          //   if (emp.status === 'Ativo' && emp.matricula) {
-          //     emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
-          //   }
-          // });
-        } catch (e) {
-          console.error('Erro ao buscar empréstimos:', e);
-        }
 
         // --- Firestore (importação XLS) ---
         let firestoreUsers = [];
@@ -907,29 +884,6 @@
       async function loadUsers() {
         const tbody = document.querySelector('.users-table tbody');
         tbody.innerHTML = '';
-
-        // --- Carrega todos os empréstimos ativos ---
-        let emprestimosPorMatricula = {};
-        try {
-          // Firestore
-          const emprestimosSnapshot = await db.collection('emprestimos').where('status', '==', 'Ativo').get();
-          emprestimosSnapshot.forEach(doc => {
-            const emp = doc.data();
-            if (emp.matricula) {
-              emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
-            }
-          });
-          // Se usar Realtime Database, use:
-          // const emprestimosSnap = await firebase.database().ref('emprestimos').once('value');
-          // emprestimosSnap.forEach(child => {
-          //   const emp = child.val();
-          //   if (emp.status === 'Ativo' && emp.matricula) {
-          //     emprestimosPorMatricula[emp.matricula] = (emprestimosPorMatricula[emp.matricula] || 0) + 1;
-          //   }
-          // });
-        } catch (e) {
-          console.error('Erro ao buscar empréstimos:', e);
-        }
 
         // --- Firestore (importação XLS) ---
         let firestoreUsers = [];
@@ -1432,3 +1386,4 @@
   </script>
 </body>
 </html>
+
