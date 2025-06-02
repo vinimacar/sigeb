@@ -159,6 +159,8 @@
         const genero = document.getElementById('livrosGenero').value;
         let query = db.collection('livros');
         if (genero) query = query.where('generos', 'array-contains', genero);
+        // Ordena por título (ordem alfabética)
+        query = query.orderBy('titulo');
         const snapshot = await query.get();
         html = `<h5>Relatório de Livros</h5>
         <table class="table table-bordered table-sm mt-3"><thead>
@@ -378,4 +380,5 @@
   </script>
 </body>
 </html>
+
 
