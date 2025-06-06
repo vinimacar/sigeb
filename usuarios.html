@@ -666,10 +666,24 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            if (confirm('Tem certeza que deseja excluir este leitor?')) {
-              await db.collection('usuarios').doc(this.dataset.id).delete();
-              showAlert('success', 'Leitor excluído com sucesso!');
-              loadUsers();
+            // Solicita email e senha antes de excluir
+            const email = prompt('Digite o email de acesso:');
+            const senha = prompt('Digite a senha de acesso:');
+            if (!email || !senha) {
+              alert('Email e senha são obrigatórios para excluir um leitor.');
+              return;
+            }
+
+            // Autentica o usuário no Firebase Auth
+            try {
+              await firebase.auth().signInWithEmailAndPassword(email, senha);
+              if (confirm('Tem certeza que deseja excluir este leitor?')) {
+                await db.collection('usuarios').doc(this.dataset.id).delete();
+                showAlert('success', 'Leitor excluído com sucesso!');
+                loadUsers();
+              }
+            } catch (error) {
+              alert('Email ou senha inválidos. Exclusão não autorizada.');
             }
           };
         });
@@ -692,13 +706,9 @@
         document.getElementById('uf').value = user.endereco?.uf || '';
         document.getElementById('telefone').value = user.telefone || '';
         document.getElementById('email').value = user.email || '';
-        document.getElementById('status').value = user.status || 'Ativo'; // <-- Adicionado aqui
-        if (user.credenciais) {
-          document.getElementById('username').value = user.credenciais.username || '';
-        }
-        toggleLoginCredentials();
+        document.getElementById('status').value = user.status || 'Ativo';
 
-        // Abre o modal
+        // Abre o modal de edição
         new bootstrap.Modal(document.getElementById('addUserModal')).show();
       }
 
@@ -860,10 +870,24 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            if (confirm('Tem certeza que deseja excluir este leitor?')) {
-              await db.collection('usuarios').doc(this.dataset.id).delete();
-              showAlert('success', 'Leitor excluído com sucesso!');
-              loadUsers();
+            // Solicita email e senha antes de excluir
+            const email = prompt('Digite o email de acesso:');
+            const senha = prompt('Digite a senha de acesso:');
+            if (!email || !senha) {
+              alert('Email e senha são obrigatórios para excluir um leitor.');
+              return;
+            }
+
+            // Autentica o usuário no Firebase Auth
+            try {
+              await firebase.auth().signInWithEmailAndPassword(email, senha);
+              if (confirm('Tem certeza que deseja excluir este leitor?')) {
+                await db.collection('usuarios').doc(this.dataset.id).delete();
+                showAlert('success', 'Leitor excluído com sucesso!');
+                loadUsers();
+              }
+            } catch (error) {
+              alert('Email ou senha inválidos. Exclusão não autorizada.');
             }
           };
         });
