@@ -1113,13 +1113,14 @@
       }
     });
 
-    // ZXing Barcode Scanner para ISBN
+    // ZXing Barcode Scanner para ISBN (câmera digital)
     let codeReader = null;
     document.addEventListener('DOMContentLoaded', function() {
       const scanBtn = document.getElementById('scanIsbnBtn');
       const scanModal = new bootstrap.Modal(document.getElementById('scanIsbnModal'));
       const video = document.getElementById('isbnVideo');
       const feedback = document.getElementById('isbnScanFeedback');
+      const isbnInput = document.getElementById('isbn');
 
       if (scanBtn) {
         scanBtn.addEventListener('click', async () => {
@@ -1143,11 +1144,12 @@
             }
             codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
               if (result) {
-                document.getElementById('isbn').value = result.text;
+                isbnInput.value = result.text;
                 scanModal.hide();
                 codeReader.reset();
+                isbnInput.dispatchEvent(new Event('blur')); // dispara busca automática
               }
-            }, { facingMode: { exact: "environment" } }); // Sugere câmera traseira em mobile
+            }, { facingMode: { exact: "environment" } });
           } catch (e) {
             feedback.textContent = 'Erro ao acessar a câmera.';
           }
@@ -1161,15 +1163,27 @@
           video.srcObject = null;
         }
       });
+
+      // Captura por leitora de código de barras (USB/Bluetooth)
+      if (isbnInput) {
+        isbnInput.addEventListener('input', function (e) {
+          // Se o valor tem 10 ou 13 dígitos, dispara busca automática
+          const val = isbnInput.value.replace(/[^0-9Xx]/g, '');
+          if (val.length === 10 || val.length === 13) {
+            isbnInput.dispatchEvent(new Event('blur'));
+          }
+        });
+      }
     });
 
-    // ZXing Barcode Scanner para EAN
+    // ZXing Barcode Scanner para EAN (câmera digital)
     let eanCodeReader = null;
     document.addEventListener('DOMContentLoaded', function() {
       const scanEanBtn = document.getElementById('scanEanBtn');
       const scanEanModal = new bootstrap.Modal(document.getElementById('scanEanModal'));
       const eanVideo = document.getElementById('eanVideo');
       const eanFeedback = document.getElementById('eanScanFeedback');
+      const eanInput = document.getElementById('ean');
 
       if (scanEanBtn) {
         scanEanBtn.addEventListener('click', async () => {
@@ -1193,11 +1207,11 @@
             }
             eanCodeReader.decodeFromVideoDevice(selectedDeviceId, eanVideo, (result, err) => {
               if (result) {
-                document.getElementById('ean').value = result.text;
+                eanInput.value = result.text;
                 scanEanModal.hide();
                 eanCodeReader.reset();
               }
-            }, { facingMode: { exact: "environment" } }); // Sugere câmera traseira em mobile
+            }, { facingMode: { exact: "environment" } });
           } catch (e) {
             eanFeedback.textContent = 'Erro ao acessar a câmera.';
           }
@@ -1211,6 +1225,17 @@
           eanVideo.srcObject = null;
         }
       });
+
+      // Captura por leitora de código de barras (USB/Bluetooth)
+      if (eanInput) {
+        eanInput.addEventListener('input', function (e) {
+          // Se o valor tem 13 dígitos, pode disparar alguma ação se desejar
+          const val = eanInput.value.replace(/\D/g, '');
+          if (val.length === 13) {
+            // Aqui pode disparar alguma ação automática se necessário
+          }
+        });
+      }
     });
 
     // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
@@ -1274,3 +1299,4 @@
   </script>
 </body>
 </html>
+
