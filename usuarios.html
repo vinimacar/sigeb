@@ -1230,7 +1230,23 @@
           }
 
           // Validação simples dos dados
-          const usuariosValidos = usuariosRaw.filter(u => u.nome && u.email && u.matricula);
+          let usuariosValidos = [];
+          if (Array.isArray(usuariosRaw) && usuariosRaw.length > 0) {
+            // Se vier como array de arrays (sheet_to_json com header:1), converte para objetos
+            if (Array.isArray(usuariosRaw[0])) {
+              const cabecalhos = usuariosRaw[0].map(c => c.toString().trim().toLowerCase());
+              usuariosValidos = usuariosRaw.slice(1).map(linha => {
+                const obj = {};
+                linha.forEach((valor, idx) => {
+                  obj[cabecalhos[idx]] = valor;
+                });
+                return obj;
+              }).filter(u => u.nome && u.matricula); // email pode não existir em planilhas de alunos
+            } else {
+              usuariosValidos = usuariosRaw.filter(u => u.nome && u.matricula);
+            }
+          }
+
           if (usuariosValidos.length === 0) {
             alert('Nenhum usuário válido encontrado no arquivo.');
             return;
@@ -1238,7 +1254,6 @@
 
           // Mostra modal de confirmação
           criarModalConfirmacaoImportacao(usuariosValidos, async (modal, usuarios) => {
-            // Atualiza barra de progresso
             const updateProgress = (percent) => {
               const progressBar = document.querySelector('.progress-bar');
               const progressText = document.getElementById('importProgressText');
@@ -1253,9 +1268,7 @@
               for (const doc of deletarUsuarios) {
                 await db.collection('usuarios').doc(doc.id).delete();
               }
-              console.log('Usuários existentes removidos com sucesso.');
             } catch (error) {
-              console.error('Erro ao remover usuários existentes:', error);
               showAlert('danger', 'Erro ao remover usuários existentes. Importação cancelada.');
               modal.hide();
               return;
@@ -1272,6 +1285,10 @@
                   status: usuario.status || 'Ativo',
                   funcao: usuario.funcao || 'ALUNO',
                   telefone: usuario.telefone || '',
+                  serie: usuario.serie || '',
+                  periodo: usuario.periodo || '',
+                  turma: usuario.turma || '',
+                  turno: usuario.turno || '',
                   endereco: {
                     logradouro: usuario.endereco || '',
                     numero: usuario.numero || '',
@@ -1284,9 +1301,8 @@
                   dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 updateProgress(Math.round(((i + 1) / usuarios.length) * 100));
-                await new Promise(resolve => setTimeout(resolve, 100)); // Simula atraso
+                await new Promise(resolve => setTimeout(resolve, 100));
               } catch (error) {
-                console.error('Erro ao importar usuário:', usuario, error);
                 showAlert('danger', `Erro ao importar usuário ${usuario.nome}.`);
               }
             }
@@ -1296,7 +1312,6 @@
             loadUsers();
           });
         } catch (error) {
-          console.error('Erro ao ler arquivo:', error);
           alert('Erro ao ler arquivo. Por favor, tente novamente.');
         }
       };
@@ -1453,4 +1468,3 @@
   </script>
 </body>
 </html>
-
