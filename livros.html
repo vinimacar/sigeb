@@ -356,12 +356,33 @@
                   <!-- Removido campo EAN -->
                   <div class="mb-3">
                     <label for="isbn" class="form-label">ISBN*</label>
-                    <input type="text" class="form-control" id="isbn" required
-                      pattern="^(97(8|9))?\d{9}(\d|X)$">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="isbn" required
+                        pattern="^(97(8|9))?\d{9}(\d|X)$">
+                      <button class="btn btn-outline-secondary" type="button" id="scanIsbnBtn" title="Ler ISBN com câmera">
+                        <i class='bx bx-barcode-reader'></i>
+                      </button>
+                    </div>
                     <div class="invalid-feedback">
                       Por favor, insira um ISBN válido (10 ou 13 dígitos, pode terminar com X).
                     </div>
                   </div>
+                  <!-- Modal para leitura do ISBN -->
+                  <div class="modal fade" id="scanIsbnModal" tabindex="-1" aria-labelledby="scanIsbnModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="scanIsbnModalLabel">Ler ISBN com Câmera</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                          <video id="isbnVideo" width="100%" style="max-width:320px;" autoplay></video>
+                          <div id="isbnScanFeedback" class="mt-2 text-danger"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="mb-3">
                     <label for="titulo" class="form-label">Título*</label>
                     <input type="text" class="form-control" id="titulo" required>
@@ -573,6 +594,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -1080,6 +1102,52 @@
           loadBooks('', '', '', '');
         });
       }
+    });
+
+    // ZXing Barcode Scanner para ISBN
+    let isbnStream = null;
+    let codeReader = null;
+    document.addEventListener('DOMContentLoaded', function() {
+      const scanBtn = document.getElementById('scanIsbnBtn');
+      const scanModal = new bootstrap.Modal(document.getElementById('scanIsbnModal'));
+      const video = document.getElementById('isbnVideo');
+      const feedback = document.getElementById('isbnScanFeedback');
+
+      if (scanBtn) {
+        scanBtn.addEventListener('click', async () => {
+          feedback.textContent = '';
+          scanModal.show();
+
+          if (!codeReader) {
+            codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+          }
+          try {
+            const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+            const selectedDeviceId = devices[0]?.deviceId;
+            if (!selectedDeviceId) {
+              feedback.textContent = 'Nenhuma câmera encontrada.';
+              return;
+            }
+            codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+              if (result) {
+                document.getElementById('isbn').value = result.text;
+                scanModal.hide();
+                codeReader.reset();
+              }
+            });
+          } catch (e) {
+            feedback.textContent = 'Erro ao acessar a câmera.';
+          }
+        });
+      }
+
+      document.getElementById('scanIsbnModal').addEventListener('hidden.bs.modal', () => {
+        if (codeReader) codeReader.reset();
+        if (video && video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      });
     });
 
     // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
