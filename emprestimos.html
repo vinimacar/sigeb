@@ -924,6 +924,35 @@
       const container = document.getElementById('multiBookLoans');
       const rows = container.querySelectorAll('.loan-book-row');
       const newRow = rows[0].cloneNode(true);
+      function addBookRow() {
+  const container = document.getElementById('multiBookLoans');
+  const rows = container.querySelectorAll('.loan-book-row');
+  const newRow = rows[0].cloneNode(true);
+
+  // Limpar os valores dos inputs na nova linha
+  const inputs = newRow.querySelectorAll('input, select, textarea');
+  inputs.forEach(input => {
+    input.value = '';
+  });
+
+  // Remover IDs duplicados, se houver
+  newRow.querySelectorAll('[id]').forEach(el => {
+    el.removeAttribute('id');
+  });
+
+  // Opcional: atualizar nome dos campos (ex: name="book[0]", book[1], etc.)
+  const rowIndex = rows.length;
+  newRow.querySelectorAll('[name]').forEach(el => {
+    const name = el.getAttribute('name');
+    if (name) {
+      const newName = name.replace(/\[\d+\]/, `[${rowIndex}]`);
+      el.setAttribute('name', newName);
+    }
+  });
+
+  container.appendChild(newRow);
+}
+
 
       // Limpa valores do novo row
       newRow.querySelector('.bookSearch').value = '';
