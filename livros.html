@@ -838,7 +838,7 @@
       try {
         // Garante que o escolaId está carregado
         if (!escolaIdUsuario) {
-          await buscarEscolaIdUsuario();
+          escolaIdUsuario = await buscarEscolaIdUsuario(); // <-- ajuste aqui
         }
         if (!escolaIdUsuario) {
           showAlert('danger', 'Não foi possível identificar a escola do usuário logado.');
@@ -1163,3 +1163,4 @@
   </script>
 </body>
 </html>
+
