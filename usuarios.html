@@ -919,6 +919,7 @@
         }
       });
 
+
       // Certifique-se de declarar usuarioLogado no escopo global, antes de qualquer função que o utilize:
       let usuarioLogado = null;
 
@@ -1285,6 +1286,60 @@
     async function handleUserSubmission(event) {
       event.preventDefault?.();
 
+      const form = document.getElementById('addUserForm');
+      form.classList.add('was-validated');
+      if (!form.checkValidity()) return;
+
+      const id = document.getElementById('usuarioId').value;
+      const nome = document.getElementById('nome').value.trim();
+      const funcao = document.getElementById('funcao').value;
+      const endereco = document.getElementById('endereco').value.trim();
+      const numero = document.getElementById('numero').value.trim();
+      const cep = document.getElementById('cep').value.trim();
+      const bairro = document.getElementById('bairro').value.trim();
+      const cidade = document.getElementById('cidade').value.trim();
+      const uf = document.getElementById('uf').value;
+      const telefone = document.getElementById('telefone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const status = document.getElementById('status').value;
+
+      // Monta objeto usuário (sem credenciais)
+      const usuario = {
+        nome,
+        funcao,
+        endereco: {
+          logradouro: endereco,
+          numero,
+          cep,
+          bairro,
+          cidade,
+          uf
+        },
+        telefone,
+        email,
+        status,
+        livrosEmprestados: 0,
+        dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (id) {
+          // Atualiza usuário existente
+          await db.collection('usuarios').doc(id).update(usuario);
+          showAlert('success', 'Usuário atualizado com sucesso!');
+        } else {
+          // Cria novo usuário
+          await db.collection('usuarios').add(usuario);
+          showAlert('success', 'Usuário cadastrado com sucesso!');
+        }
+        // Fecha modal
+        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+        loadUsers();
+      } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+        showAlert('danger', 'Erro ao salvar usuário.');
+      }
+    }
 
     // Certifique-se de adicionar o event listener após a definição da função:
     document.addEventListener('DOMContentLoaded', function() {
@@ -1296,5 +1351,4 @@
   </script>
 </body>
 </html>
-
 
