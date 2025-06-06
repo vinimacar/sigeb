@@ -462,6 +462,34 @@
                     </div>
                   </div>
 
+                  <div class="mb-3">
+                    <label for="ean" class="form-label">EAN</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="ean" pattern="^\d{13}$" placeholder="Código EAN (13 dígitos)">
+                      <button class="btn btn-outline-secondary" type="button" id="scanEanBtn" title="Ler EAN com câmera">
+                        <i class='bx bx-barcode-reader'></i>
+                      </button>
+                    </div>
+                    <div class="invalid-feedback">
+                      Por favor, insira um EAN válido (13 dígitos).
+                    </div>
+                  </div>
+                  <!-- Modal para leitura do EAN -->
+                  <div class="modal fade" id="scanEanModal" tabindex="-1" aria-labelledby="scanEanModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="scanEanModalLabel">Ler EAN com Câmera</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                          <video id="eanVideo" width="100%" style="max-width:320px;" autoplay></video>
+                          <div id="eanScanFeedback" class="mt-2 text-danger"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </form>
