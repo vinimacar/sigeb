@@ -666,31 +666,15 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            const email = prompt('Digite o email de acesso:');
-            const senha = prompt('Digite a senha de acesso:');
-            if (!email || !senha) {
-              alert('Email e senha são obrigatórios para excluir um leitor.');
-              return;
-            }
-
-            try {
-              // Se o usuário logado for o mesmo do email informado, use reauthenticate
-              const user = firebase.auth().currentUser;
-              if (user && user.email === email) {
-                const credential = firebase.auth.EmailAuthProvider.credential(email, senha);
-                await user.reauthenticateWithCredential(credential);
-              } else {
-                // Caso contrário, faça login normalmente (isso troca o usuário global!)
-                await firebase.auth().signInWithEmailAndPassword(email, senha);
-              }
-
-              if (confirm('Tem certeza que deseja excluir este leitor?')) {
+            // Alerta visual bem chamativo antes de excluir
+            if (confirm('⚠️ ATENÇÃO!\n\nEsta ação irá excluir o usuário permanentemente.\n\nTem certeza que deseja continuar?')) {
+              try {
                 await db.collection('usuarios').doc(this.dataset.id).delete();
-                showAlert('success', 'Leitor excluído com sucesso!');
+                showAlert('danger', 'Usuário excluído com sucesso!');
                 loadUsers();
+              } catch (error) {
+                showAlert('danger', 'Erro ao excluir usuário.');
               }
-            } catch (error) {
-              alert('Email ou senha inválidos. Exclusão não autorizada.');
             }
           };
         });
@@ -877,31 +861,15 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            const email = prompt('Digite o email de acesso:');
-            const senha = prompt('Digite a senha de acesso:');
-            if (!email || !senha) {
-              alert('Email e senha são obrigatórios para excluir um leitor.');
-              return;
-            }
-
-            try {
-              // Se o usuário logado for o mesmo do email informado, use reauthenticate
-              const user = firebase.auth().currentUser;
-              if (user && user.email === email) {
-                const credential = firebase.auth.EmailAuthProvider.credential(email, senha);
-                await user.reauthenticateWithCredential(credential);
-              } else {
-                // Caso contrário, faça login normalmente (isso troca o usuário global!)
-                await firebase.auth().signInWithEmailAndPassword(email, senha);
-              }
-
-              if (confirm('Tem certeza que deseja excluir este leitor?')) {
+            // Alerta visual bem chamativo antes de excluir
+            if (confirm('⚠️ ATENÇÃO!\n\nEsta ação irá excluir o usuário permanentemente.\n\nTem certeza que deseja continuar?')) {
+              try {
                 await db.collection('usuarios').doc(this.dataset.id).delete();
-                showAlert('success', 'Leitor excluído com sucesso!');
+                showAlert('danger', 'Usuário excluído com sucesso!');
                 loadUsers();
+              } catch (error) {
+                showAlert('danger', 'Erro ao excluir usuário.');
               }
-            } catch (error) {
-              alert('Email ou senha inválidos. Exclusão não autorizada.');
             }
           };
         });
@@ -1051,20 +1019,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     // Importar usuários via XLS/XLSX
-    document.getElementById('importXlsBtn').addEventListener('click', async function() {
-      // Solicita email e senha do Firebase Auth antes de permitir importação
-      const email = prompt('Digite seu email de acesso:');
-      const senha = prompt('Digite sua senha de acesso:');
-      if (!email || !senha) {
-        alert('Email e senha são obrigatórios para importar usuários.');
-        return;
-      }
-      try {
-        await firebase.auth().signInWithEmailAndPassword(email, senha);
-        document.getElementById('xlsInput').click();
-      } catch (error) {
-        alert('Email ou senha inválidos. Importação não autorizada.');
-      }
+    document.getElementById('importXlsBtn').addEventListener('click', function() {
+      // Não solicita mais email/senha, apenas abre o seletor de arquivo
+      document.getElementById('xlsInput').click();
     });
 
     // Crie um modal para confirmação visual dos dados importados
