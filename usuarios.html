@@ -658,21 +658,17 @@
           tbody.appendChild(tr);
         });
 
-        // Adiciona eventos aos botões de editar e excluir
+        // Adiciona eventos aos botões de editar e excluir SEM exigir credenciais
         tbody.querySelectorAll('.edit-button').forEach(btn => {
-          btn.onclick = async function() {
-            const cred = await solicitarCredenciais();
-            if (cred) {
-              editUser(this.dataset.id);
-            }
+          btn.onclick = function() {
+            editUser(this.dataset.id);
           };
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            const cred = await solicitarCredenciais();
-            if (cred && confirm('Tem certeza que deseja excluir este usuário?')) {
+            if (confirm('Tem certeza que deseja excluir este leitor?')) {
               await db.collection('usuarios').doc(this.dataset.id).delete();
-              showAlert('success', 'Usuário excluído com sucesso!');
+              showAlert('success', 'Leitor excluído com sucesso!');
               loadUsers();
             }
           };
@@ -856,21 +852,17 @@
           tbody.appendChild(tr);
         });
 
-        // Adiciona eventos aos botões de editar e excluir
+        // Adiciona eventos aos botões de editar e excluir SEM exigir credenciais
         tbody.querySelectorAll('.edit-button').forEach(btn => {
-          btn.onclick = async function() {
-            const cred = await solicitarCredenciais();
-            if (cred) {
-              editUser(this.dataset.id);
-            }
+          btn.onclick = function() {
+            editUser(this.dataset.id);
           };
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            const cred = await solicitarCredenciais();
-            if (cred && confirm('Tem certeza que deseja excluir este usuário?')) {
+            if (confirm('Tem certeza que deseja excluir este leitor?')) {
               await db.collection('usuarios').doc(this.dataset.id).delete();
-              showAlert('success', 'Usuário excluído com sucesso!');
+              showAlert('success', 'Leitor excluído com sucesso!');
               loadUsers();
             }
           };
@@ -1351,4 +1343,5 @@
   </script>
 </body>
 </html>
+
 
