@@ -1233,15 +1233,13 @@
             const ano = livro.publish_date.match(/\d{4}/) ? livro.publish_date.match(/\d{4}/)[0] : livro.publish_date;
             document.getElementById("anoPublicacao").value = ano;
           }
-          // Idioma (opcional)
-          if (livro.languages && livro.languages.length > 0 && livro.languages[0].key.includes('por')) {
-            document.getElementById("idioma").value = "pt-BR";
-          }
         } else {
-          alert("Livro não encontrado.");
+          // Não encontrou o livro, apenas permite o cadastro manual
+          // Opcional: pode mostrar um aviso amigável
+          showAlert('warning', 'ISBN não encontrado. Preencha os dados manualmente para cadastrar o livro.');
         }
       } catch (error) {
-        alert("Erro ao buscar o livro.");
+        showAlert('danger', 'Erro ao buscar o livro. Preencha os dados manualmente.');
         console.error(error);
       }
     }
