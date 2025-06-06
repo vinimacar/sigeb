@@ -388,7 +388,7 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="funcao" class="form-label">Função*</label>
-                    <select class="form-select" id="funcao" required onchange="toggleLoginCredentials()">
+                    <select class="form-select" id="funcao" required>
                       <option value="">Selecione a função</option>
                       <option value="ALUNO">Aluno</option>
                       <option value="PROFESSOR">Professor</option>
@@ -532,37 +532,8 @@
                 </div>
               </div>
 
-              <!-- Credenciais de Login (visível apenas para funções específicas) -->
-              <div id="loginCredentials" style="display: none;">
-                <hr>
-                <h6 class="mb-3">Credenciais de Acesso</h6>
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="mb-3">
-                      <label for="username" class="form-label">Nome de Usuário*</label>
-                      <input type="text" class="form-control" id="username">
-                      <div class="invalid-feedback">
-                        Por favor, insira um nome de usuário.
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="mb-3">
-                      <label for="password" class="form-label">Senha*</label>
-                      <div class="input-group">
-                        <input type="password" class="form-control" id="password">
-                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
-                          <i class='bx bx-show'></i>
-                        </button>
-                      </div>
-                      <div class="invalid-feedback">
-                        Por favor, insira uma senha.
-                      </div>
-                      <small class="text-muted">Mínimo 8 caracteres, incluindo letras e números</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <!-- Remova o bloco de campos de credenciais do formulário de usuário -->
+              
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar Usuário</button>
@@ -595,41 +566,6 @@
         } catch (error) {
           console.error('Erro ao buscar CEP:', error);
           showAlert('danger', 'Erro ao buscar CEP');
-        }
-      }
-
-      // Função para mostrar/ocultar campos de login
-      function toggleLoginCredentials() {
-        const funcao = document.getElementById('funcao').value;
-        const loginFields = document.getElementById('loginCredentials');
-        const needsLogin = ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(funcao);
-        
-        loginFields.style.display = needsLogin ? 'block' : 'none';
-        
-        // Atualizar validação dos campos
-        const username = document.getElementById('username');
-        const password = document.getElementById('password');
-        
-        if (needsLogin) {
-          username.setAttribute('required', '');
-          password.setAttribute('required', '');
-        } else {
-          username.removeAttribute('required');
-          password.removeAttribute('required');
-        }
-      }
-
-      // Função para mostrar/ocultar senha
-      function togglePassword() {
-        const passwordInput = document.getElementById('password');
-        const icon = document.querySelector('.bx-show');
-        
-        if (passwordInput.type === 'password') {
-          passwordInput.type = 'text';
-          icon.classList.replace('bx-show', 'bx-hide');
-        } else {
-          passwordInput.type = 'password';
-          icon.classList.replace('bx-hide', 'bx-show');
         }
       }
 
@@ -1416,10 +1352,8 @@
       const telefone = document.getElementById('telefone').value.trim();
       const email = document.getElementById('email').value.trim();
       const status = document.getElementById('status').value;
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
 
-      // Monta objeto usuário
+      // Monta objeto usuário (sem credenciais)
       const usuario = {
         nome,
         funcao,
@@ -1437,18 +1371,6 @@
         livrosEmprestados: 0,
         dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
       };
-
-      // Adiciona credenciais se necessário
-      if (['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(funcao)) {
-        if (!username || !password) {
-          showAlert('danger', 'Usuário e senha são obrigatórios para colaboradores.');
-          return;
-        }
-        usuario.credenciais = {
-          username,
-          password: await hashPassword(password)
-        };
-      }
 
       try {
         if (id) {
