@@ -1113,6 +1113,15 @@
       }
     });
 
+    // Aguarda o carregamento da biblioteca ZXing
+    function waitForZXingBrowser(callback) {
+      if (window.ZXingBrowser && window.ZXingBrowser.BrowserMultiFormatReader) {
+        callback();
+      } else {
+        setTimeout(() => waitForZXingBrowser(callback), 100);
+      }
+    }
+
     // ZXing Barcode Scanner para ISBN (câmera digital)
     let codeReader = null;
     document.addEventListener('DOMContentLoaded', function() {
@@ -1123,51 +1132,50 @@
       const isbnInput = document.getElementById('isbn');
 
       if (scanBtn) {
-        scanBtn.addEventListener('click', async () => {
-          feedback.textContent = '';
-          scanModal.show();
+        scanBtn.addEventListener('click', () => {
+          waitForZXingBrowser(async () => {
+            feedback.textContent = '';
+            scanModal.show();
 
-          if (!codeReader) {
-            codeReader = new ZXingBrowser.BrowserMultiFormatReader();
-          }
-          try {
-            const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-            let selectedDeviceId = devices[0]?.deviceId;
-            // Prioriza câmera traseira em smartphones
-            if (devices.length > 1) {
-              const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
-              if (backCam) selectedDeviceId = backCam.deviceId;
+            if (!window.codeReader) {
+              window.codeReader = new ZXingBrowser.BrowserMultiFormatReader();
             }
-            if (!selectedDeviceId) {
-              feedback.textContent = 'Nenhuma câmera encontrada.';
-              return;
-            }
-            codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
-              if (result) {
-                isbnInput.value = result.text;
-                scanModal.hide();
-                codeReader.reset();
-                isbnInput.dispatchEvent(new Event('blur')); // dispara busca automática
+            try {
+              const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+              let selectedDeviceId = devices[0]?.deviceId;
+              if (devices.length > 1) {
+                const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
+                if (backCam) selectedDeviceId = backCam.deviceId;
               }
-            }, { facingMode: { exact: "environment" } });
-          } catch (e) {
-            feedback.textContent = 'Erro ao acessar a câmera.';
-          }
+              if (!selectedDeviceId) {
+                feedback.textContent = 'Nenhuma câmera encontrada.';
+                return;
+              }
+              window.codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+                if (result) {
+                  isbnInput.value = result.text;
+                  scanModal.hide();
+                  window.codeReader.reset();
+                  isbnInput.dispatchEvent(new Event('blur'));
+                }
+              }, { facingMode: { exact: "environment" } });
+            } catch (e) {
+              feedback.textContent = 'Erro ao acessar a câmera.';
+            }
+          });
         });
       }
 
       document.getElementById('scanIsbnModal').addEventListener('hidden.bs.modal', () => {
-        if (codeReader) codeReader.reset();
+        if (window.codeReader) window.codeReader.reset();
         if (video && video.srcObject) {
           video.srcObject.getTracks().forEach(track => track.stop());
           video.srcObject = null;
         }
       });
 
-      // Captura por leitora de código de barras (USB/Bluetooth)
       if (isbnInput) {
         isbnInput.addEventListener('input', function (e) {
-          // Se o valor tem 10 ou 13 dígitos, dispara busca automática
           const val = isbnInput.value.replace(/[^0-9Xx]/g, '');
           if (val.length === 10 || val.length === 13) {
             isbnInput.dispatchEvent(new Event('blur'));
@@ -1186,53 +1194,52 @@
       const eanInput = document.getElementById('ean');
 
       if (scanEanBtn) {
-        scanEanBtn.addEventListener('click', async () => {
-          eanFeedback.textContent = '';
-          scanEanModal.show();
+        scanEanBtn.addEventListener('click', () => {
+          waitForZXingBrowser(async () => {
+            eanFeedback.textContent = '';
+            scanEanModal.show();
 
-          if (!eanCodeReader) {
-            eanCodeReader = new ZXingBrowser.BrowserMultiFormatReader();
-          }
-          try {
-            const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-            let selectedDeviceId = devices[0]?.deviceId;
-            // Prioriza câmera traseira em smartphones
-            if (devices.length > 1) {
-              const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
-              if (backCam) selectedDeviceId = backCam.deviceId;
+            if (!window.eanCodeReader) {
+              window.eanCodeReader = new ZXingBrowser.BrowserMultiFormatReader();
             }
-            if (!selectedDeviceId) {
-              eanFeedback.textContent = 'Nenhuma câmera encontrada.';
-              return;
-            }
-            eanCodeReader.decodeFromVideoDevice(selectedDeviceId, eanVideo, (result, err) => {
-              if (result) {
-                eanInput.value = result.text;
-                scanEanModal.hide();
-                eanCodeReader.reset();
+            try {
+              const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+              let selectedDeviceId = devices[0]?.deviceId;
+              if (devices.length > 1) {
+                const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
+                if (backCam) selectedDeviceId = backCam.deviceId;
               }
-            }, { facingMode: { exact: "environment" } });
-          } catch (e) {
-            eanFeedback.textContent = 'Erro ao acessar a câmera.';
-          }
+              if (!selectedDeviceId) {
+                eanFeedback.textContent = 'Nenhuma câmera encontrada.';
+                return;
+              }
+              window.eanCodeReader.decodeFromVideoDevice(selectedDeviceId, eanVideo, (result, err) => {
+                if (result) {
+                  eanInput.value = result.text;
+                  scanEanModal.hide();
+                  window.eanCodeReader.reset();
+                }
+              }, { facingMode: { exact: "environment" } });
+            } catch (e) {
+              eanFeedback.textContent = 'Erro ao acessar a câmera.';
+            }
+          });
         });
       }
 
       document.getElementById('scanEanModal').addEventListener('hidden.bs.modal', () => {
-        if (eanCodeReader) eanCodeReader.reset();
+        if (window.eanCodeReader) window.eanCodeReader.reset();
         if (eanVideo && eanVideo.srcObject) {
           eanVideo.srcObject.getTracks().forEach(track => track.stop());
           eanVideo.srcObject = null;
         }
       });
 
-      // Captura por leitora de código de barras (USB/Bluetooth)
       if (eanInput) {
         eanInput.addEventListener('input', function (e) {
-          // Se o valor tem 13 dígitos, pode disparar alguma ação se desejar
           const val = eanInput.value.replace(/\D/g, '');
           if (val.length === 13) {
-            // Aqui pode disparar alguma ação automática se necessário
+            // ação automática se desejar
           }
         });
       }
@@ -1299,4 +1306,3 @@
   </script>
 </body>
 </html>
-
