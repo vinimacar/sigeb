@@ -353,17 +353,11 @@
             <form id="addBookForm" class="needs-validation" novalidate>
               <div class="row">
                 <div class="col-md-8">
-                  <div class="mb-3">
-                    <label for="ean" class="form-label">Código EAN*</label>
-                    <input type="text" class="form-control" id="ean" required pattern="^\d{8,14}$" maxlength="14">
-                    <div class="invalid-feedback">
-                      Por favor, insira um código EAN válido (8 a 14 dígitos).
-                    </div>
-                  </div>
+                  <!-- Removido campo EAN -->
                   <div class="mb-3">
                     <label for="isbn" class="form-label">ISBN*</label>
                     <input type="text" class="form-control" id="isbn" required
-    pattern="^(97(8|9))?\d{9}(\d|X)$">
+                      pattern="^(97(8|9))?\d{9}(\d|X)$">
                     <div class="invalid-feedback">
                       Por favor, insira um ISBN válido (10 ou 13 dígitos, pode terminar com X).
                     </div>
@@ -1151,3 +1145,4 @@
   </script>
 </body>
 </html>
+
