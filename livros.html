@@ -462,21 +462,6 @@
                     </div>
                   </div>
 
-                  <div class="mb-3">
-                    <label for="idioma" class="form-label">Idioma*</label>
-                    <select class="form-select" id="idioma" required>
-                      <option value="">Selecione o idioma</option>
-                      <option value="pt-BR" selected>Português (Brasil)</option>
-                      <option value="en">Inglês</option>
-                      <option value="es">Espanhol</option>
-                      <option value="fr">Francês</option>
-                      <option value="de">Alemão</option>
-                      <option value="it">Italiano</option>
-                    </select>
-                    <div class="invalid-feedback">
-                      Por favor, selecione o idioma.
-                    </div>
-                  </div>
                 </div>
               </div>
             </form>
@@ -859,8 +844,6 @@
         const isbn = document.getElementById('isbn').value;
         const quantidade = parseInt(document.getElementById('quantidade').value);
         const generos = Array.from(document.getElementById('generos').selectedOptions).map(option => option.value);
-        const idioma = document.getElementById('idioma').value;
-
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         await addDoc(collection(db, 'livros'), {
@@ -872,7 +855,6 @@
           isbn,
           quantidade,
           generos,
-          idioma,
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
@@ -1154,6 +1136,55 @@
       });
     });
 
+    // ZXing Barcode Scanner para EAN
+    let eanCodeReader = null;
+    document.addEventListener('DOMContentLoaded', function() {
+      const scanEanBtn = document.getElementById('scanEanBtn');
+      const scanEanModal = new bootstrap.Modal(document.getElementById('scanEanModal'));
+      const eanVideo = document.getElementById('eanVideo');
+      const eanFeedback = document.getElementById('eanScanFeedback');
+
+      if (scanEanBtn) {
+        scanEanBtn.addEventListener('click', async () => {
+          eanFeedback.textContent = '';
+          scanEanModal.show();
+
+          if (!eanCodeReader) {
+            eanCodeReader = new ZXingBrowser.BrowserMultiFormatReader();
+          }
+          try {
+            const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+            let selectedDeviceId = devices[0]?.deviceId;
+            if (devices.length > 1) {
+              const backCam = devices.find(d => /back|traseira/i.test(d.label));
+              if (backCam) selectedDeviceId = backCam.deviceId;
+            }
+            if (!selectedDeviceId) {
+              eanFeedback.textContent = 'Nenhuma câmera encontrada.';
+              return;
+            }
+            eanCodeReader.decodeFromVideoDevice(selectedDeviceId, eanVideo, (result, err) => {
+              if (result) {
+                document.getElementById('ean').value = result.text;
+                scanEanModal.hide();
+                eanCodeReader.reset();
+              }
+            });
+          } catch (e) {
+            eanFeedback.textContent = 'Erro ao acessar a câmera.';
+          }
+        });
+      }
+
+      document.getElementById('scanEanModal').addEventListener('hidden.bs.modal', () => {
+        if (eanCodeReader) eanCodeReader.reset();
+        if (eanVideo && eanVideo.srcObject) {
+          eanVideo.srcObject.getTracks().forEach(track => track.stop());
+          eanVideo.srcObject = null;
+        }
+      });
+    });
+
     // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
     async function buscarLivroPorISBN() {
       const isbn = document.getElementById("isbn").value.trim().replace(/[^0-9Xx]/g, '');
@@ -1217,3 +1248,4 @@
   </script>
 </body>
 </html>
+
