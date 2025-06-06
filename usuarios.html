@@ -1390,7 +1390,14 @@
         showAlert('danger', 'Erro ao salvar usuário.');
       }
     }
+
+    // Certifique-se de adicionar o event listener após a definição da função:
+    document.addEventListener('DOMContentLoaded', function() {
+      const addUserForm = document.getElementById('addUserForm');
+      if (addUserForm) {
+        addUserForm.addEventListener('submit', handleUserSubmission);
+      }
+    });
   </script>
 </body>
 </html>
-
