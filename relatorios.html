@@ -132,354 +132,77 @@
 
   <button type="submit">Gerar e Enviar Relatório</button>
 </form>
+  <!-- Firebase App SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-      authDomain: "sigeb-ccd3f.firebaseapp.com",
-      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-      projectId: "sigeb-ccd3f",
-      storageBucket: "sigeb-ccd3f.firebasestorage.app",
-      messagingSenderId: "209689711066",
-      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-      measurementId: "G-VJBDW2B7HZ"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-
-    // Initialize services
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-    const analytics = firebase.analytics();
-
-    // Variável global para armazenar o nome da escola do usuário logado
-    let nomeEscola = 'Escola Exemplo';
-
-    // Buscar a escola vinculada ao usuário logado
-    async function buscarEscolaUsuario() {
-      if (auth.currentUser) {
-        const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
-        if (userDoc.exists && userDoc.data().escolaId) {
-          const escolaId = userDoc.data().escolaId;
-          const escolaDoc = await db.collection('escolas').doc(escolaId).get();
-          if (escolaDoc.exists && escolaDoc.data().nome) {
-            nomeEscola = escolaDoc.data().nome;
-          }
-        }
-      }
-    }
-
-    // Alternar filtros conforme tipo de relatório
-    document.getElementById('reportType').addEventListener('change', function() {
-      document.getElementById('livrosFilters').classList.add('d-none');
-      document.getElementById('usuariosFilters').classList.add('d-none');
-      document.getElementById('emprestimosFilters').classList.add('d-none');
-      if (this.value === 'livros') document.getElementById('livrosFilters').classList.remove('d-none');
-      if (this.value === 'usuarios') document.getElementById('usuariosFilters').classList.remove('d-none');
-      if (this.value === 'emprestimos') document.getElementById('emprestimosFilters').classList.remove('d-none');
-    });
-
-    // Gerar relatório ao clicar
-    document.getElementById('btnGerarRelatorio').addEventListener('click', async function() {
-      const tipo = document.getElementById('reportType').value;
-      let html = '';
-      if (tipo === 'livros') {
-        const genero = document.getElementById('livrosGenero').value;
-        let query = db.collection('livros');
-        if (genero) {
-          query = query.where('generos', 'array-contains', genero);
-        }
-        query = query.orderBy('titulo'); // Ordem alfabética
-        const snapshot = await query.get();
-        html = `<h5>Relatório de Livros</h5>
-        <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Título</th><th>Autor(es)</th><th>Editora</th><th>Ano</th><th>Gêneros</th><th>Qtd.</th></tr></thead><tbody>`;
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          html += `<tr>
-            <td>${d.titulo || ''}</td>
-            <td>${Array.isArray(d.autores) ? d.autores.join(', ') : d.autores || ''}</td>
-            <td>${d.editora || ''}</td>
-            <td>${d.ano || ''}</td>
-            <td>${Array.isArray(d.generos) ? d.generos.join(', ') : d.generos || ''}</td>
-            <td>${d.quantidade || ''}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-      } else if (tipo === 'usuarios') {
-        const status = document.getElementById('usuariosStatus').value;
-        let query = db.collection('usuarios');
-        if (status) query = query.where('status', '==', status);
-        const snapshot = await query.get();
-        html = `<h5>Relatório de Usuários</h5>
-        <table class="table table-bordered table-sm mt-3"><thead>
-        <tr><th>Nome</th><th>Email</th><th>Função</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>`;
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          html += `<tr>
-            <td>${d.nome || ''}</td>
-            <td>${d.email || ''}</td>
-            <td>${d.funcao || ''}</td>
-            <td>${d.status || ''}</td>
-            <td>${d.dataCadastro ? new Date(d.dataCadastro.seconds*1000).toLocaleDateString() : ''}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-      } else if (tipo === 'emprestimos') {
-        const situacao = document.getElementById('emprestimosSituacao').value;
-        let query = db.collection('emprestimos');
-        if (situacao === 'ativo' || situacao === 'atrasado') {
-          query = query.where('status', '==', 'EMPRESTADO');
-        } else if (situacao === 'finalizado') {
-          query = query.where('status', '==', 'DEVOLVIDO');
-        } else {
-          query = query.where('status', 'in', ['EMPRESTADO', 'DEVOLVIDO']);
-        }
-
-        const snapshot = await query.get();
-        const emprestimos = snapshot.docs;
-
-        // Pré-carrega todos os usuários e livros em cache para evitar múltiplas queries por linha
-        const userIds = new Set();
-        const bookIds = new Set();
-        emprestimos.forEach(doc => {
-          const d = doc.data();
-          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
-          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
-        });
-
-        // Busca todos os usuários e livros necessários de uma vez
-        const usuariosMap = {};
-        if (userIds.size > 0) {
-          const userSnaps = await db.collection('usuarios').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(userIds)).get();
-          userSnaps.forEach(u => { usuariosMap[u.id] = u.data().nome; });
-        }
-        const livrosMap = {};
-        if (bookIds.size > 0) {
-          const livroSnaps = await db.collection('livros').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(bookIds)).get();
-          livroSnaps.forEach(l => { livrosMap[l.id] = l.data().titulo; });
-        }
-
-        html = `<h5>Relatório de Empréstimos</h5>
-        <table class="table table-bordered table-sm mt-3"><thead>
-        <tr>
-          <th>Usuário</th>
-          <th>Livro</th>
-          <th>Data Empréstimo</th>
-          <th>Data Devolução</th>
-          <th>Status</th>
-        </tr></thead><tbody>`;
-
-        const today = new Date();
-        for (const doc of emprestimos) {
-          const d = doc.data();
-          let usuarioNome = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : '');
-          let livroTitulo = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : '');
-
-          // Determina status real
-          let status = d.status;
-          if (d.status === 'EMPRESTADO' && d.dataDevolucao && d.dataDevolucao.seconds) {
-            const returnDateObj = new Date(d.dataDevolucao.seconds * 1000);
-            if (returnDateObj < new Date(today.setHours(0,0,0,0))) {
-              status = 'ATRASADO';
-            }
-          }
-
-          // Aplica filtro de situação
-          if (situacao === 'ativo' && status !== 'EMPRESTADO') continue;
-          if (situacao === 'atrasado' && status !== 'ATRASADO') continue;
-
-          // Mostra loanDate e returnDate nas colunas principais
-          const loanDate = d.loanDate || '';
-          const returnDate = d.returnDate || '';
-
-          html += `<tr>
-            <td>${usuarioNome || ''}</td>
-            <td>${livroTitulo || ''}</td>
-            <td>${loanDate}</td>
-            <td>${returnDate}</td>
-            <td>${status || ''}</td>
-          </tr>`;
-        }
-        html += '</tbody></table>';
-      }
-      document.getElementById('reportResult').innerHTML = html || '<p>Nenhum dado encontrado.</p>';
-      const table = document.getElementById('reportResult').querySelector('table');
-      document.getElementById('btnBaixarPDF').disabled = !table; // Habilita se houver tabela
-    });
-
-    // Função para baixar o relatório em PDF
-    document.getElementById('btnBaixarPDF').addEventListener('click', async function() {
-      const tipo = document.getElementById('reportType').value;
-      const reportDiv = document.getElementById('reportResult');
-      const table = reportDiv.querySelector('table');
-      if (!table) {
-        alert('Gere um relatório antes de baixar.');
-        return;
-      }
-
-      // Captura usuário logado
-      let usuarioLogado = '';
-      if (auth.currentUser) {
-        const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
-        usuarioLogado = userDoc.exists ? userDoc.data().nome : auth.currentUser.email;
-      } else {
-        usuarioLogado = 'Desconhecido';
-      }
-
-      // Data e hora atual
-      const dataHora = new Date();
-      const dataHoraStr = dataHora.toLocaleString();
-
-      let title = '';
-      if (tipo === 'livros') title = 'Relatório de Livros';
-      else if (tipo === 'usuarios') title = 'Relatório de Usuários';
-      else if (tipo === 'emprestimos') title = 'Relatório de Empréstimos';
-
-      const doc = new jspdf.jsPDF('l', 'pt', 'a4');
-
-      doc.setFontSize(14);
-      doc.text(nomeEscola, 40, 30);
-      doc.setFontSize(12);
-      doc.text(title, 40, 50);
-      doc.setFontSize(10);
-      doc.text(`Usuário: ${usuarioLogado}`, 40, 65);
-      doc.text(`Data/Hora: ${dataHoraStr}`, 300, 65);
-
-      doc.autoTable({
-        html: table,
-        startY: 80,
-        styles: { font: 'helvetica', fontSize: 10 },
-        headStyles: { fillColor: [79, 172, 254] }
-      });
-      doc.save(`${title.replace(/\s/g, '_').toLowerCase()}.pdf`);
-    });
-
-    // Função para buscar e mostrar os empréstimos atrasados na barra
-    async function mostrarBarraAtrasados() {
-      // Busca apenas empréstimos com status ATRASADO
-      const query = await db.collection('emprestimos').where('status', '==', 'ATRASADO').get();
-      if (!query.empty) {
-        let textos = [];
-        // Pré-carrega nomes dos usuários e livros
-        const userIds = new Set();
-        const bookIds = new Set();
-        const atrasados = [];
-        query.forEach(doc => {
-          const d = doc.data();
-          atrasados.push(doc);
-          if (!d.usuarioNome && d.userId) userIds.add(d.userId);
-          if (!d.livroTitulo && d.bookId) bookIds.add(d.bookId);
-        });
-        const usuariosMap = {};
-        if (userIds.size > 0) {
-          const userSnaps = await db.collection('usuarios').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(userIds)).get();
-          userSnaps.forEach(u => { usuariosMap[u.id] = u.data().nome; });
-        }
-        const livrosMap = {};
-        if (bookIds.size > 0) {
-          const livroSnaps = await db.collection('livros').where(firebase.firestore.FieldPath.documentId(), 'in', Array.from(bookIds)).get();
-          livroSnaps.forEach(l => { livrosMap[l.id] = l.data().titulo; });
-        }
-        atrasados.forEach(doc => {
-          const d = doc.data();
-          const usuario = d.usuarioNome || (d.userId ? usuariosMap[d.userId] : 'Usuário');
-          const livro = d.livroTitulo || (d.bookId ? livrosMap[d.bookId] : 'Livro');
-          const dataDev = d.dataDevolucao && d.dataDevolucao.seconds
-            ? new Date(d.dataDevolucao.seconds * 1000).toLocaleDateString()
-            : '';
-          textos.push(`⚠️ ${usuario} está com "${livro}" atrasado desde ${dataDev}`);
-        });
-        if (textos.length > 0) {
-          document.getElementById('textoAtrasados').innerText = textos.join('   |   ');
-          document.getElementById('barraAtrasados').style.display = 'block';
-        } else {
-          document.getElementById('barraAtrasados').style.display = 'none';
-        }
-      } else {
-        document.getElementById('barraAtrasados').style.display = 'none';
-      }
-    }
-
-document.getElementById('formRelatorio').addEventListener('submit', async function(e) {
-  e.preventDefault();
-
-  // Gera o PDF usando jsPDF
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // Dados do formulário
-  const nome = document.querySelector('input[name="nome"]').value;
-  const mensagem = document.querySelector('textarea[name="mensagem"]').value;
-
-  doc.text("Relatório", 10, 10);
-  doc.text("Nome: " + nome, 10, 20);
-  doc.text("Mensagem: " + mensagem, 10, 30);
-
-  // Gera o PDF como Base64
-  const pdfBase64 = doc.output('datauristring');
-
-  // Coloca no campo oculto
-  document.getElementById('relatorio_pdf').value = pdfBase64;
-
-  // Envia com fetch (em vez do submit padrão)
-  const form = e.target;
-  const formData = new FormData(form);
-
-  fetch(form.action, {
-    method: form.method,
-    body: formData,
-    headers: {
-      'Accept': 'application/json'
-    }
-  }).then(response => {
-    if (response.ok) {
-      alert('Relatório enviado com sucesso!');
-      form.reset();
-    } else {
-      alert('Erro ao enviar relatório.');
-    }
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
 <script>
-document.getElementById("formRelatorio").addEventListener("submit", async function(e) {
-  e.preventDefault();
-  
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const nome = document.querySelector('input[name="nome"]').value;
-  const mensagem = document.querySelector('textarea[name="mensagem"]').value;
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+    authDomain: "sigeb-ccd3f.firebaseapp.com",
+    databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+    projectId: "sigeb-ccd3f",
+    storageBucket: "sigeb-ccd3f.appspot.com",
+    messagingSenderId: "209689711066",
+    appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+    measurementId: "G-VJBDW2B7HZ"
+  };
 
-  doc.text("Relatório de Exemplo", 10, 10);
-  doc.text(`Nome: ${nome}`, 10, 20);
-  doc.text(`Mensagem: ${mensagem}`, 10, 30);
+  firebase.initializeApp(firebaseConfig);
 
-  // Baixar o PDF localmente
-  doc.save("relatorio.pdf");
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
+  const analytics = firebase.analytics();
 
-  // Insira aqui o link do PDF já hospedado (manual ou automatizado)
-  const linkPDF = "https://seuservidor.com/pdfs/relatorio.pdf"; // substitua
+  let nomeEscola = 'Escola Exemplo';
 
-  // Inserir no campo oculto
-  document.getElementById("link_pdf").value = linkPDF;
-
-  // Enviar formulário com link
-  e.target.submit();
-});
-
-
-    // Chama ao carregar a página
-    document.addEventListener('DOMContentLoaded', async () => {
-      await auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          await buscarEscolaUsuario();
+  async function buscarEscolaUsuario() {
+    if (auth.currentUser) {
+      const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
+      if (userDoc.exists && userDoc.data().escolaId) {
+        const escolaDoc = await db.collection('escolas').doc(userDoc.data().escolaId).get();
+        if (escolaDoc.exists && escolaDoc.data().nome) {
+          nomeEscola = escolaDoc.data().nome;
         }
-        mostrarBarraAtrasados();
-      });
-    });
-  </script>
+      }
+    }
+  }
+
+  // Geração de relatório simples do formulário
+  document.getElementById("formRelatorio").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const nome = document.querySelector('input[name="nome"]').value;
+    const mensagem = document.querySelector('textarea[name="mensagem"]').value;
+
+    doc.text("Relatório de Exemplo", 10, 10);
+    doc.text(`Nome: ${nome}`, 10, 20);
+    doc.text(`Mensagem: ${mensagem}`, 10, 30);
+
+    // Baixa o PDF localmente
+    doc.save("relatorio.pdf");
+
+    // Se você quiser enviar um link em vez do PDF embutido:
+    const linkPDF = "https://seuservidor.com/pdfs/relatorio.pdf"; // substitua se for o caso
+    document.getElementById("link_pdf").value = linkPDF;
+
+    // Agora envia o formulário com os dados
+    e.target.submit();
+  });
+</script>
+
 </body>
 </html>
 
