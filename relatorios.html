@@ -442,6 +442,33 @@ document.getElementById('formRelatorio').addEventListener('submit', async functi
     } else {
       alert('Erro ao enviar relatório.');
     }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.getElementById("formRelatorio").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const nome = document.querySelector('input[name="nome"]').value;
+  const mensagem = document.querySelector('textarea[name="mensagem"]').value;
+
+  doc.text("Relatório de Exemplo", 10, 10);
+  doc.text(`Nome: ${nome}`, 10, 20);
+  doc.text(`Mensagem: ${mensagem}`, 10, 30);
+
+  // Baixar o PDF localmente
+  doc.save("relatorio.pdf");
+
+  // Insira aqui o link do PDF já hospedado (manual ou automatizado)
+  const linkPDF = "https://seuservidor.com/pdfs/relatorio.pdf"; // substitua
+
+  // Inserir no campo oculto
+  document.getElementById("link_pdf").value = linkPDF;
+
+  // Enviar formulário com link
+  e.target.submit();
+});
+
 
     // Chama ao carregar a página
     document.addEventListener('DOMContentLoaded', async () => {
