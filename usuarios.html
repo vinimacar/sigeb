@@ -666,7 +666,6 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            // Solicita email e senha antes de excluir
             const email = prompt('Digite o email de acesso:');
             const senha = prompt('Digite a senha de acesso:');
             if (!email || !senha) {
@@ -674,9 +673,17 @@
               return;
             }
 
-            // Autentica o usuário no Firebase Auth
             try {
-              await firebase.auth().signInWithEmailAndPassword(email, senha);
+              // Se o usuário logado for o mesmo do email informado, use reauthenticate
+              const user = firebase.auth().currentUser;
+              if (user && user.email === email) {
+                const credential = firebase.auth.EmailAuthProvider.credential(email, senha);
+                await user.reauthenticateWithCredential(credential);
+              } else {
+                // Caso contrário, faça login normalmente (isso troca o usuário global!)
+                await firebase.auth().signInWithEmailAndPassword(email, senha);
+              }
+
               if (confirm('Tem certeza que deseja excluir este leitor?')) {
                 await db.collection('usuarios').doc(this.dataset.id).delete();
                 showAlert('success', 'Leitor excluído com sucesso!');
@@ -870,7 +877,6 @@
         });
         tbody.querySelectorAll('.delete-button').forEach(btn => {
           btn.onclick = async function() {
-            // Solicita email e senha antes de excluir
             const email = prompt('Digite o email de acesso:');
             const senha = prompt('Digite a senha de acesso:');
             if (!email || !senha) {
@@ -878,9 +884,17 @@
               return;
             }
 
-            // Autentica o usuário no Firebase Auth
             try {
-              await firebase.auth().signInWithEmailAndPassword(email, senha);
+              // Se o usuário logado for o mesmo do email informado, use reauthenticate
+              const user = firebase.auth().currentUser;
+              if (user && user.email === email) {
+                const credential = firebase.auth.EmailAuthProvider.credential(email, senha);
+                await user.reauthenticateWithCredential(credential);
+              } else {
+                // Caso contrário, faça login normalmente (isso troca o usuário global!)
+                await firebase.auth().signInWithEmailAndPassword(email, senha);
+              }
+
               if (confirm('Tem certeza que deseja excluir este leitor?')) {
                 await db.collection('usuarios').doc(this.dataset.id).delete();
                 showAlert('success', 'Leitor excluído com sucesso!');
@@ -1363,5 +1377,4 @@
   </script>
 </body>
 </html>
-
 
