@@ -1037,23 +1037,19 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     // Importar usuários via XLS/XLSX
-    async function solicitarSenhaImportacao() {
-      return new Promise((resolve) => {
-        const senha = prompt('Digite a senha de administrador para importar usuários:');
-        // Agora a senha é "1234"
-        if (senha === '1234') {
-          resolve(true);
-        } else {
-          alert('Senha incorreta. Importação cancelada.');
-          resolve(false);
-        }
-      });
-    }
-
     document.getElementById('importXlsBtn').addEventListener('click', async function() {
-      const autorizado = await solicitarSenhaImportacao();
-      if (autorizado) {
+      // Solicita email e senha do Firebase Auth antes de permitir importação
+      const email = prompt('Digite seu email de acesso:');
+      const senha = prompt('Digite sua senha de acesso:');
+      if (!email || !senha) {
+        alert('Email e senha são obrigatórios para importar usuários.');
+        return;
+      }
+      try {
+        await firebase.auth().signInWithEmailAndPassword(email, senha);
         document.getElementById('xlsInput').click();
+      } catch (error) {
+        alert('Email ou senha inválidos. Importação não autorizada.');
       }
     });
 
