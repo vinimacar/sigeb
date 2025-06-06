@@ -536,7 +536,7 @@
               
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarUsuario">Salvar Usuário</button>
               </div>
             </form>
           </div>
@@ -1330,7 +1330,7 @@
 
     // Função para salvar/atualizar usuário ao submeter o formulário do modal
     async function handleUserSubmission(event) {
-      event.preventDefault();
+      event.preventDefault?.();
 
       // Verifica permissão do usuário logado
       if (!usuarioLogado || !['BIBLIOTECARIO', 'DIRETOR', 'SUPERVISOR', 'ADMINISTRADOR'].includes(usuarioLogado.funcao)) {
@@ -1338,7 +1338,7 @@
         return;
       }
 
-      const form = event.target;
+      const form = document.getElementById('addUserForm');
       form.classList.add('was-validated');
       if (!form.checkValidity()) return;
 
@@ -1395,9 +1395,9 @@
 
     // Certifique-se de adicionar o event listener após a definição da função:
     document.addEventListener('DOMContentLoaded', function() {
-      const addUserForm = document.getElementById('addUserForm');
-      if (addUserForm) {
-        addUserForm.addEventListener('submit', handleUserSubmission);
+      const btnSalvar = document.getElementById('btnSalvarUsuario');
+      if (btnSalvar) {
+        btnSalvar.addEventListener('click', handleUserSubmission);
       }
     });
   </script>
