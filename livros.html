@@ -355,6 +355,34 @@
                 <div class="col-md-8">
                   <!-- Removido campo EAN -->
                   <div class="mb-3">
+                    <label for="ean" class="form-label">EAN</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="ean" pattern="^\d{13}$" placeholder="Código EAN (13 dígitos)">
+                      <button class="btn btn-outline-secondary" type="button" id="scanEanBtn" title="Ler EAN com câmera">
+                        <i class='bx bx-barcode-reader'></i>
+                      </button>
+                    </div>
+                    <div class="invalid-feedback">
+                      Por favor, insira um EAN válido (13 dígitos).
+                    </div>
+                  </div>
+                  <!-- Modal para leitura do EAN -->
+                  <div class="modal fade" id="scanEanModal" tabindex="-1" aria-labelledby="scanEanModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="scanEanModalLabel">Ler EAN com Câmera</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                          <video id="eanVideo" width="100%" style="max-width:320px;" autoplay></video>
+                          <div id="eanScanFeedback" class="mt-2 text-danger"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
                     <label for="isbn" class="form-label">ISBN*</label>
                     <div class="input-group">
                       <input type="text" class="form-control" id="isbn" required
@@ -437,8 +465,9 @@
                   </div>
 
                   <div class="mb-3">
-                    <label for="generos" class="form-label">Gêneros*</label>
-                    <select class="form-select" id="generos" multiple required>
+                    <label for="generos" class="form-label">Gênero*</label>
+                    <select class="form-select" id="generos" required>
+                      <option value="">Selecione...</option>
                       <option value="ROMANCE">Romance</option>
                       <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
                       <option value="FANTASIA">Fantasia</option>
@@ -456,37 +485,8 @@
                       <option value="POESIA">Poesia</option>
                       <option value="OUTROS">Outros</option>
                     </select>
-                    <small class="text-muted">Pressione Ctrl (Cmd no Mac) para selecionar múltiplos gêneros</small>
                     <div class="invalid-feedback">
-                      Por favor, selecione pelo menos um gênero.
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label for="ean" class="form-label">EAN</label>
-                    <div class="input-group">
-                      <input type="text" class="form-control" id="ean" pattern="^\d{13}$" placeholder="Código EAN (13 dígitos)">
-                      <button class="btn btn-outline-secondary" type="button" id="scanEanBtn" title="Ler EAN com câmera">
-                        <i class='bx bx-barcode-reader'></i>
-                      </button>
-                    </div>
-                    <div class="invalid-feedback">
-                      Por favor, insira um EAN válido (13 dígitos).
-                    </div>
-                  </div>
-                  <!-- Modal para leitura do EAN -->
-                  <div class="modal fade" id="scanEanModal" tabindex="-1" aria-labelledby="scanEanModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="scanEanModalLabel">Ler EAN com Câmera</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                          <video id="eanVideo" width="100%" style="max-width:320px;" autoplay></video>
-                          <div id="eanScanFeedback" class="mt-2 text-danger"></div>
-                        </div>
-                      </div>
+                      Por favor, selecione um gênero.
                     </div>
                   </div>
 
@@ -871,7 +871,7 @@
         const edicao = document.getElementById('edicao').value || null;
         const isbn = document.getElementById('isbn').value;
         const quantidade = parseInt(document.getElementById('quantidade').value);
-        const generos = Array.from(document.getElementById('generos').selectedOptions).map(option => option.value);
+        const genero = document.getElementById('generos').value;
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         await addDoc(collection(db, 'livros'), {
@@ -882,7 +882,7 @@
           edicao,
           isbn,
           quantidade,
-          generos,
+          genero, // agora é string, não array
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
@@ -1276,4 +1276,3 @@
   </script>
 </body>
 </html>
-
