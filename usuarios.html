@@ -1230,23 +1230,7 @@
           }
 
           // Validação simples dos dados
-          let usuariosValidos = [];
-          if (Array.isArray(usuariosRaw) && usuariosRaw.length > 0) {
-            // Se vier como array de arrays (sheet_to_json com header:1), converte para objetos
-            if (Array.isArray(usuariosRaw[0])) {
-              const cabecalhos = usuariosRaw[0].map(c => c.toString().trim().toLowerCase());
-              usuariosValidos = usuariosRaw.slice(1).map(linha => {
-                const obj = {};
-                linha.forEach((valor, idx) => {
-                  obj[cabecalhos[idx]] = valor;
-                });
-                return obj;
-              }).filter(u => u.nome && u.matricula); // email pode não existir em planilhas de alunos
-            } else {
-              usuariosValidos = usuariosRaw.filter(u => u.nome && u.matricula);
-            }
-          }
-
+          const usuariosValidos = usuariosRaw.filter(u => u.nome && u.email && u.matricula);
           if (usuariosValidos.length === 0) {
             alert('Nenhum usuário válido encontrado no arquivo.');
             return;
@@ -1468,3 +1452,5 @@
   </script>
 </body>
 </html>
+
+
