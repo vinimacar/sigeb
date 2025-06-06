@@ -486,11 +486,11 @@
               </div>
 
               <!-- Novos campos para cadastro de alunos -->
-              <div class="row">
+              <div class="row" id="camposAluno" style="display:none">
                 <div class="col-md-4">
                   <div class="mb-3">
                     <label for="matricula" class="form-label">Matrícula*</label>
-                    <input type="text" class="form-control" id="matricula" required>
+                    <input type="text" class="form-control" id="matricula">
                     <div class="invalid-feedback">
                       Por favor, insira a matrícula.
                     </div>
@@ -499,7 +499,7 @@
                 <div class="col-md-2">
                   <div class="mb-3">
                     <label for="serie" class="form-label">Série*</label>
-                    <select class="form-select" id="serie" required>
+                    <select class="form-select" id="serie">
                       <option value="">Selecione</option>
                       <option value="1">1º</option>
                       <option value="2">2º</option>
@@ -519,7 +519,7 @@
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="periodo" class="form-label">Período*</label>
-                    <select class="form-select" id="periodo" required>
+                    <select class="form-select" id="periodo">
                       <option value="">Selecione</option>
                       <option value="Anos Iniciais">Anos Iniciais</option>
                       <option value="Fundamental">Fundamental</option>
@@ -535,7 +535,7 @@
                 <div class="col-md-1">
                   <div class="mb-3">
                     <label for="turma" class="form-label">Turma*</label>
-                    <select class="form-select" id="turma" required>
+                    <select class="form-select" id="turma">
                       <option value="">Selecione</option>
                       <option value="A">A</option>
                       <option value="B">B</option>
@@ -555,7 +555,7 @@
                 <div class="col-md-2">
                   <div class="mb-3">
                     <label for="turno" class="form-label">Turno*</label>
-                    <select class="form-select" id="turno" required>
+                    <select class="form-select" id="turno">
                       <option value="">Selecione</option>
                       <option value="Matutino">Matutino</option>
                       <option value="Vespertino">Vespertino</option>
@@ -1363,11 +1363,6 @@
       const id = document.getElementById('usuarioId').value;
       const nome = document.getElementById('nome').value.trim();
       const funcao = document.getElementById('funcao').value;
-      const matricula = document.getElementById('matricula').value.trim();
-      const serie = document.getElementById('serie').value;
-      const periodo = document.getElementById('periodo').value;
-      const turma = document.getElementById('turma').value;
-      const turno = document.getElementById('turno').value;
       const endereco = document.getElementById('endereco').value.trim();
       const numero = document.getElementById('numero').value.trim();
       const cep = document.getElementById('cep').value.trim();
@@ -1378,7 +1373,16 @@
       const email = document.getElementById('email').value.trim();
       const status = document.getElementById('status').value;
 
-      // Monta objeto usuário (sem credenciais)
+      // Só pega campos de aluno se for ALUNO
+      let matricula = '', serie = '', periodo = '', turma = '', turno = '';
+      if (funcao === 'ALUNO') {
+        matricula = document.getElementById('matricula').value.trim();
+        serie = document.getElementById('serie').value;
+        periodo = document.getElementById('periodo').value;
+        turma = document.getElementById('turma').value;
+        turno = document.getElementById('turno').value;
+      }
+
       const usuario = {
         nome,
         funcao,
@@ -1404,15 +1408,12 @@
 
       try {
         if (id) {
-          // Atualiza usuário existente
           await db.collection('usuarios').doc(id).update(usuario);
           showAlert('success', 'Usuário atualizado com sucesso!');
         } else {
-          // Cria novo usuário
           await db.collection('usuarios').add(usuario);
           showAlert('success', 'Usuário cadastrado com sucesso!');
         }
-        // Fecha modal
         bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
         loadUsers();
       } catch (error) {
@@ -1428,6 +1429,27 @@
         btnSalvar.addEventListener('click', handleUserSubmission);
       }
     });
+
+    // Exibe ou esconde campos de aluno conforme função selecionada
+    document.getElementById('funcao').addEventListener('change', function() {
+      const isAluno = this.value === 'ALUNO';
+      document.getElementById('camposAluno').style.display = isAluno ? '' : 'none';
+      // Torna campos obrigatórios apenas se for aluno
+      ['matricula','serie','periodo','turma','turno'].forEach(id => {
+        document.getElementById(id).required = isAluno;
+      });
+    });
+
+    // Garante que os campos de aluno estejam corretos ao abrir o modal para editar
+    function editUser(id) {
+      // ...código já existente para preencher campos...
+      // Após preencher os campos:
+      const funcao = document.getElementById('funcao').value;
+      document.getElementById('camposAluno').style.display = funcao === 'ALUNO' ? '' : 'none';
+      ['matricula','serie','periodo','turma','turno'].forEach(id => {
+        document.getElementById(id).required = funcao === 'ALUNO';
+      });
+    }
   </script>
 </body>
 </html>
