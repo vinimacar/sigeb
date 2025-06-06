@@ -363,9 +363,9 @@
                   <div class="mb-3">
                     <label for="isbn" class="form-label">ISBN*</label>
                     <input type="text" class="form-control" id="isbn" required
-                           pattern="^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$">
+    pattern="^(97(8|9))?\d{9}(\d|X)$">
                     <div class="invalid-feedback">
-                      Por favor, insira um ISBN válido.
+                      Por favor, insira um ISBN válido (10 ou 13 dígitos, pode terminar com X).
                     </div>
                   </div>
                   <div class="mb-3">
@@ -836,16 +836,6 @@
       }
 
       try {
-        // Garante que o escolaId está carregado
-        if (!escolaIdUsuario) {
-          escolaIdUsuario = await buscarEscolaIdUsuario(); // <-- ajuste aqui
-        }
-        if (!escolaIdUsuario) {
-          showAlert('danger', 'Não foi possível identificar a escola do usuário logado.');
-          return;
-        }
-
-        const ean = document.getElementById('ean').value;
         const titulo = document.getElementById('titulo').value;
         const autores = document.getElementById('autores').value.split(';').map(a => a.trim()).filter(a => a);
         const editora = document.getElementById('editora').value;
@@ -859,7 +849,6 @@
         let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
 
         await addDoc(collection(db, 'livros'), {
-          ean,
           titulo,
           autores,
           editora,
@@ -872,7 +861,6 @@
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
-          escolaId: escolaIdUsuario,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -1163,4 +1151,3 @@
   </script>
 </body>
 </html>
-
