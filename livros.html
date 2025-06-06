@@ -1131,11 +1131,10 @@
           }
           try {
             const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-            // Para mobile, tenta pegar a câmera traseira se disponível
             let selectedDeviceId = devices[0]?.deviceId;
+            // Prioriza câmera traseira em smartphones
             if (devices.length > 1) {
-              // Procura por uma câmera que seja 'back' ou 'traseira'
-              const backCam = devices.find(d => /back|traseira/i.test(d.label));
+              const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
               if (backCam) selectedDeviceId = backCam.deviceId;
             }
             if (!selectedDeviceId) {
@@ -1148,7 +1147,7 @@
                 scanModal.hide();
                 codeReader.reset();
               }
-            });
+            }, { facingMode: { exact: "environment" } }); // Sugere câmera traseira em mobile
           } catch (e) {
             feedback.textContent = 'Erro ao acessar a câmera.';
           }
@@ -1183,8 +1182,9 @@
           try {
             const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
             let selectedDeviceId = devices[0]?.deviceId;
+            // Prioriza câmera traseira em smartphones
             if (devices.length > 1) {
-              const backCam = devices.find(d => /back|traseira/i.test(d.label));
+              const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
               if (backCam) selectedDeviceId = backCam.deviceId;
             }
             if (!selectedDeviceId) {
@@ -1197,7 +1197,7 @@
                 scanEanModal.hide();
                 eanCodeReader.reset();
               }
-            });
+            }, { facingMode: { exact: "environment" } }); // Sugere câmera traseira em mobile
           } catch (e) {
             eanFeedback.textContent = 'Erro ao acessar a câmera.';
           }
