@@ -285,7 +285,7 @@
         <i class='bx bxs-book'></i>
         Livros
       </a>
-      <a href="usuarios.html" class="menu-item" title="Gerenciar usuários">
+      <a href="leitores.html" class="menu-item" title="Gerenciar usuários">
         <i class='bx bxs-user'></i>
         Usuários
       </a>
@@ -422,40 +422,49 @@
 
       // Usuários (Firestore)
       db.collection('usuarios').onSnapshot(snapshot => {
-        let totalCadastrados = 0;
+        let totalUsuarios = 0;
+        let totalLeitores = 0;
         snapshot.forEach(doc => {
-          totalCadastrados++;
+          totalUsuarios++;
+          const data = doc.data();
+          // Considera leitor se função for ALUNO (ou similar)
+          if (data.funcao && data.funcao.toUpperCase() === 'ALUNO') {
+            totalLeitores++;
+          }
         });
-        document.getElementById('totalUsuarios').textContent = totalCadastrados;
+        document.getElementById('totalUsuarios').textContent = totalUsuarios;
+        // Exibe leitores embaixo do total de usuários, ou crie um novo card se preferir
+        let leitoresLabel = document.getElementById('totalLeitoresLabel');
+        if (!leitoresLabel) {
+          leitoresLabel = document.createElement('div');
+          leitoresLabel.id = 'totalLeitoresLabel';
+          leitoresLabel.style.fontSize = '0.9em';
+          leitoresLabel.style.color = '#4facfe';
+          document.getElementById('totalUsuarios').parentNode.appendChild(leitoresLabel);
+        }
+        leitoresLabel.textContent = `Leitores: ${totalLeitores}`;
       });
 
-      // Empréstimos ativos, reservas e atrasados (buscando do Firestore/Firebase)
+      // Empréstimos ativos, reservas e atrasados
       db.collection('emprestimos').onSnapshot(snapshot => {
         let totalEmprestimos = 0;
         let totalAtrasados = 0;
         const hoje = new Date();
         snapshot.forEach(child => {
           const data = child.data();
-          // Suporte para múltiplos livros por empréstimo (aba emprestimos.html)
           let booksArray = [];
           if (Array.isArray(data.books)) {
             booksArray = data.books;
           } else if (data.bookId && data.quantity) {
             booksArray = [{ bookId: data.bookId, quantity: data.quantity }];
           }
-
-          // Conta empréstimos ativos
           if (data.status === 'EMPRESTADO') {
-            // Soma todas as quantidades dos livros deste empréstimo
             let totalQtd = 0;
             booksArray.forEach(item => {
               totalQtd += item.quantity || 1;
             });
             totalEmprestimos += totalQtd;
-
-            // Verifica atraso
             if (data.returnDate) {
-              // data.returnDate no formato dd/mm/yyyy
               const [d, m, y] = data.returnDate.split('/');
               const dataDevolucao = new Date(`${y}-${m}-${d}`);
               if (dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)) {
@@ -467,12 +476,6 @@
         document.getElementById('totalEmprestimos').textContent = totalEmprestimos;
         document.getElementById('totalAtrasados').textContent = totalAtrasados;
       });
-
-      // Nome da escola (se existir)
-      // db.collection('configuracoes').doc('escola').onSnapshot(snapshot => {
-      //   const escola = snapshot.exists ? snapshot.data() : null;
-      //   document.getElementById('nomeEscola').textContent = escola && escola.nome ? escola.nome : 'Escola não cadastrada';
-      // });
     }
 
     // Busca e exibe as 5 atividades recentes (últimos empréstimos/reservas/devoluções)
@@ -590,4 +593,5 @@
   </script>
 </body>
 </html>
+
 
