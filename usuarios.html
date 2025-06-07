@@ -1200,12 +1200,23 @@
             // CSV com tabulação (Excel exporta assim para colunas)
             usuariosRaw = csvToArray(e.target.result, "\t");
             // Se não encontrar, tenta ponto e vírgula
-            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+            if (usuariosRaw.length === 0 || (Array.isArray(usuariosRaw[0]) && usuariosRaw[0].length < 2)) {
               usuariosRaw = csvToArray(e.target.result, ";");
             }
             // Se não encontrar, tenta vírgula
-            if (usuariosRaw.length === 0 || Object.keys(usuariosRaw[0]).length < 2) {
+            if (usuariosRaw.length === 0 || (Array.isArray(usuariosRaw[0]) && usuariosRaw[0].length < 2)) {
               usuariosRaw = csvToArray(e.target.result, ",");
+            }
+            // Se for array de arrays, converte para objetos
+            if (Array.isArray(usuariosRaw[0])) {
+              const cabecalhos = usuariosRaw[0].map(c => c.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s/g, '').toLowerCase());
+              usuariosRaw = usuariosRaw.slice(1).map(linha => {
+                const obj = {};
+                linha.forEach((valor, idx) => {
+                  obj[cabecalhos[idx]] = valor;
+                });
+                return obj;
+              });
             }
           } else {
             const data = e.target.result;
@@ -1218,25 +1229,29 @@
                 json.splice(i, 1);
               }
             }
-            // Converte para objeto com chaves
-            const cabecalhos = json[0].map(cabecalho => cabecalho.trim().toLowerCase());
-            json.slice(1).forEach(linha => {
+            // Converte para objeto com chaves normalizadas
+            const cabecalhos = json[0].map(cabecalho =>
+              cabecalho
+                ? cabecalho.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s/g, '').toLowerCase()
+                : ''
+            );
+            usuariosRaw = json.slice(1).map(linha => {
               const usuario = {};
               linha.forEach((valor, index) => {
                 usuario[cabecalhos[index]] = valor;
               });
-              usuariosRaw.push(usuario);
+              return usuario;
             });
           }
 
-          // Validação simples dos dados
-          const usuariosValidos = usuariosRaw.filter(u => u.nome && u.email && u.matricula);
+          // Aceita usuário se tiver nome e matrícula (email não é obrigatório)
+          const usuariosValidos = usuariosRaw.filter(u => u.nome && u.matricula);
+
           if (usuariosValidos.length === 0) {
-            alert('Nenhum usuário válido encontrado no arquivo.');
+            alert('Nenhum usuário válido encontrado no arquivo.\n\nVerifique se os cabeçalhos estão como "Nome" e "Matrícula" (ou "nome" e "matricula").');
             return;
           }
 
-          // Mostra modal de confirmação
           criarModalConfirmacaoImportacao(usuariosValidos, async (modal, usuarios) => {
             const updateProgress = (percent) => {
               const progressBar = document.querySelector('.progress-bar');
@@ -1264,7 +1279,7 @@
               try {
                 await db.collection('usuarios').add({
                   nome: usuario.nome,
-                  email: usuario.email,
+                  email: usuario.email || '',
                   matricula: usuario.matricula,
                   status: usuario.status || 'Ativo',
                   funcao: usuario.funcao || 'ALUNO',
