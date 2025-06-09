@@ -817,7 +817,10 @@
             const div = document.createElement('a');
             div.className = 'dropdown-item';
             div.href = '#';
-            div.textContent = `${user.nome} (${user.email})`;
+            // Mostra apenas nome e matrícula (se houver), não o email
+            div.textContent = user.matricula
+              ? `${user.nome} (Matrícula: ${user.matricula})`
+              : user.nome;
             div.onclick = (e) => {
               e.preventDefault();
               selectUser(id, user.nome);
