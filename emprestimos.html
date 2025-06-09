@@ -1319,6 +1319,11 @@ async function loadLoans(statusFilter = null) {
               <button class="action-button" title="Editar" onclick="openEditLoanModal('${doc.id}')">
                 <i class="bx bx-edit"></i>
               </button>
+              ${loan.status === 'EMPRESTADO' ? `
+                <button class="action-button return-button" title="Marcar como Devolvido" onclick="confirmReturnLoan('${doc.id}')">
+                  <i class="bx bx-check-circle"></i>
+                </button>
+              ` : ''}
             </div>
           </td>
         </tr>
@@ -1517,6 +1522,20 @@ async function loadLoans(statusFilter = null) {
 
     // Opcional: também atualizar barra ao iniciar
     document.addEventListener('DOMContentLoaded', showNotReturnedBar);
+
+    async function confirmReturnLoan(loanId) {
+  if (!confirm('Confirmar devolução de todos os livros deste empréstimo?')) return;
+  try {
+    // Atualiza status para DEVOLVIDO
+    await db.collection('emprestimos').doc(loanId).update({
+      status: 'DEVOLVIDO'
+    });
+    showAlert('success', 'Empréstimo marcado como devolvido!');
+    loadLoans();
+  } catch (error) {
+    showAlert('danger', 'Erro ao marcar devolução.');
+  }
+}
   </script>
 </body>
 </html>
