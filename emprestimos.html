@@ -452,6 +452,16 @@
         </div>
         <div class="modal-body">
           <form id="addLoanForm" class="needs-validation" novalidate>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Número do Registro</label>
+                <input type="text" class="form-control" id="registroNumero" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Usuário Selecionado</label>
+                <input type="text" class="form-control" id="usuarioSelecionadoNome" readonly>
+              </div>
+            </div>
             <div id="multiBookLoans">
               <div class="loan-book-row row align-items-end mb-3">
                 <div class="col-md-5">
@@ -845,6 +855,7 @@
       document.getElementById('userSearch').value = userName;
       document.getElementById('selectedUserId').value = userId;
       document.getElementById('userSearchResults').classList.remove('show');
+      document.getElementById('usuarioSelecionadoNome').value = userName;
     }
 
     // Adicione listeners para busca automática ao digitar ou clicar no botão
@@ -1006,6 +1017,7 @@
         const userId = document.getElementById('selectedUserId').value;
         const loanDate = document.getElementById('loanDate').value;
         const returnDate = document.getElementById('returnDate').value;
+        const registroNumero = document.getElementById('registroNumero').value;
 
         // Coleta todos os livros e quantidades
         const bookRows = document.querySelectorAll('.loan-book-row');
@@ -1041,13 +1053,14 @@
               quantidade: bookDoc.data().quantidade - loan.quantity
             });
           }
-          // Cria um único documento de empréstimo com todos os livros
+          // Cria um único documento de empréstimo com todos os livros e número de registro
           const loanRef = db.collection('emprestimos').doc();
           transaction.set(loanRef, {
             userId,
             books: loans, // array de livros e quantidades
             loanDate,
             returnDate,
+            registroNumero,
             status: 'EMPRESTADO',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -1067,7 +1080,8 @@
         await showPrintLoanModal({
           quantity: loans[0].quantity,
           loanDate,
-          returnDate
+          returnDate,
+          registroNumero
         }, userDocForReceipt.data(), bookDocForReceipt.data());
 
       } catch (error) {
@@ -1075,282 +1089,21 @@
       }
     }
 
-    // Função para exibir barra de empréstimos não devolvidos com efeito marquee
-    async function showNotReturnedBar() {
-      try {
-        const loansRef = db.collection('emprestimos');
-        const snapshot = await loansRef
-          .where('status', '==', 'EMPRESTADO')
-          .get();
-
-        let overdueCount = 0;
-        const today = new Date();
-        snapshot.forEach(doc => {
-          const loan = doc.data();
-          if (loan.returnDate) {
-            const [d, m, y] = loan.returnDate.split('/');
-            const returnDate = new Date(`${y}-${m}-${d}`);
-            if (returnDate < today.setHours(0,0,0,0)) {
-              overdueCount += loan.quantity || 1;
-            }
-          }
-        });
-
-        const bar = document.getElementById('notReturnedBar');
-        if (overdueCount === 0) {
-          bar.style.display = 'none';
-          bar.innerHTML = '';
-          return;
-        }
-
-        // Barra de aviso em vermelho
-        bar.style.display = 'block';
-        bar.style.background = '#ffebee'; // vermelho claro
-        bar.style.color = '#b71c1c'; // vermelho escuro
-        bar.style.fontWeight = 'bold';
-        bar.style.fontSize = '1.1rem';
-        bar.style.padding = '14px 20px';
-        bar.style.borderRadius = '8px';
-        bar.style.textAlign = 'center';
-        bar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.10)';
-        bar.style.animation = 'blinkBar 4s steps(2, start) 3';
-
-        bar.innerHTML = `ATENÇÃO EXISTEM ${overdueCount} DEVOLUÇÕES DE LIVROS EM ATRASO. FAVOR ENTRE EM CONTATO COM O USUÁRIO.`;
-      } catch (error) {
-        // Silencia erro na barra
-      }
+    // Gera um número de registro único (ex: EMP-20240609-XXXX)
+    function gerarNumeroRegistro() {
+      const now = new Date();
+      const data = now.toISOString().slice(0,10).replace(/-/g,'');
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      return `EMP-${data}-${rand}`;
     }
 
-    // Adicione o CSS para o efeito de piscar:
-    const style = document.createElement('style');
-    style.innerHTML = `
-    @keyframes blinkBar {
-      0%, 80%, 100% { opacity: 1; }
-      40% { opacity: 0.6; }
-    }
-    #notReturnedBar {
-      animation: blinkBar 4s steps(2, start) 3;
-    }
-    `;
-    document.head.appendChild(style);
-
-    // Carregar empréstimos
-    async function loadLoans(filterStatus) {
-      try {
-        const loansRef = db.collection('emprestimos');
-        let query = loansRef.orderBy('createdAt', 'desc').limit(15); // Alterado para 15
-        const snapshot = await query.get();
-
-        const tbody = document.getElementById('loansTableBody');
-        tbody.innerHTML = '';
-
-        const today = new Date();
-
-        for (const doc of snapshot.docs) {
-          const loan = doc.data();
-          if (!loan.userId || !loan.bookId) continue;
-
-          // Buscar dados do usuário e livro
-          const [userDoc, bookDoc] = await Promise.all([
-            db.collection('usuarios').doc(loan.userId).get(),
-            db.collection('livros').doc(loan.bookId).get()
-          ]);
-          const user = userDoc.data();
-          const book = bookDoc.data();
-          if (!user || !book) continue;
-
-          // Verifica se está atrasado
-          let atrasado = false;
-          let status = loan.status;
-          if (loan.status === 'EMPRESTADO' && loan.returnDate) {
-            const [d, m, y] = loan.returnDate.split('/');
-            const returnDate = new Date(`${y}-${m}-${d}`);
-            if (returnDate < today.setHours(0,0,0,0)) {
-              atrasado = true;
-              status = 'ATRASADO';
-            }
-          }
-
-          // Filtro pelo status
-          if (filterStatus && status !== filterStatus) continue;
-
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${book.titulo}</td>
-            <td>${user.nome}</td>
-            <td>${loan.loanDate}</td>
-            <td>${loan.returnDate}</td>
-            <td><span class="loan-status status-${status.toLowerCase()}">${status}</span></td>
-            <td>
-              <div class="action-buttons">
-                <button class="action-button return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
-                  <i class='bx bx-check-circle'></i>
-                </button>
-                <button class="action-button renew-button" title="Renovar" onclick="renewLoan('${doc.id}')">
-                  <i class='bx bx-refresh'></i>
-                </button>
-                <button class="action-button edit-button" title="Editar" onclick="openEditLoanModal('${doc.id}')">
-                  <i class='bx bx-edit'></i>
-                </button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(row);
-        }
-        // Atualiza a barra de empréstimos não devolvidos
-        await showNotReturnedBar();
-      } catch (error) {
-        console.error('Erro ao carregar empréstimos:', error);
-        showAlert('danger', 'Erro ao carregar empréstimos');
-      }
-    }
-
-    // Devolver livro
-    async function returnLoan(loanId) {
-      try {
-        const loanDoc = await db.collection('emprestimos').doc(loanId).get();
-        const loanData = loanDoc.data();
-
-        await db.runTransaction(async (transaction) => {
-          // Atualizar quantidade do livro
-          const bookRef = db.collection('livros').doc(loanData.bookId);
-          const bookDoc = await transaction.get(bookRef);
-          
-          transaction.update(bookRef, {
-            quantidade: bookDoc.data().quantidade + loanData.quantity
-          });
-
-          // Atualizar status do empréstimo
-          transaction.update(db.collection('emprestimos').doc(loanId), {
-            status: 'DEVOLVIDO',
-            returnedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        });
-
-        showAlert('success', 'Livro devolvido com sucesso!');
-        loadLoans();
-      } catch (error) {
-        console.error('Erro ao devolver livro:', error);
-        showAlert('danger', 'Erro ao devolver livro');
-      }
-    }
-
-    // Renovar empréstimo
-    async function renewLoan(loanId) {
-      try {
-        const loanDoc = await db.collection('emprestimos').doc(loanId).get();
-        const loanData = loanDoc.data();
-
-        // Adicionar 14 dias à data de devolução
-        const currentReturnDate = new Date(loanData.returnDate.split('/').reverse().join('-'));
-        const newReturnDate = new Date(currentReturnDate.setDate(currentReturnDate.getDate() + 14));
-        const formattedNewReturnDate = newReturnDate.toLocaleDateString('pt-BR');
-
-        await db.collection('emprestimos').doc(loanId).update({
-          returnDate: formattedNewReturnDate,
-          renewedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // Enviar email de renovação
-        const userDoc = await db.collection('usuarios').doc(loanData.userId).get();
-        const bookDoc = await db.collection('livros').doc(loanData.bookId).get();
-        await sendRenewalEmail(userDoc.data(), bookDoc.data().titulo, formattedNewReturnDate);
-
-        showAlert('success', 'Empréstimo renovado com sucesso!');
-        loadLoans();
-      } catch (error) {
-        console.error('Erro ao renovar empréstimo:', error);
-        showAlert('danger', 'Erro ao renovar empréstimo');
-      }
-    }
-
-    // Enviar email de renovação
-    async function sendRenewalEmail(userData, bookTitle, newReturnDate) {
-      try {
-        const emailContent = RENEWAL_EMAIL_TEMPLATE
-          .replace('{{userName}}', userData.nome)
-          .replace('{{userEmail}}', userData.email)
-          .replace('{{bookTitle}}', bookTitle)
-          .replace('{{newReturnDate}}', newReturnDate);
-
-        await emailjs.send(
-          "SEU_SERVICE_ID_DO_EMAILJS",
-          "SEU_TEMPLATE_ID_DO_EMAILJS",
-          {
-            to_email: userData.email,
-            to_name: userData.nome,
-            html_content: emailContent,
-            subject: `${SYSTEM_CONFIG.schoolName} - Confirmação de Renovação`
-          }
-        );
-
-        console.log('Email de renovação enviado com sucesso');
-      } catch (error) {
-        console.error('Erro ao enviar email de renovação:', error);
-        showAlert('warning', 'A renovação foi registrada, mas houve um erro ao enviar o email de confirmação');
-      }
-    }
-
-    // Função para exportar empréstimos para XLS
-    async function exportLoansToXLS() {
-      try {
-        const loansRef = db.collection('emprestimos');
-        const snapshot = await loansRef.orderBy('createdAt', 'desc').get();
-
-        const data = [];
-        for (const doc of snapshot.docs) {
-          const loan = doc.data();
-          // Busca usuário e livro(s)
-          let userName = '', userEmail = '';
-          let bookTitles = '';
-          if (loan.userId) {
-            const userDoc = await db.collection('usuarios').doc(loan.userId).get();
-            if (userDoc.exists) {
-              userName = userDoc.data().nome || '';
-              userEmail = userDoc.data().email || '';
-            }
-          }
-          // Suporte para múltiplos livros
-          if (Array.isArray(loan.books)) {
-            const titles = [];
-            for (const item of loan.books) {
-              const bookDoc = await db.collection('livros').doc(item.bookId).get();
-              if (bookDoc.exists) {
-                titles.push(`${bookDoc.data().titulo} (Qtd: ${item.quantity})`);
-              }
-            }
-            bookTitles = titles.join('; ');
-          } else if (loan.bookId) {
-            const bookDoc = await db.collection('livros').doc(loan.bookId).get();
-            if (bookDoc.exists) {
-              bookTitles = bookDoc.data().titulo;
-            }
-          }
-          data.push({
-            'Usuário': userName,
-            'Email': userEmail,
-            'Livro(s)': bookTitles,
-            'Data Empréstimo': loan.loanDate || '',
-            'Data Devolução': loan.returnDate || '',
-            'Status': loan.status || '',
-          });
-        }
-
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Empréstimos');
-        XLSX.writeFile(workbook, 'relatorio_emprestimos.xlsx');
-      } catch (error) {
-        showAlert('danger', 'Erro ao gerar relatório XLS');
-      }
-    }
-
-    // Adiciona o evento ao botão
+    // Ao abrir o modal de novo empréstimo, preenche o número de registro
     document.addEventListener('DOMContentLoaded', function() {
-      const btnExport = document.getElementById('btnExportLoansXLS');
-      if (btnExport) {
-        btnExport.addEventListener('click', exportLoansToXLS);
-      }
+      const addLoanModal = document.getElementById('addLoanModal');
+      addLoanModal.addEventListener('show.bs.modal', function() {
+        document.getElementById('registroNumero').value = gerarNumeroRegistro();
+        document.getElementById('usuarioSelecionadoNome').value = '';
+      });
     });
 
     // Mostrar alertas
@@ -1665,4 +1418,3 @@
   </script>
 </body>
 </html>
-
