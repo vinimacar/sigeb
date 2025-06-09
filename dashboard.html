@@ -442,7 +442,7 @@
           leitoresLabel.style.color = '#4facfe';
           document.getElementById('totalUsuarios').parentNode.appendChild(leitoresLabel);
         }
-        leitoresLabel.textContent = `Leitores: ${totalLeitores}`;
+        leitoresLabel.textContent = `Usuarios: ${totalLeitores}`;
       });
 
       // Empréstimos ativos, reservas e atrasados
@@ -511,7 +511,7 @@
             let dataMov = '';
 
             // Busca usuário e livro para detalhar a atividade
-            let user = 'Usuário';
+            let user = 'Usuario';
             let book = 'Livro';
             try {
               const [userSnap, bookSnap] = await Promise.all([
@@ -593,5 +593,4 @@
   </script>
 </body>
 </html>
-
 
