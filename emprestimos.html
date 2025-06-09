@@ -1254,7 +1254,89 @@
       await loadLoans(status);
     }
 
-    // --- Controle de permissão para registrar empréstimo ---
+    // Função para carregar e exibir todos os empréstimos na tabela
+async function loadLoans(statusFilter = null) {
+  const tbody = document.getElementById('loansTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6">Carregando...</td></tr>';
+
+  try {
+    let query = db.collection('emprestimos').orderBy('createdAt', 'desc');
+    if (statusFilter) {
+      query = query.where('status', '==', statusFilter);
+    }
+    const snapshot = await query.get();
+
+    if (snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    for (const doc of snapshot.docs) {
+      const loan = doc.data();
+      // Busca usuário
+      let userName = '';
+      let userEmail = '';
+      if (loan.userId) {
+        const userDoc = await db.collection('usuarios').doc(loan.userId).get();
+        if (userDoc.exists) {
+          userName = userDoc.data().nome || '';
+          userEmail = userDoc.data().email || '';
+        }
+      }
+      // Monta lista de livros
+      let booksHtml = '';
+      if (Array.isArray(loan.books)) {
+        for (const item of loan.books) {
+          const bookDoc = await db.collection('livros').doc(item.bookId).get();
+          const bookTitle = bookDoc.exists ? bookDoc.data().titulo : 'Livro removido';
+          booksHtml += `<div>${bookTitle} <span class="badge bg-secondary">${item.quantity}</span></div>`;
+        }
+      } else {
+        booksHtml = '-';
+      }
+      // Status visual
+      let statusClass = '';
+      if (loan.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
+      else if (loan.status === 'EMPRESTADO') {
+        // Verifica atraso
+        if (loan.returnDate) {
+          const [d, m, y] = loan.returnDate.split('/');
+          const returnDate = new Date(`${y}-${m}-${d}`);
+          const today = new Date();
+          if (returnDate < today.setHours(0,0,0,0)) statusClass = 'status-atrasado';
+          else statusClass = 'status-emprestado';
+        } else {
+          statusClass = 'status-emprestado';
+        }
+      }
+      // Monta linha
+      tbody.innerHTML += `
+        <tr>
+          <td>${booksHtml}</td>
+          <td>${userName ? userName + (userEmail ? `<br><small>${userEmail}</small>` : '') : '-'}</td>
+          <td>${loan.loanDate || '-'}</td>
+          <td>${loan.returnDate || '-'}</td>
+          <td><span class="loan-status ${statusClass}">${loan.status || '-'}</span></td>
+          <td>
+            <!-- Ações: editar, devolver, imprimir, etc. -->
+            <div class="action-buttons">
+              <button class="action-button" title="Editar" onclick="openEditLoanModal('${doc.id}')">
+                <i class="bx bx-edit"></i>
+              </button>
+              <!-- Outras ações podem ser adicionadas aqui -->
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  } catch (error) {
+    document.getElementById('loansTableBody').innerHTML = '<tr><td colspan="6">Erro ao carregar empréstimos.</td></tr>';
+  }
+}
+
+// --- Controle de permissão para registrar empréstimo ---
 
     // Função para obter usuário logado do localStorage
     function getUsuarioLogado() {
