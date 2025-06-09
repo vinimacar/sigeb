@@ -1038,7 +1038,7 @@
               quantidade: bookDoc.data().quantidade - loan.quantity
             });
           }
-          // Cria um único documento de empréstimo com todos os livros e número de registro
+          // Cria um único documento de empréstimo com todos os livros
           const loanRef = db.collection('emprestimos').doc();
           transaction.set(loanRef, {
             userId,
@@ -1074,469 +1074,746 @@
       }
     }
 
-    // Gera um número de registro único (ex: EMP-20240609-XXXX)
-    function gerarNumeroRegistro() {
-      const now = new Date();
-      const data = now.toISOString().slice(0,10).replace(/-/g,'');
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      return `EMP-${data}-${rand}`;
+    // Enviar notificação via WhatsApp para o usuário após registrar empréstimo
+async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
+  try {
+    const userDoc = await db.collection('usuarios').doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData.telefone) return;
+
+    // Monta lista de livros para mensagem
+    let livrosMsg = '';
+    for (const item of loans) {
+      const bookDoc = await db.collection('livros').doc(item.bookId).get();
+      const bookData = bookDoc.data();
+      livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
     }
 
-    // Ao abrir o modal de novo empréstimo, preenche o número de registro
+    const msg = encodeURIComponent(
+      `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivros:${livrosMsg}\nData do Empréstimo: ${loanDate}\nData de Devolução: ${returnDate}\n\nPor favor, devolva os livros na data correta.`
+    );
+
+    // Formata telefone para padrão internacional (ex: 5511999999999)
+    let phone = userData.telefone.replace(/\D/g, '');
+    if (phone.length === 11 && !phone.startsWith('55')) {
+      phone = '55' + phone;
+    }
+
+    // Abre o WhatsApp Web em nova aba (não envia automático, usuário precisa confirmar)
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+  } catch (error) {
+    // Não bloqueia o fluxo, apenas loga
+    console.error('Erro ao enviar WhatsApp:', error);
+  }
+}
+
+    // Inicializar Flatpickr (calendário)
     document.addEventListener('DOMContentLoaded', function() {
-      const addLoanModal = document.getElementById('addLoanModal');
-      addLoanModal.addEventListener('show.bs.modal', function() {
-        document.getElementById('registroNumero').value = gerarNumeroRegistro();
-        document.getElementById('usuarioSelecionadoNome').value = '';
+      flatpickr("#loanDate", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        defaultDate: "today",
+        minDate: "today"
       });
-    });
 
-    // Mostrar alertas
-    function showAlert(type, message) {
-      const alertDiv = document.createElement('div');
-      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-      alertDiv.role = 'alert';
-      alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
-      
-      document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.search-box'));
-      
-      setTimeout(() => {
-        alertDiv.remove();
-      }, 5000);
-    }
-
-    // Função para filtrar empréstimos na tabela pelo campo de busca
-    function searchLoans() {
-      const search = document.getElementById('searchInput').value.trim().toLowerCase();
-      const rows = document.querySelectorAll('#loansTableBody tr');
-      rows.forEach(row => {
-        // Pega os textos das colunas: livro, usuário, data empréstimo, data devolução, registro
-        const livro = row.children[0]?.textContent.toLowerCase() || '';
-        const usuario = row.children[1]?.textContent.toLowerCase() || '';
-        const dataEmprestimo = row.children[2]?.textContent.toLowerCase() || '';
-        const dataDevolucao = row.children[3]?.textContent.toLowerCase() || '';
-        // Busca pelo número do registro (pode estar em uma coluna oculta ou no atributo data)
-        const registro = row.getAttribute('data-registro')?.toLowerCase() || '';
-        if (
-          livro.includes(search) ||
-          usuario.includes(search) ||
-          dataEmprestimo.includes(search) ||
-          dataDevolucao.includes(search) ||
-          registro.includes(search)
-        ) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+      flatpickr("#returnDate", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        minDate: "today",
+        defaultDate: new Date().fp_incr(14) // 14 dias por padrão
       });
-    }
 
-    // Adiciona evento ao campo de busca para filtrar enquanto digita
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('searchInput').addEventListener('input', searchLoans);
+      loadLoans();
     });
 
-    // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('addLoanForm');
-      form.addEventListener('submit', handleLoanSubmission);
-    });
+    // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
+    async function searchUsers() {
+      const searchTerm = document.getElementById('userSearch').value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
+      const resultsDiv = document.getElementById('userSearchResults');
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
 
-    // Função para abrir o modal de edição e preencher os dados
-    async function openEditLoanModal(loanId) {
+      if (searchTerm.length < 2) return;
+
       try {
-        const loanDoc = await db.collection('emprestimos').doc(loanId).get();
-        if (!loanDoc.exists) return showAlert('danger', 'Empréstimo não encontrado');
-        const loan = loanDoc.data();
+        // Busca por nome (original e minúsculo)
+        const queryByName = db.collection('usuarios')
+          .where('nome', '>=', searchTerm)
+          .where('nome', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
 
-        document.getElementById('editLoanId').value = loanId;
-        document.getElementById('editLoanDate').value = loan.loanDate || '';
-        document.getElementById('editReturnDate').value = loan.returnDate || '';
+        const queryByNameLower = db.collection('usuarios')
+          .where('nome', '>=', searchTermLower)
+          .where('nome', '<=', searchTermLower + '\uf8ff')
+          .limit(10)
+          .get();
 
-        // Inicializa o flatpickr nos campos do modal de edição
-        flatpickr("#editLoanDate", {
-          locale: "pt",
-          dateFormat: "d/m/Y",
-          defaultDate: loan.loanDate || "today"
-        });
-        flatpickr("#editReturnDate", {
-          locale: "pt",
-          dateFormat: "d/m/Y",
-          defaultDate: loan.returnDate || "today"
-        });
+        // Busca por matrícula (se existir esse campo)
+        const queryByMatricula = db.collection('usuarios')
+          .where('matricula', '>=', searchTerm)
+          .where('matricula', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
 
-        new bootstrap.Modal(document.getElementById('editLoanModal')).show();
+        const [nameSnapshot, nameLowerSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByNameLower, queryByMatricula]);
+
+        // Usar Map para evitar duplicatas
+        const usersMap = new Map();
+        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        nameLowerSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+
+        if (usersMap.size === 0) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
+        } else {
+          usersMap.forEach((user, id) => {
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            // Mostra apenas nome e matrícula (se houver), não o email
+            div.textContent = user.matricula
+              ? `${user.nome} (Matrícula: ${user.matricula})`
+              : user.nome;
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectUser(id, user.nome);
+            };
+            resultsDiv.appendChild(div);
+          });
+        }
+        resultsDiv.classList.add('show');
       } catch (error) {
-        showAlert('danger', 'Erro ao carregar dados do empréstimo');
+        console.error('Erro ao buscar usuários:', error);
+        showAlert('danger', 'Erro ao buscar usuários');
       }
     }
 
-    // Evento para salvar alterações do empréstimo
-    document.getElementById('editLoanForm').addEventListener('submit', async function(event) {
+    // Selecionar usuário da lista
+    function selectUser(userId, userName) {
+      document.getElementById('userSearch').value = userName;
+      document.getElementById('selectedUserId').value = userId;
+      document.getElementById('userSearchResults').classList.remove('show');
+      document.getElementById('usuarioSelecionadoNome').value = userName;
+    }
+
+    // Adicione listeners para busca automática ao digitar ou clicar no botão
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('userSearch').addEventListener('input', searchUsers);
+      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
+    });
+
+    // Buscar livros cadastrados ao digitar no campo ou clicar no botão
+    async function searchBooks(inputOrBtn) {
+      let input, resultsDiv;
+      if (inputOrBtn.classList.contains('bookSearch')) {
+        input = inputOrBtn;
+        resultsDiv = input.parentElement.parentElement.querySelector('.bookSearchResults');
+      } else {
+        input = inputOrBtn.parentElement.querySelector('.bookSearch');
+        resultsDiv = inputOrBtn.parentElement.parentElement.querySelector('.bookSearchResults');
+      }
+      const searchTerm = input.value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
+      if (searchTerm.length < 2) return;
+
+      try {
+        // Busca por título (original e minúsculo)
+        const queryByTitle = db.collection('livros')
+          .where('titulo', '>=', searchTerm)
+          .where('titulo', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByTitleLower = db.collection('livros')
+          .where('titulo', '>=', searchTermLower)
+          .where('titulo', '<=', searchTermLower + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByISBN = db.collection('livros')
+          .where('isbn', '>=', searchTerm)
+          .where('isbn', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const [titleSnapshot, titleLowerSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByTitleLower, queryByISBN]);
+        const booksMap = new Map();
+        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        titleLowerSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+
+        if (booksMap.size === 0) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
+        } else {
+          booksMap.forEach((book, id) => {
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectBookMulti(input, id, book.titulo, book.quantidade);
+            };
+            resultsDiv.appendChild(div);
+          });
+        }
+        resultsDiv.classList.add('show');
+      } catch (error) {
+        showAlert('danger', 'Erro ao buscar livros');
+      }
+    }
+
+    // Selecionar livro para múltiplos empréstimos
+    function selectBookMulti(input, bookId, bookTitle, quantity) {
+      input.value = bookTitle;
+      const row = input.closest('.loan-book-row');
+      row.querySelector('.selectedBookId').value = bookId;
+      row.querySelector('.availableQuantity').textContent = quantity;
+      row.querySelector('.bookSearchResults').classList.remove('show');
+      row.querySelector('.quantity').max = quantity;
+    }
+
+    // Função para adicionar nova linha de livro
+    function addBookRow() {
+      const container = document.getElementById('multiBookLoans');
+      const rows = container.querySelectorAll('.loan-book-row');
+      const newRow = rows[0].cloneNode(true);
+      function addBookRow() {
+  const container = document.getElementById('multiBookLoans');
+  const rows = container.querySelectorAll('.loan-book-row');
+  const newRow = rows[0].cloneNode(true);
+
+  // Limpar os valores dos inputs na nova linha
+  const inputs = newRow.querySelectorAll('input, select, textarea');
+  inputs.forEach(input => {
+    input.value = '';
+  });
+
+  // Remover IDs duplicados, se houver
+  newRow.querySelectorAll('[id]').forEach(el => {
+    el.removeAttribute('id');
+  });
+
+  // Opcional: atualizar nome dos campos (ex: name="book[0]", book[1], etc.)
+  const rowIndex = rows.length;
+  newRow.querySelectorAll('[name]').forEach(el => {
+    const name = el.getAttribute('name');
+    if (name) {
+      const newName = name.replace(/\[\d+\]/, `[${rowIndex}]`);
+      el.setAttribute('name', newName);
+    }
+  });
+
+  container.appendChild(newRow);
+}
+
+
+      // Limpa valores do novo row
+      newRow.querySelector('.bookSearch').value = '';
+      newRow.querySelector('.selectedBookId').value = '';
+      newRow.querySelector('.availableQuantity').textContent = '-';
+      newRow.querySelector('.quantity').value = 1;
+      newRow.querySelector('.bookSearchResults').innerHTML = '';
+      newRow.querySelector('.bookSearchResults').classList.remove('show');
+      newRow.querySelector('.removeBookRow').style.display = 'inline-block';
+
+      container.appendChild(newRow);
+
+      // Adiciona listeners para busca de livros
+      newRow.querySelector('.bookSearch').addEventListener('input', function() {
+        searchBooks(newRow.querySelector('.bookSearch'));
+      });
+    }
+
+    // Função para remover linha de livro
+    function removeBookRow(btn) {
+      const row = btn.closest('.loan-book-row');
+      if (document.querySelectorAll('.loan-book-row').length > 1) {
+        row.remove();
+      }
+    }
+
+    // Adicione listeners para busca automática ao digitar
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('.bookSearch').addEventListener('input', function() {
+        searchBooks(this);
+      });
+    });
+
+    // Registrar empréstimo
+    async function handleLoanSubmission(event) {
       event.preventDefault();
-      const form = event.target;
+      const form = document.getElementById('addLoanForm');
       if (!form.checkValidity()) {
         form.classList.add('was-validated');
         return;
       }
-      const loanId = document.getElementById('editLoanId').value;
-      const loanDate = document.getElementById('editLoanDate').value;
-      const returnDate = document.getElementById('editReturnDate').value;
 
       try {
-        await db.collection('emprestimos').doc(loanId).update({
-          loanDate,
-          returnDate
-        });
-        showAlert('success', 'Empréstimo atualizado com sucesso!');
-        bootstrap.Modal.getInstance(document.getElementById('editLoanModal')).hide();
-        loadLoans();
-      } catch (error) {
-        showAlert('danger', 'Erro ao atualizar empréstimo');
-      }
-    });
+        const userId = document.getElementById('selectedUserId').value;
+        const loanDate = document.getElementById('loanDate').value;
+        const returnDate = document.getElementById('returnDate').value;
+        const registroNumero = document.getElementById('registroNumero').value;
 
-    // Opcional: também atualizar barra ao iniciar
-    document.addEventListener('DOMContentLoaded', showNotReturnedBar);
-    
-    // Carregar contadores e atualizar "pizza"
-    async function loadLoanStats() {
-      let countEmprestado = 0, countAtrasado = 0, countDevolvido = 0;
-      const loansRef = db.collection('emprestimos');
-      const snapshot = await loansRef.get();
-      const today = new Date();
-      snapshot.forEach(doc => {
-        const loan = doc.data();
-        if (loan.status === 'DEVOLVIDO') {
-          countDevolvido += loan.quantity || 1;
-        } else if (loan.status === 'EMPRESTADO') {
-          if (loan.returnDate) {
-            const [d, m, y] = loan.returnDate.split('/');
-            const returnDate = new Date(`${y}-${m}-${d}`);
-            if (returnDate < today.setHours(0,0,0,0)) {
-              countAtrasado += loan.quantity || 1;
-            } else {
-              countEmprestado += loan.quantity || 1;
-            }
-          } else {
-            countEmprestado += loan.quantity || 1;
+        // Coleta todos os livros e quantidades
+        const bookRows = document.querySelectorAll('.loan-book-row');
+        const loans = [];
+        for (const row of bookRows) {
+          const bookId = row.querySelector('.selectedBookId').value;
+          const quantity = parseInt(row.querySelector('.quantity').value);
+          if (!bookId || !quantity) continue;
+          loans.push({ bookId, quantity });
+        }
+        if (loans.length === 0) {
+          showAlert('warning', 'Selecione pelo menos um livro.');
+          return;
+        }
+
+        // Verifica disponibilidade de todos os livros
+        for (const loan of loans) {
+          const bookDoc = await db.collection('livros').doc(loan.bookId).get();
+          const bookData = bookDoc.data();
+          if (bookData.quantidade < loan.quantity) {
+            showAlert('warning', `Quantidade indisponível para o livro: ${bookData.titulo}`);
+            return;
           }
         }
-      });
-      document.getElementById('countEmprestado').textContent = countEmprestado;
-      document.getElementById('countAtrasado').textContent = countAtrasado;
-      document.getElementById('countDevolvido').textContent = countDevolvido;
 
-      // SVG Pie: calcula proporção
-      const total = countEmprestado + countAtrasado + countDevolvido || 1;
-      const circleLength = 2 * Math.PI * 38;
-      function setPie(selector, value) {
-        const el = document.querySelector(selector);
-        if (el) {
-          el.style.strokeDasharray = `${(value/total)*circleLength} ${circleLength}`;
-        }
+        // Registra o empréstimo em uma transação
+        await db.runTransaction(async (transaction) => {
+          // Atualiza a quantidade de cada livro
+          for (const loan of loans) {
+            const bookRef = db.collection('livros').doc(loan.bookId);
+            const bookDoc = await transaction.get(bookRef);
+            transaction.update(bookRef, {
+              quantidade: bookDoc.data().quantidade - loan.quantity
+            });
+          }
+          // Cria um único documento de empréstimo com todos os livros
+          const loanRef = db.collection('emprestimos').doc();
+          transaction.set(loanRef, {
+            userId,
+            books: loans, // array de livros e quantidades
+            loanDate,
+            returnDate,
+            registroNumero,
+            status: 'EMPRESTADO',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+
+        showAlert('success', 'Empréstimo registrado com sucesso!');
+        form.reset();
+        // Remove linhas extras
+        document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
+        document.querySelector('.availableQuantity').textContent = '-';
+        closeAddLoanModal();
+        loadLoans();
+
+        // Mostra comprovante do primeiro livro (opcional: pode adaptar para mostrar todos)
+        const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
+        const bookDocForReceipt = await db.collection('livros').doc(loans[0].bookId).get();
+        await showPrintLoanModal({
+          quantity: loans[0].quantity,
+          loanDate,
+          returnDate,
+          registroNumero
+        }, userDocForReceipt.data(), bookDocForReceipt.data());
+
+      } catch (error) {
+        showAlert('danger', 'Erro ao registrar empréstimo');
       }
-      setPie('.pie-fg-emprestado', countEmprestado);
-      setPie('.pie-fg-atrasado', countAtrasado);
-      setPie('.pie-fg-devolvido', countDevolvido);
-    }
-    document.addEventListener('DOMContentLoaded', loadLoanStats);
-
-    // Mostrar lista ao clicar no botão
-    async function showLoansByStatus(status) {
-      document.querySelector('.loans-table').style.display = '';
-      document.querySelector('.search-box').style.display = '';
-      await loadLoans(status);
     }
 
-    // Função para carregar e exibir todos os empréstimos na tabela
-async function loadLoans(statusFilter = null) {
-  const tbody = document.getElementById('loansTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6">Carregando...</td></tr>';
-
+    // Enviar notificação via WhatsApp para o usuário após registrar empréstimo
+async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
   try {
-    let query = db.collection('emprestimos').orderBy('createdAt', 'desc');
-    if (statusFilter) {
-      query = query.where('status', '==', statusFilter);
-    }
-    const snapshot = await query.get();
+    const userDoc = await db.collection('usuarios').doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData.telefone) return;
 
-    if (snapshot.empty) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
-      return;
+    // Monta lista de livros para mensagem
+    let livrosMsg = '';
+    for (const item of loans) {
+      const bookDoc = await db.collection('livros').doc(item.bookId).get();
+      const bookData = bookDoc.data();
+      livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
     }
 
-    tbody.innerHTML = '';
-    for (const doc of snapshot.docs) {
-      const loan = doc.data();
-      // Busca usuário
-      let userName = '';
-      let userEmail = '';
-      if (loan.userId) {
-        const userDoc = await db.collection('usuarios').doc(loan.userId).get();
-        if (userDoc.exists) {
-          userName = userDoc.data().nome || '';
-          userEmail = userDoc.data().email || '';
-        }
-      }
-      // Monta lista de livros
-      let booksHtml = '';
-      if (Array.isArray(loan.books)) {
-        for (const item of loan.books) {
-          const bookDoc = await db.collection('livros').doc(item.bookId).get();
-          const bookTitle = bookDoc.exists ? bookDoc.data().titulo : 'Livro removido';
-          booksHtml += `<div>${bookTitle} <span class="badge bg-secondary">${item.quantity}</span></div>`;
-        }
-      } else {
-        booksHtml = '-';
-      }
-      // Status visual
-      let statusClass = '';
-      if (loan.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
-      else if (loan.status === 'EMPRESTADO') {
-        // Verifica atraso
-        if (loan.returnDate) {
-          const [d, m, y] = loan.returnDate.split('/');
-          const returnDate = new Date(`${y}-${m}-${d}`);
-          const today = new Date();
-          if (returnDate < today.setHours(0,0,0,0)) statusClass = 'status-atrasado';
-          else statusClass = 'status-emprestado';
-        } else {
-          statusClass = 'status-emprestado';
-        }
-      }
-      // Monta linha
-      tbody.innerHTML += `
-        <tr data-registro="${loan.registroNumero || ''}">
-          <td>${booksHtml}</td>
-          <td>${userName ? userName + (userEmail ? `<br><small>${userEmail}</small>` : '') : '-'}</td>
-          <td>${loan.loanDate || '-'}</td>
-          <td>${loan.returnDate || '-'}</td>
-          <td><span class="loan-status ${statusClass}">${loan.status || '-'}</span></td>
-          <td>
-            <div class="action-buttons">
-              <button class="action-button" title="Editar" onclick="openEditLoanModal('${doc.id}')">
-                <i class="bx bx-edit"></i>
-              </button>
-              ${loan.status === 'EMPRESTADO' ? `
-                <button class="action-button return-button" title="Marcar como Devolvido" onclick="confirmReturnLoan('${doc.id}')">
-                  <i class="bx bx-check-circle"></i>
-                </button>
-              ` : ''}
-            </div>
-          </td>
-        </tr>
-      `;
+    const msg = encodeURIComponent(
+      `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivros:${livrosMsg}\nData do Empréstimo: ${loanDate}\nData de Devolução: ${returnDate}\n\nPor favor, devolva os livros na data correta.`
+    );
+
+    // Formata telefone para padrão internacional (ex: 5511999999999)
+    let phone = userData.telefone.replace(/\D/g, '');
+    if (phone.length === 11 && !phone.startsWith('55')) {
+      phone = '55' + phone;
     }
+
+    // Abre o WhatsApp Web em nova aba (não envia automático, usuário precisa confirmar)
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   } catch (error) {
-    document.getElementById('loansTableBody').innerHTML = '<tr><td colspan="6">Erro ao carregar empréstimos.</td></tr>';
+    // Não bloqueia o fluxo, apenas loga
+    console.error('Erro ao enviar WhatsApp:', error);
   }
 }
 
-// --- Controle de permissão para registrar empréstimo ---
-
-    // Função para obter usuário logado do localStorage
-    function getUsuarioLogado() {
-      try {
-        return JSON.parse(localStorage.getItem('usuarioLogado'));
-      } catch {
-        return null;
-      }
-    }
-
-    // Função para verificar se o usuário pode registrar empréstimo
-    function podeRegistrarEmprestimo() {
-      const user = getUsuarioLogado();
-      // Só permite se for colaborador (não aluno)
-      return user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao);
-    }
-
-    // Ao carregar a página, verifica permissão e esconde botão se não for colaborador
+    // Inicializar Flatpickr (calendário)
     document.addEventListener('DOMContentLoaded', function() {
-      const btn = document.querySelector('.add-button[data-bs-target="#addLoanModal"]');
-      if (!podeRegistrarEmprestimo()) {
-        if (btn) btn.style.display = 'none';
-      }
+      flatpickr("#loanDate", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        defaultDate: "today",
+        minDate: "today"
+      });
+
+      flatpickr("#returnDate", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        minDate: "today",
+        defaultDate: new Date().fp_incr(14) // 14 dias por padrão
+      });
+
+      loadLoans();
     });
 
-    // Bloqueia o submit do formulário se não for colaborador
+    // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
+    async function searchUsers() {
+      const searchTerm = document.getElementById('userSearch').value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
+      const resultsDiv = document.getElementById('userSearchResults');
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
+
+      if (searchTerm.length < 2) return;
+
+      try {
+        // Busca por nome (original e minúsculo)
+        const queryByName = db.collection('usuarios')
+          .where('nome', '>=', searchTerm)
+          .where('nome', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByNameLower = db.collection('usuarios')
+          .where('nome', '>=', searchTermLower)
+          .where('nome', '<=', searchTermLower + '\uf8ff')
+          .limit(10)
+          .get();
+
+        // Busca por matrícula (se existir esse campo)
+        const queryByMatricula = db.collection('usuarios')
+          .where('matricula', '>=', searchTerm)
+          .where('matricula', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const [nameSnapshot, nameLowerSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByNameLower, queryByMatricula]);
+
+        // Usar Map para evitar duplicatas
+        const usersMap = new Map();
+        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        nameLowerSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+
+        if (usersMap.size === 0) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
+        } else {
+          usersMap.forEach((user, id) => {
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            // Mostra apenas nome e matrícula (se houver), não o email
+            div.textContent = user.matricula
+              ? `${user.nome} (Matrícula: ${user.matricula})`
+              : user.nome;
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectUser(id, user.nome);
+            };
+            resultsDiv.appendChild(div);
+          });
+        }
+        resultsDiv.classList.add('show');
+      } catch (error) {
+        console.error('Erro ao buscar usuários:', error);
+        showAlert('danger', 'Erro ao buscar usuários');
+      }
+    }
+
+    // Selecionar usuário da lista
+    function selectUser(userId, userName) {
+      document.getElementById('userSearch').value = userName;
+      document.getElementById('selectedUserId').value = userId;
+      document.getElementById('userSearchResults').classList.remove('show');
+      document.getElementById('usuarioSelecionadoNome').value = userName;
+    }
+
+    // Adicione listeners para busca automática ao digitar ou clicar no botão
     document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('userSearch').addEventListener('input', searchUsers);
+      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
+    });
+
+    // Buscar livros cadastrados ao digitar no campo ou clicar no botão
+    async function searchBooks(inputOrBtn) {
+      let input, resultsDiv;
+      if (inputOrBtn.classList.contains('bookSearch')) {
+        input = inputOrBtn;
+        resultsDiv = input.parentElement.parentElement.querySelector('.bookSearchResults');
+      } else {
+        input = inputOrBtn.parentElement.querySelector('.bookSearch');
+        resultsDiv = inputOrBtn.parentElement.parentElement.querySelector('.bookSearchResults');
+      }
+      const searchTerm = input.value.trim();
+      const searchTermLower = searchTerm.toLowerCase();
+      resultsDiv.innerHTML = '';
+      resultsDiv.classList.remove('show');
+      if (searchTerm.length < 2) return;
+
+      try {
+        // Busca por título (original e minúsculo)
+        const queryByTitle = db.collection('livros')
+          .where('titulo', '>=', searchTerm)
+          .where('titulo', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByTitleLower = db.collection('livros')
+          .where('titulo', '>=', searchTermLower)
+          .where('titulo', '<=', searchTermLower + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const queryByISBN = db.collection('livros')
+          .where('isbn', '>=', searchTerm)
+          .where('isbn', '<=', searchTerm + '\uf8ff')
+          .limit(10)
+          .get();
+
+        const [titleSnapshot, titleLowerSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByTitleLower, queryByISBN]);
+        const booksMap = new Map();
+        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        titleLowerSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
+
+        if (booksMap.size === 0) {
+          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
+        } else {
+          booksMap.forEach((book, id) => {
+            const div = document.createElement('a');
+            div.className = 'dropdown-item';
+            div.href = '#';
+            div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
+            div.onclick = (e) => {
+              e.preventDefault();
+              selectBookMulti(input, id, book.titulo, book.quantidade);
+            };
+            resultsDiv.appendChild(div);
+          });
+        }
+        resultsDiv.classList.add('show');
+      } catch (error) {
+        showAlert('danger', 'Erro ao buscar livros');
+      }
+    }
+
+    // Selecionar livro para múltiplos empréstimos
+    function selectBookMulti(input, bookId, bookTitle, quantity) {
+      input.value = bookTitle;
+      const row = input.closest('.loan-book-row');
+      row.querySelector('.selectedBookId').value = bookId;
+      row.querySelector('.availableQuantity').textContent = quantity;
+      row.querySelector('.bookSearchResults').classList.remove('show');
+      row.querySelector('.quantity').max = quantity;
+    }
+
+    // Função para adicionar nova linha de livro
+    function addBookRow() {
+      const container = document.getElementById('multiBookLoans');
+      const rows = container.querySelectorAll('.loan-book-row');
+      const newRow = rows[0].cloneNode(true);
+      function addBookRow() {
+  const container = document.getElementById('multiBookLoans');
+  const rows = container.querySelectorAll('.loan-book-row');
+  const newRow = rows[0].cloneNode(true);
+
+  // Limpar os valores dos inputs na nova linha
+  const inputs = newRow.querySelectorAll('input, select, textarea');
+  inputs.forEach(input => {
+    input.value = '';
+  });
+
+  // Remover IDs duplicados, se houver
+  newRow.querySelectorAll('[id]').forEach(el => {
+    el.removeAttribute('id');
+  });
+
+  // Opcional: atualizar nome dos campos (ex: name="book[0]", book[1], etc.)
+  const rowIndex = rows.length;
+  newRow.querySelectorAll('[name]').forEach(el => {
+    const name = el.getAttribute('name');
+    if (name) {
+      const newName = name.replace(/\[\d+\]/, `[${rowIndex}]`);
+      el.setAttribute('name', newName);
+    }
+  });
+
+  container.appendChild(newRow);
+}
+
+
+      // Limpa valores do novo row
+      newRow.querySelector('.bookSearch').value = '';
+      newRow.querySelector('.selectedBookId').value = '';
+      newRow.querySelector('.availableQuantity').textContent = '-';
+      newRow.querySelector('.quantity').value = 1;
+      newRow.querySelector('.bookSearchResults').innerHTML = '';
+      newRow.querySelector('.bookSearchResults').classList.remove('show');
+      newRow.querySelector('.removeBookRow').style.display = 'inline-block';
+
+      container.appendChild(newRow);
+
+      // Adiciona listeners para busca de livros
+      newRow.querySelector('.bookSearch').addEventListener('input', function() {
+        searchBooks(newRow.querySelector('.bookSearch'));
+      });
+    }
+
+    // Função para remover linha de livro
+    function removeBookRow(btn) {
+      const row = btn.closest('.loan-book-row');
+      if (document.querySelectorAll('.loan-book-row').length > 1) {
+        row.remove();
+      }
+    }
+
+    // Adicione listeners para busca automática ao digitar
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('.bookSearch').addEventListener('input', function() {
+        searchBooks(this);
+      });
+    });
+
+    // Registrar empréstimo
+    async function handleLoanSubmission(event) {
+      event.preventDefault();
       const form = document.getElementById('addLoanForm');
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          if (!podeRegistrarEmprestimo()) {
-            e.preventDefault();
-            showAlert('danger', 'Apenas colaboradores podem registrar empréstimos.');
-            return false;
-          }
-        });
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
       }
-    });
-
-    // Função para mostrar o comprovante após registrar empréstimo
-    async function showPrintLoanModal(loanData, userData, bookData) {
-      const content = `
-        <p><strong>Usuário:</strong> ${userData.nome} (${userData.email})</p>
-        <p><strong>Livro:</strong> ${bookData.titulo}</p>
-        <p><strong>Quantidade:</strong> ${loanData.quantity}</p>
-        <p><strong>Data do Empréstimo:</strong> ${loanData.loanDate}</p>
-        <p><strong>Data de Devolução:</strong> ${loanData.returnDate}</p>
-      `;
-      document.getElementById('loanReceiptContent').innerHTML = content;
-      // Limpa assinatura
-      clearSignature();
-
-      // Adiciona botão WhatsApp se houver telefone cadastrado
-      let whatsappBtn = '';
-      if (userData.telefone) {
-        // Formata telefone para padrão internacional (ex: 5511999999999)
-        let phone = userData.telefone.replace(/\D/g, '');
-        if (phone.length === 11 && !phone.startsWith('55')) {
-          phone = '55' + phone;
-        }
-        const msg = encodeURIComponent(
-          `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivro: ${bookData.titulo}\nQuantidade: ${loanData.quantity}\nData do Empréstimo: ${loanData.loanDate}\nData de Devolução: ${loanData.returnDate}\n\nPor favor, devolva o livro na data correta.`
-        );
-        whatsappBtn = `
-          <a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn btn-success mb-2">
-            <i class="bx bxl-whatsapp"></i> Enviar comprovante por WhatsApp
-          </a>
-        `;
-      }
-      document.getElementById('loanReceiptContent').insertAdjacentHTML('beforeend', whatsappBtn);
-
-      new bootstrap.Modal(document.getElementById('printLoanModal')).show();
-    }
-
-    // Função de impressão
-    function printLoanReceipt() {
-      if (confirm('Deseja imprimir o comprovante de empréstimo?')) {
-        const printContents = document.getElementById('printArea').innerHTML;
-        const win = window.open('', '', 'height=600,width=800');
-        win.document.write('<html><head><title>Comprovante de Empréstimo</title>');
-        win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">');
-        win.document.write('</head><body>');
-        win.document.write(printContents);
-        win.document.write('</body></html>');
-        win.document.close();
-        win.focus();
-        setTimeout(() => win.print(), 500);
-      }
-    }
-
-    // Assinatura digital simples com canvas
-    let signaturePad, signatureCtx, drawing = false;
-    document.addEventListener('DOMContentLoaded', function() {
-      const canvas = document.getElementById('signaturePad');
-      if (canvas) {
-        signaturePad = canvas;
-        signatureCtx = canvas.getContext('2d');
-        signaturePad.addEventListener('mousedown', () => drawing = true);
-        signaturePad.addEventListener('mouseup', () => drawing = false);
-        signaturePad.addEventListener('mouseout', () => drawing = false);
-        signaturePad.addEventListener('mousemove', drawSignature);
-        // Touch events para mobile
-        signaturePad.addEventListener('touchstart', () => drawing = true);
-        signaturePad.addEventListener('touchend', () => drawing = false);
-        signaturePad.addEventListener('touchcancel', () => drawing = false);
-        signaturePad.addEventListener('touchmove', drawSignatureTouch);
-      }
-    });
-    function drawSignature(e) {
-      if (!drawing) return;
-      signatureCtx.lineWidth = 2;
-      signatureCtx.lineCap = 'round';
-      signatureCtx.strokeStyle = '#222';
-      const rect = signaturePad.getBoundingClientRect();
-      signatureCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-      signatureCtx.stroke();
-      signatureCtx.beginPath();
-      signatureCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    }
-    function drawSignatureTouch(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const rect = signaturePad.getBoundingClientRect();
-      signatureCtx.lineWidth = 2;
-      signatureCtx.lineCap = 'round';
-      signatureCtx.strokeStyle = '#222';
-      signatureCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-      signatureCtx.stroke();
-      signatureCtx.beginPath();
-      signatureCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-    }
-    function clearSignature() {
-      if (signatureCtx) signatureCtx.clearRect(0, 0, signaturePad.width, signaturePad.height);
-    }
-
-    // Antes de fechar o modal, remova o foco de qualquer campo dentro dele
-    function closeAddLoanModal() {
-      const modal = document.getElementById('addLoanModal');
-      const focused = modal.querySelector(':focus');
-      if (focused) focused.blur();
-      // Corrige erro: só chama hide() se houver instância do modal
-      const modalInstance = bootstrap.Modal.getInstance(modal);
-      if (modalInstance) {
-        modalInstance.hide();
-      }
-    }
-
-    // Adicione a função showNotReturnedBar para evitar erro de função não definida
-
-    // Exibe barra de alerta para empréstimos atrasados (caso existam)
-    async function showNotReturnedBar() {
-      const bar = document.getElementById('notReturnedBar');
-      if (!bar) return;
-      bar.style.display = 'none';
-      bar.innerHTML = '';
 
       try {
-        const loansRef = db.collection('emprestimos');
-        const snapshot = await loansRef.where('status', '==', 'EMPRESTADO').get();
-        const today = new Date();
-        let atrasados = [];
+        const userId = document.getElementById('selectedUserId').value;
+        const loanDate = document.getElementById('loanDate').value;
+        const returnDate = document.getElementById('returnDate').value;
+        const registroNumero = document.getElementById('registroNumero').value;
 
-        snapshot.forEach(doc => {
-          const loan = doc.data();
-          if (loan.returnDate) {
-            const [d, m, y] = loan.returnDate.split('/');
-            const returnDate = new Date(`${y}-${m}-${d}`);
-            if (returnDate < today.setHours(0,0,0,0)) {
-              atrasados.push(loan);
-            }
+        // Coleta todos os livros e quantidades
+        const bookRows = document.querySelectorAll('.loan-book-row');
+        const loans = [];
+        for (const row of bookRows) {
+          const bookId = row.querySelector('.selectedBookId').value;
+          const quantity = parseInt(row.querySelector('.quantity').value);
+          if (!bookId || !quantity) continue;
+          loans.push({ bookId, quantity });
+        }
+        if (loans.length === 0) {
+          showAlert('warning', 'Selecione pelo menos um livro.');
+          return;
+        }
+
+        // Verifica disponibilidade de todos os livros
+        for (const loan of loans) {
+          const bookDoc = await db.collection('livros').doc(loan.bookId).get();
+          const bookData = bookDoc.data();
+          if (bookData.quantidade < loan.quantity) {
+            showAlert('warning', `Quantidade indisponível para o livro: ${bookData.titulo}`);
+            return;
           }
+        }
+
+        // Registra o empréstimo em uma transação
+        await db.runTransaction(async (transaction) => {
+          // Atualiza a quantidade de cada livro
+          for (const loan of loans) {
+            const bookRef = db.collection('livros').doc(loan.bookId);
+            const bookDoc = await transaction.get(bookRef);
+            transaction.update(bookRef, {
+              quantidade: bookDoc.data().quantidade - loan.quantity
+            });
+          }
+          // Cria um único documento de empréstimo com todos os livros
+          const loanRef = db.collection('emprestimos').doc();
+          transaction.set(loanRef, {
+            userId,
+            books: loans, // array de livros e quantidades
+            loanDate,
+            returnDate,
+            registroNumero,
+            status: 'EMPRESTADO',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
         });
 
-        if (atrasados.length > 0) {
-          const msg = `⚠️ Existem ${atrasados.length} empréstimo(s) atrasado(s)! Clique em "Atrasos" para visualizar.`;
-          bar.innerHTML = `<div class="marquee">${msg}</div>`;
-          bar.style.display = '';
-        }
-      } catch (e) {
-        // Em caso de erro, não exibe nada
-        bar.style.display = 'none';
+        showAlert('success', 'Empréstimo registrado com sucesso!');
+        form.reset();
+        // Remove linhas extras
+        document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
+        document.querySelector('.availableQuantity').textContent = '-';
+        closeAddLoanModal();
+        loadLoans();
+
+        // Mostra comprovante do primeiro livro (opcional: pode adaptar para mostrar todos)
+        const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
+        const bookDocForReceipt = await db.collection('livros').doc(loans[0].bookId).get();
+        await showPrintLoanModal({
+          quantity: loans[0].quantity,
+          loanDate,
+          returnDate,
+          registroNumero
+        }, userDocForReceipt.data(), bookDocForReceipt.data());
+
+      } catch (error) {
+        showAlert('danger', 'Erro ao registrar empréstimo');
       }
     }
 
-    // Opcional: também atualizar barra ao iniciar
-    document.addEventListener('DOMContentLoaded', showNotReturnedBar);
-
-    async function confirmReturnLoan(loanId) {
-  if (!confirm('Confirmar devolução de todos os livros deste empréstimo?')) return;
+    // Enviar notificação via WhatsApp para o usuário após registrar empréstimo
+async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
   try {
-    // Atualiza status para DEVOLVIDO
-    await db.collection('emprestimos').doc(loanId).update({
-      status: 'DEVOLVIDO'
-    });
-    showAlert('success', 'Empréstimo marcado como devolvido!');
-    loadLoans();
+    const userDoc = await db.collection('usuarios').doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData.telefone) return;
+
+    // Monta lista de livros para mensagem
+    let livrosMsg = '';
+    for (const item of loans) {
+      const bookDoc = await db.collection('livros').doc(item.bookId).get();
+      const bookData = bookDoc.data();
+      livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
+    }
+
+    const msg = encodeURIComponent(
+      `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivros:${livrosMsg}\nData do Empréstimo: ${loanDate}\nData de Devolução: ${returnDate}\n\nPor favor, devolva os livros na data correta.`
+    );
+
+    // Formata telefone para padrão internacional (ex: 5511999999999)
+    let phone = userData.telefone.replace(/\D/g, '');
+    if (phone.length === 11 && !phone.startsWith('55')) {
+      phone = '55' + phone;
+    }
+
+    // Abre o WhatsApp Web em nova aba (não envia automático, usuário precisa confirmar)
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   } catch (error) {
-    showAlert('danger', 'Erro ao marcar devolução.');
+    // Não bloqueia o fluxo, apenas loga
+    console.error('Erro ao enviar WhatsApp:', error);
   }
 }
   </script>
