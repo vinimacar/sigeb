@@ -1083,14 +1083,16 @@ async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
   try {
     const userDoc = await db.collection('usuarios').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData.telefone) return;
+    if (!userData || !userData.telefone) return;
 
     // Monta lista de livros para mensagem
     let livrosMsg = '';
     for (const item of loans) {
       const bookDoc = await db.collection('livros').doc(item.bookId).get();
       const bookData = bookDoc.data();
-      livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
+      if (bookData && bookData.titulo) {
+        livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
+      }
     }
 
     const msg = encodeURIComponent(
@@ -1102,6 +1104,7 @@ async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
     if (phone.length === 11 && !phone.startsWith('55')) {
       phone = '55' + phone;
     }
+    if (phone.length < 12) return; // Não tenta abrir se telefone inválido
 
     // Abre o WhatsApp Web em nova aba (não envia automático, usuário precisa confirmar)
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
