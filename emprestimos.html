@@ -398,10 +398,10 @@
       }
     </style>
 
-    <div class="search-box" style="display:none;">
-      <input type="text" id="searchInput" placeholder="Pesquisar por livro, usuário ou data...">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Buscar por nome, matrícula ou registro do empréstimo...">
       <button class="add-button" onclick="searchLoans()">
-        <i class='bx bx-search'></i>
+        <i class='bx bx-search'></i> Buscar Empréstimo
       </button>
     </div>
 
@@ -1110,16 +1110,19 @@
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const rows = document.querySelectorAll('#loansTableBody tr');
       rows.forEach(row => {
-        // Pega os textos das colunas: livro, usuário, data empréstimo, data devolução
+        // Pega os textos das colunas: livro, usuário, data empréstimo, data devolução, registro
         const livro = row.children[0]?.textContent.toLowerCase() || '';
         const usuario = row.children[1]?.textContent.toLowerCase() || '';
         const dataEmprestimo = row.children[2]?.textContent.toLowerCase() || '';
         const dataDevolucao = row.children[3]?.textContent.toLowerCase() || '';
+        // Busca pelo número do registro (pode estar em uma coluna oculta ou no atributo data)
+        const registro = row.getAttribute('data-registro')?.toLowerCase() || '';
         if (
           livro.includes(search) ||
           usuario.includes(search) ||
           dataEmprestimo.includes(search) ||
-          dataDevolucao.includes(search)
+          dataDevolucao.includes(search) ||
+          registro.includes(search)
         ) {
           row.style.display = '';
         } else {
@@ -1305,19 +1308,17 @@ async function loadLoans(statusFilter = null) {
       }
       // Monta linha
       tbody.innerHTML += `
-        <tr>
+        <tr data-registro="${loan.registroNumero || ''}">
           <td>${booksHtml}</td>
           <td>${userName ? userName + (userEmail ? `<br><small>${userEmail}</small>` : '') : '-'}</td>
           <td>${loan.loanDate || '-'}</td>
           <td>${loan.returnDate || '-'}</td>
           <td><span class="loan-status ${statusClass}">${loan.status || '-'}</span></td>
           <td>
-            <!-- Ações: editar, devolver, imprimir, etc. -->
             <div class="action-buttons">
               <button class="action-button" title="Editar" onclick="openEditLoanModal('${doc.id}')">
                 <i class="bx bx-edit"></i>
               </button>
-              <!-- Outras ações podem ser adicionadas aqui -->
             </div>
           </td>
         </tr>
