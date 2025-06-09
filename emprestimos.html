@@ -1402,6 +1402,47 @@
         modalInstance.hide();
       }
     }
+
+    // Adicione a função showNotReturnedBar para evitar erro de função não definida
+
+    // Exibe barra de alerta para empréstimos atrasados (caso existam)
+    async function showNotReturnedBar() {
+      const bar = document.getElementById('notReturnedBar');
+      if (!bar) return;
+      bar.style.display = 'none';
+      bar.innerHTML = '';
+
+      try {
+        const loansRef = db.collection('emprestimos');
+        const snapshot = await loansRef.where('status', '==', 'EMPRESTADO').get();
+        const today = new Date();
+        let atrasados = [];
+
+        snapshot.forEach(doc => {
+          const loan = doc.data();
+          if (loan.returnDate) {
+            const [d, m, y] = loan.returnDate.split('/');
+            const returnDate = new Date(`${y}-${m}-${d}`);
+            if (returnDate < today.setHours(0,0,0,0)) {
+              atrasados.push(loan);
+            }
+          }
+        });
+
+        if (atrasados.length > 0) {
+          const msg = `⚠️ Existem ${atrasados.length} empréstimo(s) atrasado(s)! Clique em "Atrasos" para visualizar.`;
+          bar.innerHTML = `<div class="marquee">${msg}</div>`;
+          bar.style.display = '';
+        }
+      } catch (e) {
+        // Em caso de erro, não exibe nada
+        bar.style.display = 'none';
+      }
+    }
+
+    // Opcional: também atualizar barra ao iniciar
+    document.addEventListener('DOMContentLoaded', showNotReturnedBar);
   </script>
 </body>
 </html>
+
