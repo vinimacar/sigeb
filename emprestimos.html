@@ -956,210 +956,15 @@
       }
     }
 
-    // Inicializar Flatpickr (calendário)
-    document.addEventListener('DOMContentLoaded', function() {
-      flatpickr("#loanDate", {
-        locale: "pt",
-        dateFormat: "d/m/Y",
-        defaultDate: "today",
-        minDate: "today"
-      });
-
-      flatpickr("#returnDate", {
-        locale: "pt",
-        dateFormat: "d/m/Y",
-        minDate: "today",
-        defaultDate: new Date().fp_incr(14) // 14 dias por padrão
-      });
-
-      loadLoans();
-    });
-
-    // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
-    async function searchUsers() {
-      const searchTerm = document.getElementById('userSearch').value.trim();
-      const searchTermLower = searchTerm.toLowerCase();
-      const resultsDiv = document.getElementById('userSearchResults');
-      resultsDiv.innerHTML = '';
-      resultsDiv.classList.remove('show');
-
-      if (searchTerm.length < 2) return;
-
-      try {
-        // Busca por nome (original e minúsculo)
-        const queryByName = db.collection('usuarios')
-          .where('nome', '>=', searchTerm)
-          .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByNameLower = db.collection('usuarios')
-          .where('nome', '>=', searchTermLower)
-          .where('nome', '<=', searchTermLower + '\uf8ff')
-          .limit(10)
-          .get();
-
-        // Busca por matrícula (se existir esse campo)
-        const queryByMatricula = db.collection('usuarios')
-          .where('matricula', '>=', searchTerm)
-          .where('matricula', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [nameSnapshot, nameLowerSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByNameLower, queryByMatricula]);
-
-        // Usar Map para evitar duplicatas
-        const usersMap = new Map();
-        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-        nameLowerSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-
-        if (usersMap.size === 0) {
-          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
-        } else {
-          usersMap.forEach((user, id) => {
-            const div = document.createElement('a');
-            div.className = 'dropdown-item';
-            div.href = '#';
-            // Mostra apenas nome e matrícula (se houver), não o email
-            div.textContent = user.matricula
-              ? `${user.nome} (Matrícula: ${user.matricula})`
-              : user.nome;
-            div.onclick = (e) => {
-              e.preventDefault();
-              selectUser(id, user.nome);
-            };
-            resultsDiv.appendChild(div);
-          });
-        }
-        resultsDiv.classList.add('show');
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-        showAlert('danger', 'Erro ao buscar usuários');
-      }
-    }
-
-    // Selecionar usuário da lista
-    function selectUser(userId, userName) {
-      document.getElementById('userSearch').value = userName;
-      document.getElementById('selectedUserId').value = userId;
-      document.getElementById('userSearchResults').classList.remove('show');
-      document.getElementById('usuarioSelecionadoNome').value = userName;
-    }
-
-    // Adicione listeners para busca automática ao digitar ou clicar no botão
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('userSearch').addEventListener('input', searchUsers);
-      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
-    });
-
-    // Buscar livros cadastrados ao digitar no campo ou clicar no botão
-    async function searchBooks(inputOrBtn) {
-      let input, resultsDiv;
-      if (inputOrBtn.classList.contains('bookSearch')) {
-        input = inputOrBtn;
-        resultsDiv = input.parentElement.parentElement.querySelector('.bookSearchResults');
-      } else {
-        input = inputOrBtn.parentElement.querySelector('.bookSearch');
-        resultsDiv = inputOrBtn.parentElement.parentElement.querySelector('.bookSearchResults');
-      }
-      const searchTerm = input.value.trim();
-      const searchTermLower = searchTerm.toLowerCase();
-      resultsDiv.innerHTML = '';
-      resultsDiv.classList.remove('show');
-      if (searchTerm.length < 2) return;
-
-      try {
-        // Busca por título (original e minúsculo)
-        const queryByTitle = db.collection('livros')
-          .where('titulo', '>=', searchTerm)
-          .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByTitleLower = db.collection('livros')
-          .where('titulo', '>=', searchTermLower)
-          .where('titulo', '<=', searchTermLower + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByISBN = db.collection('livros')
-          .where('isbn', '>=', searchTerm)
-          .where('isbn', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [titleSnapshot, titleLowerSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByTitleLower, queryByISBN]);
-        const booksMap = new Map();
-        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-        titleLowerSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-
-        if (booksMap.size === 0) {
-          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
-        } else {
-          booksMap.forEach((book, id) => {
-            const div = document.createElement('a');
-            div.className = 'dropdown-item';
-            div.href = '#';
-            div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
-            div.onclick = (e) => {
-              e.preventDefault();
-              selectBookMulti(input, id, book.titulo, book.quantidade);
-            };
-            resultsDiv.appendChild(div);
-          });
-        }
-        resultsDiv.classList.add('show');
-      } catch (error) {
-        showAlert('danger', 'Erro ao buscar livros');
-      }
-    }
-
-    // Selecionar livro para múltiplos empréstimos
-    function selectBookMulti(input, bookId, bookTitle, quantity) {
-      input.value = bookTitle;
-      const row = input.closest('.loan-book-row');
-      row.querySelector('.selectedBookId').value = bookId;
-      row.querySelector('.availableQuantity').textContent = quantity;
-      row.querySelector('.bookSearchResults').classList.remove('show');
-      row.querySelector('.quantity').max = quantity;
-    }
-
-    // Função para adicionar nova linha de livro
+    // Função para adicionar nova linha de livro (permitir apenas uma)
     function addBookRow() {
       const container = document.getElementById('multiBookLoans');
       const rows = container.querySelectorAll('.loan-book-row');
+      if (rows.length >= 1) {
+        showAlert('warning', 'Só é permitido um livro por empréstimo.');
+        return;
+      }
       const newRow = rows[0].cloneNode(true);
-      function addBookRow() {
-  const container = document.getElementById('multiBookLoans');
-  const rows = container.querySelectorAll('.loan-book-row');
-  const newRow = rows[0].cloneNode(true);
-
-  // Limpar os valores dos inputs na nova linha
-  const inputs = newRow.querySelectorAll('input, select, textarea');
-  inputs.forEach(input => {
-    input.value = '';
-  });
-
-  // Remover IDs duplicados, se houver
-  newRow.querySelectorAll('[id]').forEach(el => {
-    el.removeAttribute('id');
-  });
-
-  // Opcional: atualizar nome dos campos (ex: name="book[0]", book[1], etc.)
-  const rowIndex = rows.length;
-  newRow.querySelectorAll('[name]').forEach(el => {
-    const name = el.getAttribute('name');
-    if (name) {
-      const newName = name.replace(/\[\d+\]/, `[${rowIndex}]`);
-      el.setAttribute('name', newName);
-    }
-  });
-
-  container.appendChild(newRow);
-}
-
 
       // Limpa valores do novo row
       newRow.querySelector('.bookSearch').value = '';
@@ -1178,19 +983,18 @@
       });
     }
 
-    // Função para remover linha de livro
-    function removeBookRow(btn) {
-      const row = btn.closest('.loan-book-row');
-      if (document.querySelectorAll('.loan-book-row').length > 1) {
-        row.remove();
-      }
-    }
-
-    // Adicione listeners para busca automática ao digitar
+    // Esconde o botão de adicionar outro livro ao abrir o modal de novo empréstimo
     document.addEventListener('DOMContentLoaded', function() {
-      document.querySelector('.bookSearch').addEventListener('input', function() {
-        searchBooks(this);
-      });
+      const addLoanModal = document.getElementById('addLoanModal');
+      if (addLoanModal) {
+        addLoanModal.addEventListener('show.bs.modal', function () {
+          // Esconde o botão de adicionar outro livro
+          const addBookBtn = document.querySelector('#addLoanForm .btn-success');
+          if (addBookBtn) addBookBtn.style.display = 'none';
+          // Esconde botões de remover linha
+          document.querySelectorAll('.removeBookRow').forEach(btn => btn.style.display = 'none');
+        });
+      }
     });
 
     // Registrar empréstimo
@@ -1210,43 +1014,38 @@
 
         // Coleta todos os livros e quantidades
         const bookRows = document.querySelectorAll('.loan-book-row');
-        const loans = [];
-        for (const row of bookRows) {
-          const bookId = row.querySelector('.selectedBookId').value;
-          const quantity = parseInt(row.querySelector('.quantity').value);
-          if (!bookId || !quantity) continue;
-          loans.push({ bookId, quantity });
-        }
-        if (loans.length === 0) {
-          showAlert('warning', 'Selecione pelo menos um livro.');
+        if (bookRows.length !== 1) {
+          showAlert('warning', 'Só é permitido um livro por empréstimo.');
           return;
         }
+        const row = bookRows[0];
+        const bookId = row.querySelector('.selectedBookId').value;
+        const quantity = parseInt(row.querySelector('.quantity').value);
+        if (!bookId || !quantity) {
+          showAlert('warning', 'Selecione um livro e a quantidade.');
+          return;
+        }
+        const loans = [{ bookId, quantity }];
 
-        // Verifica disponibilidade de todos os livros
-        for (const loan of loans) {
-          const bookDoc = await db.collection('livros').doc(loan.bookId).get();
-          const bookData = bookDoc.data();
-          if (bookData.quantidade < loan.quantity) {
-            showAlert('warning', `Quantidade indisponível para o livro: ${bookData.titulo}`);
-            return;
-          }
+        // Verifica disponibilidade do livro
+        const bookDoc = await db.collection('livros').doc(bookId).get();
+        const bookData = bookDoc.data();
+        if (bookData.quantidade < quantity) {
+          showAlert('warning', `Quantidade indisponível para o livro: ${bookData.titulo}`);
+          return;
         }
 
         // Registra o empréstimo em uma transação
         await db.runTransaction(async (transaction) => {
-          // Atualiza a quantidade de cada livro
-          for (const loan of loans) {
-            const bookRef = db.collection('livros').doc(loan.bookId);
-            const bookDoc = await transaction.get(bookRef);
-            transaction.update(bookRef, {
-              quantidade: bookDoc.data().quantidade - loan.quantity
-            });
-          }
-          // Cria um único documento de empréstimo com todos os livros
+          const bookRef = db.collection('livros').doc(bookId);
+          const bookDoc = await transaction.get(bookRef);
+          transaction.update(bookRef, {
+            quantidade: bookDoc.data().quantidade - quantity
+          });
           const loanRef = db.collection('emprestimos').doc();
           transaction.set(loanRef, {
             userId,
-            books: loans, // array de livros e quantidades
+            books: loans,
             loanDate,
             returnDate,
             registroNumero,
@@ -1257,376 +1056,22 @@
 
         showAlert('success', 'Empréstimo registrado com sucesso!');
         form.reset();
-        // Remove linhas extras
-        document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
         document.querySelector('.availableQuantity').textContent = '-';
         closeAddLoanModal();
         loadLoans();
 
-        // Mostra comprovante do primeiro livro (opcional: pode adaptar para mostrar todos)
+        // Mostra comprovante do livro
         const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
-        const bookDocForReceipt = await db.collection('livros').doc(loans[0].bookId).get();
+        const bookDocForReceipt = await db.collection('livros').doc(bookId).get();
         await showPrintLoanModal({
-          quantity: loans[0].quantity,
+          quantity,
           loanDate,
           returnDate,
           registroNumero
         }, userDocForReceipt.data(), bookDocForReceipt.data());
 
-      } catch (error) {
-        showAlert('danger', 'Erro ao registrar empréstimo');
-      }
-    }
-
-    // Enviar notificação via WhatsApp para o usuário após registrar empréstimo
-async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
-  try {
-    const userDoc = await db.collection('usuarios').doc(userId).get();
-    const userData = userDoc.data();
-    if (!userData.telefone) return;
-
-    // Monta lista de livros para mensagem
-    let livrosMsg = '';
-    for (const item of loans) {
-      const bookDoc = await db.collection('livros').doc(item.bookId).get();
-      const bookData = bookDoc.data();
-      livrosMsg += `\n- ${bookData.titulo} (Qtd: ${item.quantity})`;
-    }
-
-    const msg = encodeURIComponent(
-      `Olá ${userData.nome},\n\nSeu empréstimo foi registrado:\nLivros:${livrosMsg}\nData do Empréstimo: ${loanDate}\nData de Devolução: ${returnDate}\n\nPor favor, devolva os livros na data correta.`
-    );
-
-    // Formata telefone para padrão internacional (ex: 5511999999999)
-    let phone = userData.telefone.replace(/\D/g, '');
-    if (phone.length === 11 && !phone.startsWith('55')) {
-      phone = '55' + phone;
-    }
-
-    // Abre o WhatsApp Web em nova aba (não envia automático, usuário precisa confirmar)
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-  } catch (error) {
-    // Não bloqueia o fluxo, apenas loga
-    console.error('Erro ao enviar WhatsApp:', error);
-  }
-}
-
-    // Inicializar Flatpickr (calendário)
-    document.addEventListener('DOMContentLoaded', function() {
-      flatpickr("#loanDate", {
-        locale: "pt",
-        dateFormat: "d/m/Y",
-        defaultDate: "today",
-        minDate: "today"
-      });
-
-      flatpickr("#returnDate", {
-        locale: "pt",
-        dateFormat: "d/m/Y",
-        minDate: "today",
-        defaultDate: new Date().fp_incr(14) // 14 dias por padrão
-      });
-
-      loadLoans();
-    });
-
-    // Buscar usuários cadastrados ao clicar na lupa ou digitar no campo
-    async function searchUsers() {
-      const searchTerm = document.getElementById('userSearch').value.trim();
-      const searchTermLower = searchTerm.toLowerCase();
-      const resultsDiv = document.getElementById('userSearchResults');
-      resultsDiv.innerHTML = '';
-      resultsDiv.classList.remove('show');
-
-      if (searchTerm.length < 2) return;
-
-      try {
-        // Busca por nome (original e minúsculo)
-        const queryByName = db.collection('usuarios')
-          .where('nome', '>=', searchTerm)
-          .where('nome', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByNameLower = db.collection('usuarios')
-          .where('nome', '>=', searchTermLower)
-          .where('nome', '<=', searchTermLower + '\uf8ff')
-          .limit(10)
-          .get();
-
-        // Busca por matrícula (se existir esse campo)
-        const queryByMatricula = db.collection('usuarios')
-          .where('matricula', '>=', searchTerm)
-          .where('matricula', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [nameSnapshot, nameLowerSnapshot, matriculaSnapshot] = await Promise.all([queryByName, queryByNameLower, queryByMatricula]);
-
-        // Usar Map para evitar duplicatas
-        const usersMap = new Map();
-        nameSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-        nameLowerSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-        matriculaSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-
-        if (usersMap.size === 0) {
-          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum usuário encontrado</span>';
-        } else {
-          usersMap.forEach((user, id) => {
-            const div = document.createElement('a');
-            div.className = 'dropdown-item';
-            div.href = '#';
-            // Mostra apenas nome e matrícula (se houver), não o email
-            div.textContent = user.matricula
-              ? `${user.nome} (Matrícula: ${user.matricula})`
-              : user.nome;
-            div.onclick = (e) => {
-              e.preventDefault();
-              selectUser(id, user.nome);
-            };
-            resultsDiv.appendChild(div);
-          });
-        }
-        resultsDiv.classList.add('show');
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-        showAlert('danger', 'Erro ao buscar usuários');
-      }
-    }
-
-    // Selecionar usuário da lista
-    function selectUser(userId, userName) {
-      document.getElementById('userSearch').value = userName;
-      document.getElementById('selectedUserId').value = userId;
-      document.getElementById('userSearchResults').classList.remove('show');
-      document.getElementById('usuarioSelecionadoNome').value = userName;
-    }
-
-    // Adicione listeners para busca automática ao digitar ou clicar no botão
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('userSearch').addEventListener('input', searchUsers);
-      document.querySelector('#addLoanForm button[onclick="searchUsers()"]').addEventListener('click', searchUsers);
-    });
-
-    // Buscar livros cadastrados ao digitar no campo ou clicar no botão
-    async function searchBooks(inputOrBtn) {
-      let input, resultsDiv;
-      if (inputOrBtn.classList.contains('bookSearch')) {
-        input = inputOrBtn;
-        resultsDiv = input.parentElement.parentElement.querySelector('.bookSearchResults');
-      } else {
-        input = inputOrBtn.parentElement.querySelector('.bookSearch');
-        resultsDiv = inputOrBtn.parentElement.parentElement.querySelector('.bookSearchResults');
-      }
-      const searchTerm = input.value.trim();
-      const searchTermLower = searchTerm.toLowerCase();
-      resultsDiv.innerHTML = '';
-      resultsDiv.classList.remove('show');
-      if (searchTerm.length < 2) return;
-
-      try {
-        // Busca por título (original e minúsculo)
-        const queryByTitle = db.collection('livros')
-          .where('titulo', '>=', searchTerm)
-          .where('titulo', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByTitleLower = db.collection('livros')
-          .where('titulo', '>=', searchTermLower)
-          .where('titulo', '<=', searchTermLower + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const queryByISBN = db.collection('livros')
-          .where('isbn', '>=', searchTerm)
-          .where('isbn', '<=', searchTerm + '\uf8ff')
-          .limit(10)
-          .get();
-
-        const [titleSnapshot, titleLowerSnapshot, isbnSnapshot] = await Promise.all([queryByTitle, queryByTitleLower, queryByISBN]);
-        const booksMap = new Map();
-        titleSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-        titleLowerSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-        isbnSnapshot.forEach(doc => booksMap.set(doc.id, doc.data()));
-
-        if (booksMap.size === 0) {
-          resultsDiv.innerHTML = '<span class="dropdown-item disabled">Nenhum livro encontrado</span>';
-        } else {
-          booksMap.forEach((book, id) => {
-            const div = document.createElement('a');
-            div.className = 'dropdown-item';
-            div.href = '#';
-            div.textContent = `${book.titulo} (${book.quantidade} disponíveis)`;
-            div.onclick = (e) => {
-              e.preventDefault();
-              selectBookMulti(input, id, book.titulo, book.quantidade);
-            };
-            resultsDiv.appendChild(div);
-          });
-        }
-        resultsDiv.classList.add('show');
-      } catch (error) {
-        showAlert('danger', 'Erro ao buscar livros');
-      }
-    }
-
-    // Selecionar livro para múltiplos empréstimos
-    function selectBookMulti(input, bookId, bookTitle, quantity) {
-      input.value = bookTitle;
-      const row = input.closest('.loan-book-row');
-      row.querySelector('.selectedBookId').value = bookId;
-      row.querySelector('.availableQuantity').textContent = quantity;
-      row.querySelector('.bookSearchResults').classList.remove('show');
-      row.querySelector('.quantity').max = quantity;
-    }
-
-    // Função para adicionar nova linha de livro
-    function addBookRow() {
-      const container = document.getElementById('multiBookLoans');
-      const rows = container.querySelectorAll('.loan-book-row');
-      const newRow = rows[0].cloneNode(true);
-      function addBookRow() {
-  const container = document.getElementById('multiBookLoans');
-  const rows = container.querySelectorAll('.loan-book-row');
-  const newRow = rows[0].cloneNode(true);
-
-  // Limpar os valores dos inputs na nova linha
-  const inputs = newRow.querySelectorAll('input, select, textarea');
-  inputs.forEach(input => {
-    input.value = '';
-  });
-
-  // Remover IDs duplicados, se houver
-  newRow.querySelectorAll('[id]').forEach(el => {
-    el.removeAttribute('id');
-  });
-
-  // Opcional: atualizar nome dos campos (ex: name="book[0]", book[1], etc.)
-  const rowIndex = rows.length;
-  newRow.querySelectorAll('[name]').forEach(el => {
-    const name = el.getAttribute('name');
-    if (name) {
-      const newName = name.replace(/\[\d+\]/, `[${rowIndex}]`);
-      el.setAttribute('name', newName);
-    }
-  });
-
-  container.appendChild(newRow);
-}
-
-
-      // Limpa valores do novo row
-      newRow.querySelector('.bookSearch').value = '';
-      newRow.querySelector('.selectedBookId').value = '';
-      newRow.querySelector('.availableQuantity').textContent = '-';
-      newRow.querySelector('.quantity').value = 1;
-      newRow.querySelector('.bookSearchResults').innerHTML = '';
-      newRow.querySelector('.bookSearchResults').classList.remove('show');
-      newRow.querySelector('.removeBookRow').style.display = 'inline-block';
-
-      container.appendChild(newRow);
-
-      // Adiciona listeners para busca de livros
-      newRow.querySelector('.bookSearch').addEventListener('input', function() {
-        searchBooks(newRow.querySelector('.bookSearch'));
-      });
-    }
-
-    // Função para remover linha de livro
-    function removeBookRow(btn) {
-      const row = btn.closest('.loan-book-row');
-      if (document.querySelectorAll('.loan-book-row').length > 1) {
-        row.remove();
-      }
-    }
-
-    // Adicione listeners para busca automática ao digitar
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelector('.bookSearch').addEventListener('input', function() {
-        searchBooks(this);
-      });
-    });
-
-    // Registrar empréstimo
-    async function handleLoanSubmission(event) {
-      event.preventDefault();
-      const form = document.getElementById('addLoanForm');
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        return;
-      }
-
-      try {
-        const userId = document.getElementById('selectedUserId').value;
-        const loanDate = document.getElementById('loanDate').value;
-        const returnDate = document.getElementById('returnDate').value;
-        const registroNumero = document.getElementById('registroNumero').value;
-
-        // Coleta todos os livros e quantidades
-        const bookRows = document.querySelectorAll('.loan-book-row');
-        const loans = [];
-        for (const row of bookRows) {
-          const bookId = row.querySelector('.selectedBookId').value;
-          const quantity = parseInt(row.querySelector('.quantity').value);
-          if (!bookId || !quantity) continue;
-          loans.push({ bookId, quantity });
-        }
-        if (loans.length === 0) {
-          showAlert('warning', 'Selecione pelo menos um livro.');
-          return;
-        }
-
-        // Verifica disponibilidade de todos os livros
-        for (const loan of loans) {
-          const bookDoc = await db.collection('livros').doc(loan.bookId).get();
-          const bookData = bookDoc.data();
-          if (bookData.quantidade < loan.quantity) {
-            showAlert('warning', `Quantidade indisponível para o livro: ${bookData.titulo}`);
-            return;
-          }
-        }
-
-        // Registra o empréstimo em uma transação
-        await db.runTransaction(async (transaction) => {
-          // Atualiza a quantidade de cada livro
-          for (const loan of loans) {
-            const bookRef = db.collection('livros').doc(loan.bookId);
-            const bookDoc = await transaction.get(bookRef);
-            transaction.update(bookRef, {
-              quantidade: bookDoc.data().quantidade - loan.quantity
-            });
-          }
-          // Cria um único documento de empréstimo com todos os livros
-          const loanRef = db.collection('emprestimos').doc();
-          transaction.set(loanRef, {
-            userId,
-            books: loans, // array de livros e quantidades
-            loanDate,
-            returnDate,
-            registroNumero,
-            status: 'EMPRESTADO',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        });
-
-        showAlert('success', 'Empréstimo registrado com sucesso!');
-        form.reset();
-        // Remove linhas extras
-        document.querySelectorAll('.loan-book-row:not(:first-child)').forEach(row => row.remove());
-        document.querySelector('.availableQuantity').textContent = '-';
-        closeAddLoanModal();
-        loadLoans();
-
-        // Mostra comprovante do primeiro livro (opcional: pode adaptar para mostrar todos)
-        const userDocForReceipt = await db.collection('usuarios').doc(userId).get();
-        const bookDocForReceipt = await db.collection('livros').doc(loans[0].bookId).get();
-        await showPrintLoanModal({
-          quantity: loans[0].quantity,
-          loanDate,
-          returnDate,
-          registroNumero
-        }, userDocForReceipt.data(), bookDocForReceipt.data());
+        // Envia notificação por WhatsApp
+        await sendWhatsappNotification(userId, loans, loanDate, returnDate);
 
       } catch (error) {
         showAlert('danger', 'Erro ao registrar empréstimo');
