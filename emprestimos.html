@@ -752,6 +752,138 @@
       }
     }
 
+    <!-- ...existing code... -->
+      // ...existing code...
+    
+      // Função para exibir alertas de feedback ao usuário
+      function showAlert(type, message) {
+        // Remove alertas antigos
+        document.querySelectorAll('.custom-alert').forEach(e => e.remove());
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} custom-alert position-fixed top-0 start-50 translate-middle-x mt-3 shadow`;
+        alert.style.zIndex = 2000;
+        alert.innerHTML = message;
+        document.body.appendChild(alert);
+        setTimeout(() => alert.remove(), 4000);
+      }
+    
+      // Função para fechar o modal de novo empréstimo
+      function closeAddLoanModal() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
+        if (modal) modal.hide();
+      }
+    
+      // Corrige duplicidade de listeners e inicialização
+      document.addEventListener('DOMContentLoaded', function() {
+        // Flatpickr já inicializado acima
+    
+        // Listener para busca de usuários
+        const userSearch = document.getElementById('userSearch');
+        if (userSearch) {
+          userSearch.addEventListener('input', searchUsers);
+        }
+        const userSearchBtn = document.querySelector('#addLoanForm button[onclick="searchUsers()"]');
+        if (userSearchBtn) {
+          userSearchBtn.addEventListener('click', searchUsers);
+        }
+    
+        // Listener para busca de livros na primeira linha
+        const firstBookSearch = document.querySelector('.bookSearch');
+        if (firstBookSearch) {
+          firstBookSearch.addEventListener('input', function() {
+            searchBooks(this);
+          });
+        }
+    
+        // Listener para submissão do formulário de empréstimo
+        const addLoanForm = document.getElementById('addLoanForm');
+        if (addLoanForm) {
+          addLoanForm.addEventListener('submit', handleLoanSubmission);
+        }
+    
+        // Gera número de registro automático ao abrir modal
+        const addLoanModal = document.getElementById('addLoanModal');
+        if (addLoanModal) {
+          addLoanModal.addEventListener('show.bs.modal', async function () {
+            // Gera um número sequencial simples (pode ser melhorado para produção)
+            const snapshot = await db.collection('emprestimos').orderBy('createdAt', 'desc').limit(1).get();
+            let nextNumber = 1;
+            if (!snapshot.empty) {
+              const last = snapshot.docs[0].data().registroNumero;
+              if (last && !isNaN(Number(last))) nextNumber = Number(last) + 1;
+            }
+            document.getElementById('registroNumero').value = String(nextNumber).padStart(6, '0');
+            // Limpa usuário selecionado
+            document.getElementById('usuarioSelecionadoNome').value = '';
+            document.getElementById('selectedUserId').value = '';
+          });
+        }
+      });
+    
+      // Função para buscar e exibir os últimos 15 empréstimos
+      async function loadLoans() {
+        const tbody = document.getElementById('loansTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6">Carregando...</td></tr>';
+        try {
+          const snapshot = await db.collection('emprestimos')
+            .orderBy('createdAt', 'desc')
+            .limit(15)
+            .get();
+    
+          tbody.innerHTML = '';
+          for (const doc of snapshot.docs) {
+            const data = doc.data();
+            // Monta lista de livros
+            let livros = '';
+            if (Array.isArray(data.books)) {
+              const titles = await Promise.all(
+                data.books.map(async (b) => {
+                  const bookDoc = await db.collection('livros').doc(b.bookId).get();
+                  const bookData = bookDoc.data();
+                  return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
+                })
+              );
+              livros = titles.join('<br>');
+            }
+            // Busca nome do usuário
+            let userName = data.userId;
+            try {
+              const userDoc = await db.collection('usuarios').doc(data.userId).get();
+              if (userDoc.exists) userName = userDoc.data().nome;
+            } catch {}
+            // Status visual
+            let statusClass = '';
+            if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
+            else if (data.status === 'ATRASADO') statusClass = 'status-atrasado';
+            else if (data.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
+    
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${livros}</td>
+              <td>${userName}</td>
+              <td>${data.loanDate || ''}</td>
+              <td>${data.returnDate || ''}</td>
+              <td><span class="loan-status ${statusClass}">${data.status || ''}</span></td>
+              <td>
+                <!-- Exemplo de ações: -->
+                <button class="btn btn-sm btn-outline-primary" title="Imprimir" onclick="showPrintLoanModal({quantity: (data.books && data.books[0] ? data.books[0].quantity : 1), loanDate: '${data.loanDate}', returnDate: '${data.returnDate}', registroNumero: '${data.registroNumero}'}, {nome: '${userName}'}, {titulo: '${livros}'})">
+                  <i class="bx bx-printer"></i>
+                </button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          }
+          if (tbody.innerHTML.trim() === '') {
+            tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+          }
+        } catch (error) {
+          tbody.innerHTML = '<tr><td colspan="6">Erro ao carregar empréstimos.</td></tr>';
+          showAlert('danger', 'Erro ao carregar empréstimos');
+        }
+      }
+    
+
     // Inicializar Flatpickr (calendário)
     document.addEventListener('DOMContentLoaded', function() {
       flatpickr("#loanDate", {
