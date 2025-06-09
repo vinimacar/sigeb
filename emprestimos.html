@@ -1816,6 +1816,58 @@ async function sendWhatsappNotification(userId, loans, loanDate, returnDate) {
     console.error('Erro ao enviar WhatsApp:', error);
   }
 }
+
+async function loadLoans() {
+  // Busca os últimos 15 empréstimos e preenche a tabela
+  const tbody = document.getElementById('loansTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6">Carregando...</td></tr>';
+  try {
+    const snapshot = await db.collection('emprestimos')
+      .orderBy('createdAt', 'desc')
+      .limit(15)
+      .get();
+
+    tbody.innerHTML = '';
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      // Monta lista de livros
+      let livros = '';
+      if (Array.isArray(data.books)) {
+        const titles = await Promise.all(
+          data.books.map(async (b) => {
+            const bookDoc = await db.collection('livros').doc(b.bookId).get();
+            const bookData = bookDoc.data();
+            return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
+          })
+        );
+        livros = titles.join('<br>');
+      }
+      // Busca nome do usuário
+      let userName = data.userId;
+      try {
+        const userDoc = await db.collection('usuarios').doc(data.userId).get();
+        if (userDoc.exists) userName = userDoc.data().nome;
+      } catch {}
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${livros}</td>
+        <td>${userName}</td>
+        <td>${data.loanDate || ''}</td>
+        <td>${data.returnDate || ''}</td>
+        <td>${data.status || ''}</td>
+        <td><!-- ações --></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    if (tbody.innerHTML.trim() === '') {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+    }
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="6">Erro ao carregar empréstimos.</td></tr>';
+    showAlert('danger', 'Erro ao carregar empréstimos');
+  }
+}
   </script>
 </body>
 </html>
