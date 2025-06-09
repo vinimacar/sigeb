@@ -536,12 +536,6 @@
                 <input type="text" class="form-control" id="editReturnDate" required>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="editQuantity" class="form-label">Quantidade*</label>
-                <input type="number" class="form-control" id="editQuantity" required min="1">
-              </div>
-            </div>
           </form>
         </div>
         <div class="modal-footer">
@@ -1155,7 +1149,6 @@
         document.getElementById('editLoanId').value = loanId;
         document.getElementById('editLoanDate').value = loan.loanDate || '';
         document.getElementById('editReturnDate').value = loan.returnDate || '';
-        document.getElementById('editQuantity').value = loan.quantity || 1;
 
         // Inicializa o flatpickr nos campos do modal de edição
         flatpickr("#editLoanDate", {
@@ -1186,13 +1179,11 @@
       const loanId = document.getElementById('editLoanId').value;
       const loanDate = document.getElementById('editLoanDate').value;
       const returnDate = document.getElementById('editReturnDate').value;
-      const quantity = parseInt(document.getElementById('editQuantity').value);
 
       try {
         await db.collection('emprestimos').doc(loanId).update({
           loanDate,
-          returnDate,
-          quantity
+          returnDate
         });
         showAlert('success', 'Empréstimo atualizado com sucesso!');
         bootstrap.Modal.getInstance(document.getElementById('editLoanModal')).hide();
