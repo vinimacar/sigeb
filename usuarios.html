@@ -665,102 +665,32 @@
         const tbody = document.querySelector('.users-table tbody');
         tbody.innerHTML = '';
 
-        // --- Firestore (importação XLS) ---
-        let firestoreUsers = [];
         try {
           const snapshot = await db.collection('usuarios').get();
           snapshot.forEach(doc => {
             const user = doc.data();
-            firestoreUsers.push({
-              nome: user.nome,
-              email: user.email,
-              matricula: user.matricula || '',
-              status: user.status || 'Ativo',
-              id: doc.id
-            });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${user.nome || ''}</td>
+              <td>${user.email || ''}</td>
+              <td>${user.matricula || ''}</td>
+              <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-button edit-button" data-id="${doc.id}">
+                    <i class='bx bx-edit-alt'></i>
+                  </button>
+                  <button class="action-button delete-button" data-id="${doc.id}">
+                    <i class='bx bx-trash'></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            tbody.appendChild(tr);
           });
         } catch (e) {
           console.error('Erro ao buscar usuários do Firestore:', e);
         }
-
-        // --- Realtime Database (cadastro pelo site) ---
-        let realtimeUsers = [];
-        try {
-          const snapshot = await firebase.database().ref('usuarios').once('value');
-          snapshot.forEach(child => {
-            const user = child.val();
-            if (user.cadastroCompleto) {
-              realtimeUsers.push({
-                nome: user.nome,
-                email: user.email,
-                matricula: user.matricula || '',
-                status: 'Ativo',
-                id: child.key
-              });
-            }
-          });
-        } catch (e) {
-          console.error('Erro ao buscar usuários do Realtime Database:', e);
-        }
-
-        // Mescla os dois arrays, evitando duplicidade por matrícula
-        const todosUsuarios = [...firestoreUsers];
-        const matriculasFS = new Set(firestoreUsers.map(u => u.matricula));
-        realtimeUsers.forEach(u => {
-          if (!matriculasFS.has(u.matricula)) {
-            todosUsuarios.push(u);
-          }
-        });
-
-        // Ordena os usuários por nome (ordem alfabética)
-        todosUsuarios.sort((a, b) => {
-          if (!a.nome) return 1;
-          if (!b.nome) return -1;
-          return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
-        });
-
-        // Renderiza na tabela
-        todosUsuarios.forEach(user => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${user.nome || ''}</td>
-            <td>${user.email || ''}</td>
-            <td>${user.matricula || ''}</td>
-            <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
-            <td>
-              <div class="action-buttons">
-                <button class="action-button edit-button" data-id="${user.id}">
-                  <i class='bx bx-edit-alt'></i>
-                </button>
-                <button class="action-button delete-button" data-id="${user.id}">
-                  <i class='bx bx-trash'></i>
-                </button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        // Adiciona eventos aos botões de editar e excluir SEM exigir credenciais
-        tbody.querySelectorAll('.edit-button').forEach(btn => {
-          btn.onclick = function() {
-            editUser(this.dataset.id);
-          };
-        });
-        tbody.querySelectorAll('.delete-button').forEach(btn => {
-          btn.onclick = async function() {
-            // Alerta visual bem chamativo antes de excluir
-            if (confirm('⚠️ ATENÇÃO!\n\nEsta ação irá excluir o usuário permanentemente.\n\nTem certeza que deseja continuar?')) {
-              try {
-                await db.collection('usuarios').doc(this.dataset.id).delete();
-                showAlert('danger', 'Usuário excluído com sucesso!');
-                loadUsers();
-              } catch (error) {
-                showAlert('danger', 'Erro ao excluir usuário.');
-              }
-            }
-          };
-        });
       }
 
       // Função para editar usuário
@@ -865,102 +795,32 @@
         const tbody = document.querySelector('.users-table tbody');
         tbody.innerHTML = '';
 
-        // --- Firestore (importação XLS) ---
-        let firestoreUsers = [];
         try {
           const snapshot = await db.collection('usuarios').get();
           snapshot.forEach(doc => {
             const user = doc.data();
-            firestoreUsers.push({
-              nome: user.nome,
-              email: user.email,
-              matricula: user.matricula || '',
-              status: user.status || 'Ativo',
-              id: doc.id
-            });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${user.nome || ''}</td>
+              <td>${user.email || ''}</td>
+              <td>${user.matricula || ''}</td>
+              <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-button edit-button" data-id="${doc.id}">
+                    <i class='bx bx-edit-alt'></i>
+                  </button>
+                  <button class="action-button delete-button" data-id="${doc.id}">
+                    <i class='bx bx-trash'></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            tbody.appendChild(tr);
           });
         } catch (e) {
           console.error('Erro ao buscar usuários do Firestore:', e);
         }
-
-        // --- Realtime Database (cadastro pelo site) ---
-        let realtimeUsers = [];
-        try {
-          const snapshot = await firebase.database().ref('usuarios').once('value');
-          snapshot.forEach(child => {
-            const user = child.val();
-            if (user.cadastroCompleto) {
-              realtimeUsers.push({
-                nome: user.nome,
-                email: user.email,
-                matricula: user.matricula || '',
-                status: 'Ativo',
-                id: child.key
-              });
-            }
-          });
-        } catch (e) {
-          console.error('Erro ao buscar usuários do Realtime Database:', e);
-        }
-
-        // Mescla os dois arrays, evitando duplicidade por matrícula
-        const todosUsuarios = [...firestoreUsers];
-        const matriculasFS = new Set(firestoreUsers.map(u => u.matricula));
-        realtimeUsers.forEach(u => {
-          if (!matriculasFS.has(u.matricula)) {
-            todosUsuarios.push(u);
-          }
-        });
-
-        // Ordena os usuários por nome (ordem alfabética)
-        todosUsuarios.sort((a, b) => {
-          if (!a.nome) return 1;
-          if (!b.nome) return -1;
-          return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
-        });
-
-        // Renderiza na tabela
-        todosUsuarios.forEach(user => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${user.nome || ''}</td>
-            <td>${user.email || ''}</td>
-            <td>${user.matricula || ''}</td>
-            <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
-            <td>
-              <div class="action-buttons">
-                <button class="action-button edit-button" data-id="${user.id}">
-                  <i class='bx bx-edit-alt'></i>
-                </button>
-                <button class="action-button delete-button" data-id="${user.id}">
-                  <i class='bx bx-trash'></i>
-                </button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        // Adiciona eventos aos botões de editar e excluir SEM exigir credenciais
-        tbody.querySelectorAll('.edit-button').forEach(btn => {
-          btn.onclick = function() {
-            editUser(this.dataset.id);
-          };
-        });
-        tbody.querySelectorAll('.delete-button').forEach(btn => {
-          btn.onclick = async function() {
-            // Alerta visual bem chamativo antes de excluir
-            if (confirm('⚠️ ATENÇÃO!\n\nEsta ação irá excluir o usuário permanentemente.\n\nTem certeza que deseja continuar?')) {
-              try {
-                await db.collection('usuarios').doc(this.dataset.id).delete();
-                showAlert('danger', 'Usuário excluído com sucesso!');
-                loadUsers();
-              } catch (error) {
-                showAlert('danger', 'Erro ao excluir usuário.');
-              }
-            }
-          };
-        });
       }
 
       // Função para autenticar colaborador pelo username e senha
@@ -1465,7 +1325,10 @@
         document.getElementById(id).required = funcao === 'ALUNO';
       });
     }
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
   </script>
 </body>
 </html>
+
 
