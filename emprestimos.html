@@ -1323,10 +1323,7 @@
           });
         }
 
-        showAlert('success', 'Empréstimo registrado com sucesso!');
-        closeAddLoanModal();
-        loadLoans(); // Recarrega a lista de empréstimos
-        sendLoanConfirmationEmail(userId, books, loanDate, returnDate); // Envia email de confirmação
+       
       } catch (error) {
         console.error('Erro ao registrar empréstimo:', error);
         showAlert('danger', 'Erro ao registrar empréstimo.');
@@ -1893,4 +1890,5 @@ db.collection('livros').get().then(snapshot => {
   </script>
 </body>
 </html>
+
 
