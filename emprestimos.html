@@ -1013,6 +1013,7 @@
       const userSearch = document.getElementById('userSearch');
       if (userSearch) {
         userSearch.addEventListener('input', searchUsers);
+        userSearch.addEventListener('focus', searchUsers);
       }
       const userSearchBtn = document.querySelector('#addLoanForm button[onclick="searchUsers()"]');
       if (userSearchBtn) {
@@ -1023,6 +1024,9 @@
       const firstBookSearch = document.querySelector('.bookSearch');
       if (firstBookSearch) {
         firstBookSearch.addEventListener('input', function() {
+          searchBooks(this);
+        });
+        firstBookSearch.addEventListener('focus', function() {
           searchBooks(this);
         });
       }
@@ -1240,6 +1244,7 @@
       newRow.querySelector('.bookSearchResults').innerHTML = '';
       newRow.querySelector('.bookSearchResults').classList.remove('show');
       newRow.querySelector('.removeBookRow').style.display = 'block';
+      // Para cada novo campo de livro:
       newRow.querySelector('.bookSearch').addEventListener('input', function() {
         searchBooks(this);
       });
@@ -1793,6 +1798,8 @@
             .get();
         }
 
+
+
         tbody.innerHTML = '';
 if (snapshot.docs.length === 0) {
   tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
@@ -1876,6 +1883,14 @@ db.collection('usuarios').get().then(snapshot => {
     db.collection('usuarios').doc(doc.id).update({ nomeSearch });
   });
 });
+db.collection('livros').get().then(snapshot => {
+  snapshot.forEach(doc => {
+    const titulo = doc.data().titulo || '';
+    const tituloSearch = titulo.toLowerCase().split(' ');
+    db.collection('livros').doc(doc.id).update({ tituloSearch });
+  });
+});
   </script>
 </body>
 </html>
+
