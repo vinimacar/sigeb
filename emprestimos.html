@@ -1868,24 +1868,14 @@ if (snapshot.docs.length === 0) {
       }
     }
 
-    // Inicializa a barra lateral
-    document.querySelector('.sidebar').classList.add('active');
-
-    // Adiciona o botão de gerar relatório
-    const pageHeader = document.querySelector('.page-header');
-    if (pageHeader) {
-      const reportButton = document.createElement('button');
-      reportButton.className = 'add-button';
-      reportButton.id = 'generateReportBtn';
-      reportButton.innerHTML = '<i class="bx bxs-file-export"></i> Gerar Relatório';
-      pageHeader.appendChild(reportButton);
-    }
-
-    // Adiciona o script da assinatura digital
-    const signatureScript = document.createElement('script');
-    signatureScript.src = 'https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js';
-    document.head.appendChild(signatureScript);
-
+    // Atualize todos os usuários para ter o campo nomeSearch
+db.collection('usuarios').get().then(snapshot => {
+  snapshot.forEach(doc => {
+    const nome = doc.data().nome || '';
+    const nomeSearch = nome.toLowerCase().split(' ');
+    db.collection('usuarios').doc(doc.id).update({ nomeSearch });
+  });
+});
   </script>
 </body>
 </html>
