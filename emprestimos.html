@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -289,17 +288,17 @@
   <!-- Firebase Initialization -->
   <script>
     // Firebase configuration
-
     const firebaseConfig = {
-  apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
-  authDomain: "sigeb-ccd3f.firebaseapp.com",
-  databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-  projectId: "sigeb-ccd3f",
-  storageBucket: "sigeb-ccd3f.firebasestorage.app",
-  messagingSenderId: "209689711066",
-  appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-  measurementId: "G-VJBDW2B7HZ"
-};
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.appspot.com",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
+
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
 
@@ -678,7 +677,7 @@
       </button>
     </div>
 
-    <!-- Lista dos últimos empréstimos -->
+    <!-- Lista dos últimos 15 empréstimos -->
     <div class="loans-table mt-4" id="recentLoansTable">
       <div class="table-responsive">
         <table class="table">
@@ -698,7 +697,7 @@
         </table>
       </div>
     </div>
-    <!-- Fim da lista dos últimos empréstimos -->
+    <!-- Fim da lista dos últimos 15 empréstimos -->
 
   </div>
 
@@ -1079,12 +1078,15 @@
             );
             livros = titles.join('<br>');
           }
-          // Busca nome do usuário
-          let userName = data.userId;
+          // Busca nome do usuário (corrigido para mostrar nome, não id)
+          let userName = '';
           try {
             const userDoc = await db.collection('usuarios').doc(data.userId).get();
             if (userDoc.exists) userName = userDoc.data().nome;
-          } catch {}
+            else userName = 'Usuário não encontrado';
+          } catch {
+            userName = 'Usuário não encontrado';
+          }
           // Status visual
           let statusClass = '';
           if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
@@ -1792,10 +1794,10 @@
         }
 
         tbody.innerHTML = '';
-        if (snapshot.docs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
-          return;
-        }
+if (snapshot.docs.length === 0) {
+  tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+  return;
+}
 
         for (const doc of snapshot.docs) {
           const data = doc.data();
@@ -1887,3 +1889,4 @@
   </script>
 </body>
 </html>
+
