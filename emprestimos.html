@@ -644,19 +644,19 @@
               <div id="multiBookLoans">
                 <div class="loan-book-row row align-items-end mb-2">
                   <div class="col-md-6">
-                    <label class="form-label visually-hidden">Livro*</label>
+                    <label class="form-label visually-hidden" for="bookSearch0">Livro*</label>
                     <div class="input-group">
-                      <input type="text" class="form-control bookSearch" id="bookSearch0" required placeholder="Digite o título ou ISBN">
+                      <input type="text" class="form-control bookSearch" id="bookSearch0" name="bookSearch0" required placeholder="Digite o título ou ISBN">
                       <button class="btn btn-outline-secondary" type="button" onclick="searchBooks(this)">
                         <i class='bx bx-search'></i>
                       </button>
                     </div>
                     <div class="bookSearchResults dropdown-menu w-100"></div>
-                    <input type="hidden" class="selectedBookId">
+                    <input type="hidden" class="selectedBookId" name="selectedBookId0" id="selectedBookId0">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label visually-hidden" for="quantity0">Quantidade*</label>
-                    <input type="number" class="form-control quantity" id="quantity0" required min="1" value="1">
+                    <input type="number" class="form-control quantity" id="quantity0" name="quantity0" required min="1" value="1">
                     <div class="form-text">Disponível: <span class="availableQuantity">-</span></div>
                   </div>
                   <div class="col-md-2">
