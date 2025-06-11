@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
 
   
-  // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ... }
+  // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ...
 // Substitua o bloco do relatório de livros pelo código abaixo para garantir que traga Autor, Gênero e Quantidade:
 
 if (reportType.value === 'livros') {
@@ -181,22 +181,27 @@ if (reportType.value === 'livros') {
   let query = db.collection('livros');
   if (genero) query = query.where('genero', '==', genero);
 
-  const snapshot = await query.get();
-  if (snapshot.empty) {
-    html = '<p>Nenhum livro encontrado.</p>';
-  } else {
-    html = `<table class="table table-bordered table-sm"><thead>
-      <tr><th>Autor</th><th>Gênero</th><th>Quantidade</th></tr>
-    </thead><tbody>`;
-    snapshot.forEach(doc => {
-      const l = doc.data();
-      html += `<tr>
-        <td>${l.autor ? l.autor : ''}</td>
-        <td>${l.genero ? l.genero : ''}</td>
-        <td>${l.exemplares !== undefined ? l.exemplares : ''}</td>
-      </tr>`;
-    });
-    html += '</tbody></table>';
+  try {
+    const snapshot = await query.get();
+    if (snapshot.empty) {
+      html = '<p>Nenhum livro encontrado.</p>';
+    } else {
+      html = `<table class="table table-bordered table-sm"><thead>
+        <tr><th>Autor</th><th>Gênero</th><th>Quantidade</th></tr>
+      </thead><tbody>`;
+      snapshot.forEach(doc => {
+        const l = doc.data();
+        html += `<tr>
+          <td>${l.autor ? l.autor : ''}</td>
+          <td>${l.genero ? l.genero : ''}</td>
+          <td>${l.exemplares !== undefined ? l.exemplares : ''}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+    }
+  } catch (error) {
+    html = `<p class="text-danger">Erro ao carregar livros: ${error.message}</p>`;
+    console.error('Erro ao buscar livros:', error);
   }
 }
 
@@ -279,5 +284,4 @@ if (reportType.value === 'livros') {
 
 </body>
 </html>
-
 
