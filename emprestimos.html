@@ -701,88 +701,82 @@
 
   </div>
 
-  <!-- Modal Novo Empréstimo -->
+  <!-- Modal Novo Empréstimo Melhorado -->
   <div class="modal fade" id="addLoanModal" tabindex="-1" aria-labelledby="addLoanModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addLoanModalLabel">Novo Empréstimo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="addLoanForm" class="needs-validation" novalidate>
+        <form id="addLoanForm" class="needs-validation" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title" id="addLoanModalLabel">Novo Empréstimo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
             <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Número do Registro</label>
+              <div class="col-md-4">
+                <label class="form-label" for="registroNumero">Nº Registro</label>
                 <input type="text" class="form-control" id="registroNumero" readonly>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Usuário Selecionado</label>
-                <input type="text" class="form-control" id="usuarioSelecionadoNome" readonly>
-              </div>
-            </div>
-            <div id="multiBookLoans">
-              <div class="loan-book-row row align-items-end mb-3">
-                <div class="col-md-5">
-                  <label class="form-label">Livro*</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control bookSearch" required placeholder="Digite o título ou ISBN do livro">
-                    <button class="btn btn-outline-secondary" type="button" onclick="searchBooks(this)">
-                      <i class='bx bx-search'></i>
-                    </button>
-                  </div>
-                  <div class="bookSearchResults dropdown-menu w-100"></div>
-                  <input type="hidden" class="selectedBookId">
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label">Quantidade*</label>
-                  <input type="number" class="form-control quantity" required min="1" value="1">
-                  <div class="form-text">Disponível: <span class="availableQuantity">-</span></div>
-                </div>
-                <div class="col-md-2">
-                  <button type="button" class="btn btn-danger removeBookRow" style="display:none;" onclick="removeBookRow(this)">
-                    <i class="bx bx-minus"></i>
+              <div class="col-md-8">
+                <label class="form-label" for="userSearch">Usuário*</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="userSearch" required placeholder="Digite nome ou matrícula">
+                  <button class="btn btn-outline-secondary" type="button" onclick="searchUsers()">
+                    <i class='bx bx-search'></i>
                   </button>
                 </div>
+                <div id="userSearchResults" class="dropdown-menu w-100"></div>
+                <input type="hidden" id="selectedUserId">
+                <div class="form-text">Selecione o usuário para o empréstimo.</div>
               </div>
             </div>
-            <button type="button" class="btn btn-success mb-3" onclick="addBookRow()">
-              <i class="bx bx-plus"></i> Adicionar outro livro
-            </button>
-            <small class="text-muted d-block mb-3">Você pode adicionar vários títulos diferentes para o mesmo usuário neste empréstimo.</small>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="userSearch" class="form-label">Usuário*</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="userSearch" required placeholder="Digite o nome ou matrícula do usuário">
-                    <button class="btn btn-outline-secondary" type="button" onclick="searchUsers()">
-                      <i class='bx bx-search'></i>
+            <div class="mb-3">
+              <label class="form-label">Livros*</label>
+              <div id="multiBookLoans">
+                <div class="loan-book-row row align-items-end mb-2">
+                  <div class="col-md-6">
+                    <label class="form-label visually-hidden" for="bookSearch0">Livro*</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control bookSearch" id="bookSearch0" required placeholder="Digite o título ou ISBN">
+                      <button class="btn btn-outline-secondary" type="button" onclick="searchBooks(this)">
+                        <i class='bx bx-search'></i>
+                      </button>
+                    </div>
+                    <div class="bookSearchResults dropdown-menu w-100"></div>
+                    <input type="hidden" class="selectedBookId">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="quantity0">Quantidade*</label>
+                    <input type="number" class="form-control quantity" id="quantity0" required min="1" value="1">
+                    <div class="form-text">Disponível: <span class="availableQuantity">-</span></div>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="button" class="btn btn-danger removeBookRow" style="display:none;" onclick="removeBookRow(this)">
+                      <i class="bx bx-minus"></i>
                     </button>
                   </div>
-                  <div id="userSearchResults" class="dropdown-menu w-100"></div>
-                  <input type="hidden" id="selectedUserId">
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="loanDate" class="form-label">Data do Empréstimo*</label>
-                  <input type="text" class="form-control" id="loanDate" required>
-                </div>
+              <button type="button" class="btn btn-success mt-2" onclick="addBookRow()">
+                <i class="bx bx-plus"></i> Adicionar outro livro
+              </button>
+              <small class="text-muted d-block mt-2">Adicione vários títulos diferentes para o mesmo usuário neste empréstimo.</small>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="loanDate" class="form-label">Data do Empréstimo*</label>
+                <input type="text" class="form-control" id="loanDate" required autocomplete="off">
               </div>
-              <div class="col-md-3">
-                <div class="mb-3">
-                  <label for="returnDate" class="form-label">Data de Devolução*</label>
-                  <input type="text" class="form-control" id="returnDate" required>
-                </div>
+              <div class="col-md-6 mb-3">
+                <label for="returnDate" class="form-label">Data de Devolução*</label>
+                <input type="text" class="form-control" id="returnDate" required autocomplete="off">
               </div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" form="addLoanForm" class="btn btn-primary">Registrar Empréstimo</button>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1236,18 +1230,26 @@
     // Funções de adicionar/remover linha de livro no modal de empréstimo
     function addBookRow() {
       const multiBookLoans = document.getElementById('multiBookLoans');
+      const rowCount = multiBookLoans.querySelectorAll('.loan-book-row').length;
       const newRow = multiBookLoans.querySelector('.loan-book-row').cloneNode(true);
-      newRow.querySelector('input').value = '';
+
+      // Limpa valores e define IDs únicos
+      const bookInput = newRow.querySelector('.bookSearch');
+      const quantityInput = newRow.querySelector('.quantity');
+      bookInput.value = '';
+      bookInput.id = `bookSearch${rowCount}`;
+      quantityInput.value = '1';
+      quantityInput.id = `quantity${rowCount}`;
       newRow.querySelector('.selectedBookId').value = '';
-      newRow.querySelector('.quantity').value = '1';
       newRow.querySelector('.availableQuantity').textContent = '-';
       newRow.querySelector('.bookSearchResults').innerHTML = '';
       newRow.querySelector('.bookSearchResults').classList.remove('show');
       newRow.querySelector('.removeBookRow').style.display = 'block';
-      // Para cada novo campo de livro:
-      newRow.querySelector('.bookSearch').addEventListener('input', function() {
-        searchBooks(this);
-      });
+
+      // Adiciona listeners para busca dinâmica
+      bookInput.addEventListener('input', function() { searchBooks(this); });
+      bookInput.addEventListener('focus', function() { searchBooks(this); });
+
       multiBookLoans.appendChild(newRow);
     }
 
