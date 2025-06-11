@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   
   // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ... }
-// Substitua o bloco do relatório de livros por este:
+// Substitua o bloco do relatório de livros pelo código abaixo para garantir que traga Autor, Gênero e Quantidade:
 
 if (reportType.value === 'livros') {
   // Filtro de gênero
@@ -191,9 +191,9 @@ if (reportType.value === 'livros') {
     snapshot.forEach(doc => {
       const l = doc.data();
       html += `<tr>
-        <td>${l.autor || ''}</td>
-        <td>${l.genero || ''}</td>
-        <td>${l.exemplares || ''}</td>
+        <td>${l.autor ? l.autor : ''}</td>
+        <td>${l.genero ? l.genero : ''}</td>
+        <td>${l.exemplares !== undefined ? l.exemplares : ''}</td>
       </tr>`;
     });
     html += '</tbody></table>';
