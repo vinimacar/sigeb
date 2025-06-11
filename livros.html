@@ -1268,12 +1268,14 @@
           }
         } else {
           // Não encontrou o livro, apenas permite o cadastro manual
-          // Opcional: pode mostrar um aviso amigável
           showAlert('warning', 'ISBN não encontrado. Preencha os dados manualmente para cadastrar o livro.');
+          // Permite cadastro normalmente, sem bloquear o botão de salvar
+          // Nenhuma ação extra é necessária, o formulário já permite cadastro manual
         }
       } catch (error) {
         showAlert('danger', 'Erro ao buscar o livro. Preencha os dados manualmente.');
         console.error(error);
+        // Permite cadastro normalmente, sem bloquear o botão de salvar
       }
     }
 
@@ -1307,3 +1309,4 @@
   </script>
 </body>
 </html>
+
