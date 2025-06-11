@@ -167,34 +167,11 @@
     }
   }
 
-  // Geração de relatório simples do formulário
-  document.getElementById("formRelatorio").addEventListener("submit", async function(e) {
-    e.preventDefault();
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const nome = document.querySelector('input[name="nome"]').value;
-    const mensagem = document.querySelector('textarea[name="mensagem"]').value;
-
-    doc.text("Relatório de Exemplo", 10, 10);
-    doc.text(`Nome: ${nome}`, 10, 20);
-    doc.text(`Mensagem: ${mensagem}`, 10, 30);
-
-    // Baixa o PDF localmente
-    doc.save("relatorio.pdf");
-
-    // Se você quiser enviar um link em vez do PDF embutido:
-    const linkPDF = "https://seuservidor.com/pdfs/relatorio.pdf"; // substitua se for o caso
-    document.getElementById("link_pdf").value = linkPDF;
-
-    // Agora envia o formulário com os dados
-    e.target.submit();
-  });
+  // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
 
 </body>
 </html>
-
 
 
