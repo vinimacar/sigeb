@@ -1321,28 +1321,23 @@
     async function renewLoan(loanId) {
       if (!confirm('Tem certeza que deseja renovar este empréstimo?')) return;
       try {
-        const loanDoc = await db.collection('emprestimos').doc(loanId).get();
-        const loanData = loanDoc.data();
+        // Pega a data e hora atual
+        const now = new Date();
+        // Acrescenta 7 dias
+        now.setDate(now.getDate() + 7);
 
-        // CONVERSÃO SEGURA DE DATA dd/mm/yyyy para Date
-        let [day, month, year] = loanData.returnDate.split('/');
-        let currentReturnDate = new Date(`${year}-${month}-${day}`);
-        currentReturnDate.setDate(currentReturnDate.getDate() + SYSTEM_CONFIG.defaultLoanDays);
-
-        // Formata para dd/mm/yyyy
-        const newReturnDate = `${String(currentReturnDate.getDate()).padStart(2, '0')}/${String(currentReturnDate.getMonth()+1).padStart(2, '0')}/${currentReturnDate.getFullYear()}`;
+        // Formata para dd/mm/yyyy HH:MM
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const newReturnDate = `${day}/${month}/${year} ${hours}:${minutes}`;
 
         await db.collection('emprestimos').doc(loanId).update({
           returnDate: newReturnDate,
           status: 'EMPRESTADO'
         });
-
-        // Envia email de confirmação de renovação para cada livro no empréstimo
-        for (const book of loanData.books) {
-          const bookDoc = await db.collection('livros').doc(book.bookId).get();
-          const bookTitle = bookDoc.data() ? bookDoc.data().titulo : 'Livro Desconhecido';
-          await sendRenewalConfirmationEmail(loanData.userId, bookTitle, newReturnDate);
-        }
 
         showAlert('success', 'Empréstimo renovado com sucesso!');
         loadLoans();
