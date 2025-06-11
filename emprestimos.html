@@ -950,13 +950,9 @@
             if (last && !isNaN(Number(last))) nextNumber = Number(last) + 1;
           }
           document.getElementById('registroNumero').value = String(nextNumber).padStart(6, '0');
-          // Limpa usuário selecionado
-          document.getElementById('usuarioSelecionadoNome').value = '';
-          document.getElementById('selectedUserId').value = '';
         });
       }
-    });
-
+    }); // <-- Adiciona o fechamento do event listener aqui
     // Função para buscar e exibir os últimos 15 empréstimos
     async function loadLoans() {
       const tbody = document.getElementById('loansTableBody');
@@ -965,7 +961,7 @@
       try {
         const snapshot = await db.collection('emprestimos')
           .orderBy('createdAt', 'desc')
-          .limit(15)
+          .limit(30)
           .get();
 
         tbody.innerHTML = '';
