@@ -60,16 +60,16 @@
     <div class="report-filters mb-4">
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
-          <label class="form-label">Tipo de Relatório</label>
-          <select class="form-select" id="reportType">
+          <label class="form-label" for="reportType">Tipo de Relatório</label>
+          <select class="form-select" id="reportType" name="reportType">
             <option value="livros">Livros</option>
             <option value="usuarios">Usuários</option>
             <option value="emprestimos">Empréstimos</option>
           </select>
         </div>
         <div class="col-md-3" id="livrosFilters">
-          <label class="form-label">Gênero</label>
-          <select class="form-select" id="livrosGenero">
+          <label class="form-label" for="livrosGenero">Gênero</label>
+          <select class="form-select" id="livrosGenero" name="livrosGenero">
             <option value="">Todos</option>
             <option value="ROMANCE">Romance</option>
             <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
@@ -90,16 +90,16 @@
           </select>
         </div>
         <div class="col-md-3 d-none" id="usuariosFilters">
-          <label class="form-label">Status</label>
-          <select class="form-select" id="usuariosStatus">
+          <label class="form-label" for="usuariosStatus">Status</label>
+          <select class="form-select" id="usuariosStatus" name="usuariosStatus">
             <option value="">Todos</option>
             <option value="ativo">Ativo</option>
             <option value="inativo">Inativo</option>
           </select>
         </div>
         <div class="col-md-3 d-none" id="emprestimosFilters">
-          <label class="form-label">Situação</label>
-          <select class="form-select" id="emprestimosSituacao">
+          <label class="form-label" for="emprestimosSituacao">Situação</label>
+          <select class="form-select" id="emprestimosSituacao" name="emprestimosSituacao">
             <option value="">Todos</option>
             <option value="ativo">Ativo</option>
             <option value="finalizado">Finalizado</option>
