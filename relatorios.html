@@ -171,31 +171,33 @@ document.addEventListener('DOMContentLoaded', function () {
     reportResult.innerHTML = '<p>Carregando dados...</p>';
     let html = '';
 
-    if (reportType.value === 'livros') {
-      // Filtro de gênero
-      const genero = document.getElementById('livrosGenero').value;
-      let query = db.collection('livros');
-      if (genero) query = query.where('genero', '==', genero);
+  // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ... }
+// Substitua o bloco do relatório de livros por este:
 
-      const snapshot = await query.get();
-      if (snapshot.empty) {
-        html = '<p>Nenhum livro encontrado.</p>';
-      } else {
-        html = `<table class="table table-bordered table-sm"><thead>
-          <tr><th>Título</th><th>Autor</th><th>Gênero</th><th>Exemplares</th></tr>
-        </thead><tbody>`;
-        snapshot.forEach(doc => {
-          const l = doc.data();
-          html += `<tr>
-            <td>${l.titulo || ''}</td>
-            <td>${l.autor || ''}</td>
-            <td>${l.genero || ''}</td>
-            <td>${l.exemplares || ''}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-      }
-    }
+if (reportType.value === 'livros') {
+  // Filtro de gênero
+  const genero = document.getElementById('livrosGenero').value;
+  let query = db.collection('livros');
+  if (genero) query = query.where('genero', '==', genero);
+
+  const snapshot = await query.get();
+  if (snapshot.empty) {
+    html = '<p>Nenhum livro encontrado.</p>';
+  } else {
+    html = `<table class="table table-bordered table-sm"><thead>
+      <tr><th>Autor</th><th>Gênero</th><th>Quantidade</th></tr>
+    </thead><tbody>`;
+    snapshot.forEach(doc => {
+      const l = doc.data();
+      html += `<tr>
+        <td>${l.autor || ''}</td>
+        <td>${l.genero || ''}</td>
+        <td>${l.exemplares || ''}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+  }
+}
 
     if (reportType.value === 'usuarios') {
       // Filtro de status
