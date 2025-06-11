@@ -858,6 +858,16 @@
         return;
       }
 
+      // Verifica se o ISBN não foi encontrado na API
+      const isbnInput = document.getElementById('isbn');
+      if (isbnInput && isbnInput.value && isbnInput.dataset.isbnEncontrado === "false") {
+        const desejaIncluir = confirm("O ISBN informado não foi encontrado em nossa base de dados. Deseja cadastrar o livro manualmente mesmo assim?");
+        if (!desejaIncluir) {
+          showAlert('info', 'Cadastro cancelado pelo usuário.');
+          return;
+        }
+      }
+
       const addBookButton = document.querySelector('button[form="addBookForm"][type="submit"]');
       if (addBookButton) {
         addBookButton.disabled = true;
@@ -883,7 +893,7 @@
           edicao,
           isbn,
           quantidade,
-          genero, // agora é string, não array
+          genero,
           capaUrl,
           disponiveis: quantidade,
           emprestados: 0,
@@ -1266,16 +1276,18 @@
             const ano = livro.publish_date.match(/\d{4}/) ? livro.publish_date.match(/\d{4}/)[0] : livro.publish_date;
             document.getElementById("anoPublicacao").value = ano;
           }
+          // Marca que o ISBN foi encontrado
+          document.getElementById("isbn").dataset.isbnEncontrado = "true";
         } else {
-          // Não encontrou o livro, apenas permite o cadastro manual
-          showAlert('warning', 'ISBN não encontrado. Preencha os dados manualmente para cadastrar o livro.');
-          // Permite cadastro normalmente, sem bloquear o botão de salvar
-          // Nenhuma ação extra é necessária, o formulário já permite cadastro manual
+          // Não encontrou o livro, pergunta se deseja cadastrar manualmente
+          document.getElementById("isbn").dataset.isbnEncontrado = "false";
+          showAlert('warning', 'ISBN não encontrado. Você deseja cadastrar o livro manualmente?');
+          // O botão de salvar será habilitado normalmente, mas a confirmação será feita ao tentar salvar
         }
       } catch (error) {
         showAlert('danger', 'Erro ao buscar o livro. Preencha os dados manualmente.');
         console.error(error);
-        // Permite cadastro normalmente, sem bloquear o botão de salvar
+        document.getElementById("isbn").dataset.isbnEncontrado = "false";
       }
     }
 
@@ -1286,18 +1298,80 @@
       }
     });
 
+    // Intercepta o submit para perguntar se o ISBN não foi encontrado
+    async function handleAddBookSubmission(event) {
+      event.preventDefault();
+      const form = document.getElementById('addBookForm');
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      // Verifica se o ISBN não foi encontrado na API
+      const isbnInput = document.getElementById('isbn');
+      if (isbnInput && isbnInput.value && isbnInput.dataset.isbnEncontrado === "false") {
+        const desejaIncluir = confirm("O ISBN informado não foi encontrado em nossa base de dados. Deseja cadastrar o livro manualmente mesmo assim?");
+        if (!desejaIncluir) {
+          showAlert('info', 'Cadastro cancelado pelo usuário.');
+          return;
+        }
+      }
+
+      const addBookButton = document.querySelector('button[form="addBookForm"][type="submit"]');
+      if (addBookButton) {
+        addBookButton.disabled = true;
+        addBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+      }
+
+      try {
+        const titulo = document.getElementById('titulo').value;
+        const autores = document.getElementById('autores').value.split(';').map(a => a.trim()).filter(a => a);
+        const editora = document.getElementById('editora').value;
+        const anoPublicacao = parseInt(document.getElementById('anoPublicacao').value);
+        const edicao = document.getElementById('edicao').value || null;
+        const isbn = document.getElementById('isbn').value;
+        const quantidade = parseInt(document.getElementById('quantidade').value);
+        const genero = document.getElementById('generos').value;
+        let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
+
+        await addDoc(collection(db, 'livros'), {
+          titulo,
+          autores,
+          editora,
+          ano: anoPublicacao,
+          edicao,
+          isbn,
+          quantidade,
+          genero,
+          capaUrl,
+          disponiveis: quantidade,
+          emprestados: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        showAlert('success', 'Livro adicionado com sucesso!');
+        bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
+        form.reset();
+        form.classList.remove('was-validated');
+        loadBooks();
+
+      } catch (error) {
+        console.error('Erro ao adicionar livro:', error);
+        showAlert('danger', `Erro ao adicionar livro: ${error.message}`);
+      } finally {
+        if (addBookButton) {
+          addBookButton.disabled = false;
+          addBookButton.innerHTML = 'Salvar Livro';
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       const addBookForm = document.getElementById('addBookForm');
-      const saveBookBtn = document.getElementById('saveBookBtn');
-      if (addBookForm && saveBookBtn) {
-        // Remove qualquer estilo inline que possa esconder o botão
-        saveBookBtn.style.display = 'inline-block';
-        saveBookBtn.style.position = 'static'; // Torna o botão estático
-        saveBookBtn.style.bottom = '';
-        saveBookBtn.style.right = '';
-        saveBookBtn.style.left = '';
-        saveBookBtn.style.top = '';
-        saveBookBtn.style.margin = '';
+      if (addBookForm) {
+        addBookForm.removeEventListener('submit', handleAddBookSubmission); // Evita múltiplos binds
+        addBookForm.addEventListener('submit', handleAddBookSubmission);
       }
     });
 
