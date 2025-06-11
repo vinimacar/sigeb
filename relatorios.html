@@ -160,10 +160,120 @@
     }
   }
 
+  // Adicione este script após a inicialização do Firebase, antes do </body>
 
+document.addEventListener('DOMContentLoaded', function () {
+  const btnGerarRelatorio = document.getElementById('btnGerarRelatorio');
+  const reportType = document.getElementById('reportType');
+  const reportResult = document.getElementById('reportResult');
+
+  btnGerarRelatorio.addEventListener('click', async function () {
+    reportResult.innerHTML = '<p>Carregando dados...</p>';
+    let html = '';
+
+    if (reportType.value === 'livros') {
+      // Filtro de gênero
+      const genero = document.getElementById('livrosGenero').value;
+      let query = db.collection('livros');
+      if (genero) query = query.where('genero', '==', genero);
+
+      const snapshot = await query.get();
+      if (snapshot.empty) {
+        html = '<p>Nenhum livro encontrado.</p>';
+      } else {
+        html = `<table class="table table-bordered table-sm"><thead>
+          <tr><th>Título</th><th>Autor</th><th>Gênero</th><th>Exemplares</th></tr>
+        </thead><tbody>`;
+        snapshot.forEach(doc => {
+          const l = doc.data();
+          html += `<tr>
+            <td>${l.titulo || ''}</td>
+            <td>${l.autor || ''}</td>
+            <td>${l.genero || ''}</td>
+            <td>${l.exemplares || ''}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+      }
+    }
+
+    if (reportType.value === 'usuarios') {
+      // Filtro de status
+      const status = document.getElementById('usuariosStatus').value;
+      let query = db.collection('usuarios');
+      if (status) query = query.where('status', '==', status.charAt(0).toUpperCase() + status.slice(1));
+
+      const snapshot = await query.get();
+      if (snapshot.empty) {
+        html = '<p>Nenhum usuário encontrado.</p>';
+      } else {
+        html = `<table class="table table-bordered table-sm"><thead>
+          <tr><th>Nome</th><th>Email</th><th>Matrícula</th><th>Status</th><th>Função</th></tr>
+        </thead><tbody>`;
+        snapshot.forEach(doc => {
+          const u = doc.data();
+          html += `<tr>
+            <td>${u.nome || ''}</td>
+            <td>${u.email || ''}</td>
+            <td>${u.matricula || ''}</td>
+            <td>${u.status || ''}</td>
+            <td>${u.funcao || ''}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+      }
+    }
+
+    if (reportType.value === 'emprestimos') {
+      // Filtro de situação
+      const situacao = document.getElementById('emprestimosSituacao').value;
+      let query = db.collection('emprestimos');
+      const hoje = new Date();
+
+      const snapshot = await query.get();
+      if (snapshot.empty) {
+        html = '<p>Nenhum empréstimo encontrado.</p>';
+      } else {
+        html = `<table class="table table-bordered table-sm"><thead>
+          <tr><th>Usuário</th><th>Livro(s)</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr>
+        </thead><tbody>`;
+        snapshot.forEach(doc => {
+          const e = doc.data();
+          let statusEmprestimo = e.status || '';
+          // Determina situação se necessário
+          if (situacao) {
+            if (situacao === 'atrasado') {
+              const dataDevolucao = e.dataDevolucao ? new Date(e.dataDevolucao) : null;
+              if (!dataDevolucao || dataDevolucao >= hoje || statusEmprestimo === 'Finalizado') return;
+            }
+            if (situacao === 'ativo' && statusEmprestimo !== 'Ativo') return;
+            if (situacao === 'finalizado' && statusEmprestimo !== 'Finalizado') return;
+          }
+          html += `<tr>
+            <td>${e.nomeUsuario || ''}</td>
+            <td>${Array.isArray(e.livros) ? e.livros.map(l => l.titulo).join(', ') : ''}</td>
+            <td>${e.dataEmprestimo || ''}</td>
+            <td>${e.dataDevolucao || ''}</td>
+            <td>${statusEmprestimo}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+      }
+    }
+
+    reportResult.innerHTML = html;
+  });
+
+  // Exibe/esconde filtros conforme o tipo de relatório
+  reportType.addEventListener('change', function () {
+    document.getElementById('livrosFilters').classList.toggle('d-none', reportType.value !== 'livros');
+    document.getElementById('usuariosFilters').classList.toggle('d-none', reportType.value !== 'usuarios');
+    document.getElementById('emprestimosFilters').classList.toggle('d-none', reportType.value !== 'emprestimos');
+  });
+});
+  // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
 
 </body>
 </html>
-
 
