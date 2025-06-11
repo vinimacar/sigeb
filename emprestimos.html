@@ -1328,14 +1328,17 @@
         const loanDoc = await db.collection('emprestimos').doc(loanId).get();
         const loanData = loanDoc.data();
 
-        // Calcula nova data de devolução (ex: +14 dias)
-        const currentReturnDate = new Date(loanData.returnDate);
+        // CONVERSÃO SEGURA DE DATA dd/mm/yyyy para Date
+        let [day, month, year] = loanData.returnDate.split('/');
+        let currentReturnDate = new Date(`${year}-${month}-${day}`);
         currentReturnDate.setDate(currentReturnDate.getDate() + SYSTEM_CONFIG.defaultLoanDays);
-        const newReturnDate = currentReturnDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+        // Formata para dd/mm/yyyy
+        const newReturnDate = `${String(currentReturnDate.getDate()).padStart(2, '0')}/${String(currentReturnDate.getMonth()+1).padStart(2, '0')}/${currentReturnDate.getFullYear()}`;
 
         await db.collection('emprestimos').doc(loanId).update({
           returnDate: newReturnDate,
-          status: 'EMPRESTADO' // Garante que o status volte para EMPRESTADO se estava ATRASADO
+          status: 'EMPRESTADO'
         });
 
         // Envia email de confirmação de renovação para cada livro no empréstimo
@@ -1810,4 +1813,5 @@ db.collection('livros').get().then(snapshot => {
   </script>
 </body>
 </html>
+
 
