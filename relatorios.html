@@ -1,84 +1,200 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Relatório SIGEB</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIGEB - Relatórios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Firebase Initialization -->
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #f0f2f5; }
+    .main-content { margin-left: 250px; padding: 20px; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; height: 100%; width: 250px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white; padding: 20px; z-index: 1000;
+    }
+    .sidebar-header { padding: 20px 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);}
+    .sidebar-header h3 { background: linear-gradient(90deg, #00f2fe, #4facfe); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin: 0; font-weight: 600;}
+    .menu-items { padding: 20px 0; }
+    .menu-item { padding: 12px 20px; color: white; text-decoration: none; display: flex; align-items: center; border-radius: 8px; margin-bottom: 5px; }
+    .menu-item.active, .menu-item:hover { background: rgba(255,255,255,0.1); color: #4facfe; }
+    .menu-item i { margin-right: 10px; font-size: 1.2rem; }
+    .report-filters { background: white; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 24px; }
+    .report-section { background: white; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 24px; }
+    .btn-gradient { background: linear-gradient(90deg, #00f2fe, #4facfe); color: white; border: none; }
+    @media (max-width: 768px) {
+      .sidebar { position: static; width: 100%; }
+      .main-content { margin-left: 0; }
+    }
+  </style>
 </head>
-<body class="bg-light">
-
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <div class="card shadow-lg rounded-4 border-0">
-          <div class="card-header bg-primary text-white text-center rounded-top-4">
-            <h4 class="mb-0"><i class="bi bi-file-earmark-text-fill me-2"></i>Gerar Relatório SIGEB</h4>
-          </div>
-          <div class="card-body p-4">
-            <form id="formRelatorio">
-              
-              <div class="mb-3">
-                <label for="nome" class="form-label">Nome do Responsável</label>
-                <input type="text" class="form-control" id="nome" required placeholder="Digite seu nome">
-              </div>
-
-              <div class="mb-3">
-                <label for="mensagem" class="form-label">Mensagem/Observações</label>
-                <textarea class="form-control" id="mensagem" rows="4" placeholder="Inclua observações importantes..."></textarea>
-              </div>
-
-              <div class="d-grid">
-                <button type="submit" class="btn btn-success">
-                  <i class="bi bi-file-earmark-pdf-fill me-1"></i>Gerar PDF
-                </button>
-              </div>
-
-            </form>
-          </div>
-          <div class="card-footer text-center text-muted small py-2">
-            SIGEB - Sistema Integrado de Gestão de Biblioteca
-          </div>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>SIGEB</h3>
+    </div>
+    <div class="menu-items">
+      <a href="dashboard.html" class="menu-item"><i class='bx bxs-dashboard'></i>Dashboard</a>
+      <a href="livros.html" class="menu-item"><i class='bx bxs-book'></i>Livros</a>
+      <a href="usuarios.html" class="menu-item"><i class='bx bxs-user'></i>Usuários</a>
+      <a href="emprestimos.html" class="menu-item"><i class='bx bxs-bookmark'></i>Empréstimos</a>
+      <a href="relatorios.html" class="menu-item active" style="position:sticky;top:0;z-index:1100;"><i class='bx bxs-report'></i>Relatórios</a>
+      <a href="configuracoes.html" class="menu-item"><i class='bx bxs-cog'></i>Configurações</a>
+      <a href="index.html" class="menu-item"><i class='bx bxs-log-out'></i>Sair</a>
+    </div>
+  </div>
+  <div class="main-content">
+    <h2 class="mb-4">Relatórios</h2>
+    <div class="report-filters mb-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Tipo de Relatório</label>
+          <select class="form-select" id="reportType">
+            <option value="livros">Livros</option>
+            <option value="usuarios">Usuários</option>
+            <option value="emprestimos">Empréstimos</option>
+          </select>
+        </div>
+        <div class="col-md-3" id="livrosFilters">
+          <label class="form-label">Gênero</label>
+          <select class="form-select" id="livrosGenero">
+            <option value="">Todos</option>
+            <option value="ROMANCE">Romance</option>
+            <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
+            <option value="FANTASIA">Fantasia</option>
+            <option value="MISTERIO">Mistério</option>
+            <option value="TERROR">Terror</option>
+            <option value="DRAMA">Drama</option>
+            <option value="AVENTURA">Aventura</option>
+            <option value="BIOGRAFIA">Biografia</option>
+            <option value="HISTORIA">História</option>
+            <option value="CIENCIAS">Ciências</option>
+            <option value="TECNOLOGIA">Tecnologia</option>
+            <option value="AUTOAJUDA">Autoajuda</option>
+            <option value="EDUCACAO">Educação</option>
+            <option value="INFANTIL">Infantil</option>
+            <option value="POESIA">Poesia</option>
+            <option value="OUTROS">Outros</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-none" id="usuariosFilters">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="usuariosStatus">
+            <option value="">Todos</option>
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-none" id="emprestimosFilters">
+          <label class="form-label">Situação</label>
+          <select class="form-select" id="emprestimosSituacao">
+            <option value="">Todos</option>
+            <option value="ativo">Ativo</option>
+            <option value="finalizado">Finalizado</option>
+            <option value="atrasado">Atrasado</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-gradient w-100" id="btnGerarRelatorio"><i class='bx bx-printer'></i> Gerar Relatório</button>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-secondary w-100" id="btnBaixarPDF"><i class='bx bx-download'></i> Baixar PDF</button>
         </div>
       </div>
     </div>
+    <div class="report-section" id="reportResult">
+      <p>Selecione o tipo de relatório e filtros desejados para visualizar e imprimir.</p>
+    </div>
+    <div id="barraAtrasados" style="display:none; background: linear-gradient(90deg, #ff512f, #dd2476); color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
+      <span id="textoAtrasados"></span>
+    </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Firebase App SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
-  <script>
-    document.getElementById("formRelatorio").addEventListener("submit", function(e) {
-      e.preventDefault();
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
+    authDomain: "sigeb-ccd3f.firebaseapp.com",
+    databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+    projectId: "sigeb-ccd3f",
+    storageBucket: "sigeb-ccd3f.appspot.com",
+    messagingSenderId: "209689711066",
+    appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+    measurementId: "G-VJBDW2B7HZ"
+  };
 
-      const nome = document.getElementById("nome").value.trim();
-      const mensagem = document.getElementById("mensagem").value.trim();
+  firebase.initializeApp(firebaseConfig);
 
-      // Montar conteúdo do PDF
-      doc.setFont("Helvetica");
-      doc.setFontSize(14);
-      doc.text("Relatório SIGEB", 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Responsável: ${nome}`, 20, 35);
-      doc.text("Mensagem/Observações:", 20, 50);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
+  const analytics = firebase.analytics();
 
-      const linhas = doc.splitTextToSize(mensagem, 170);
-      doc.text(linhas, 20, 60);
+  let nomeEscola = 'Escola Exemplo';
 
-      // Salvar arquivo
-      doc.save(`relatorio_SIGEB_${nome.replace(/\s+/g, "_")}.pdf`);
-    });
-  </script>
+  async function buscarEscolaUsuario() {
+    if (auth.currentUser) {
+      const userDoc = await db.collection('usuarios').doc(auth.currentUser.uid).get();
+      if (userDoc.exists && userDoc.data().escolaId) {
+        const escolaDoc = await db.collection('escolas').doc(userDoc.data().escolaId).get();
+        if (escolaDoc.exists && escolaDoc.data().nome) {
+          nomeEscola = escolaDoc.data().nome;
+        }
+      }
+    }
+  }
+
+  // Geração de relatório simples do formulário
+  document.getElementById("formRelatorio").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const nome = document.querySelector('input[name="nome"]').value;
+    const mensagem = document.querySelector('textarea[name="mensagem"]').value;
+
+    doc.text("Relatório de Exemplo", 10, 10);
+    doc.text(`Nome: ${nome}`, 10, 20);
+    doc.text(`Mensagem: ${mensagem}`, 10, 30);
+
+    // Baixa o PDF localmente
+    doc.save("relatorio.pdf");
+
+    // Se você quiser enviar um link em vez do PDF embutido:
+    const linkPDF = "https://seuservidor.com/pdfs/relatorio.pdf"; // substitua se for o caso
+    document.getElementById("link_pdf").value = linkPDF;
+
+    // Agora envia o formulário com os dados
+    e.target.submit();
+  });
+</script>
 
 </body>
 </html>
+
+
 
