@@ -278,6 +278,32 @@ if (reportType.value === 'livros') {
     document.getElementById('usuariosFilters').classList.toggle('d-none', reportType.value !== 'usuarios');
     document.getElementById('emprestimosFilters').classList.toggle('d-none', reportType.value !== 'emprestimos');
   });
+
+  const btnBaixarPDF = document.getElementById('btnBaixarPDF');
+
+  btnBaixarPDF.addEventListener('click', function () {
+    const reportType = document.getElementById('reportType').value;
+    const reportResult = document.getElementById('reportResult');
+    const doc = new jspdf.jsPDF();
+
+    // Extrai o título do relatório
+    let titulo = '';
+    if (reportType === 'livros') titulo = 'Relatório de Livros';
+    if (reportType === 'usuarios') titulo = 'Relatório de Usuários';
+    if (reportType === 'emprestimos') titulo = 'Relatório de Empréstimos';
+
+    doc.text(titulo, 14, 15);
+
+    // Extrai a tabela HTML
+    const table = reportResult.querySelector('table');
+    if (table) {
+      doc.autoTable({ html: table, startY: 25 });
+      doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
+    } else {
+      doc.text('Nenhum dado para exportar.', 14, 30);
+      doc.save('relatorio.pdf');
+    }
+  });
 });
   // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
