@@ -614,33 +614,53 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
   <!-- Firebase Initialization -->
+ 
   <script>
-  // Corrigido: Removido import/export e inicialização modular
-  // Use apenas a versão compat!
-  const firebaseConfig = {
-    apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
-    authDomain: "sigeb-ccd3f.firebaseapp.com",
-    databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
-    projectId: "sigeb-ccd3f",
-    storageBucket: "sigeb-ccd3f.appspot.com",
-    messagingSenderId: "209689711066",
-    appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
-    measurementId: "G-VJBDW2B7HZ"
-  };
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", 
+      authDomain: "sigeb-ccd3f.firebaseapp.com",
+      databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+      projectId: "sigeb-ccd3f",
+      storageBucket: "sigeb-ccd3f.appspot.com",
+      messagingSenderId: "209689711066",
+      appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+      measurementId: "G-VJBDW2B7HZ"
+    };
 
-  // Inicializa Firebase usando compat
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  // Se quiser analytics (opcional, só se a API key for válida)
-  if (firebase.analytics) {
-    firebase.analytics();
-  }
+    // Inicializando Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // Exemplo de função que utiliza `return`
+    function buscarDados() {
+      return db.collection("exemplo").get()
+        .then((snapshot) => {
+          const dados = [];
+          snapshot.forEach((doc) => {
+            dados.push(doc.data());
+          });
+          return dados;  // Retorna os dados coletados
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar dados: ", error);
+          return [];  // Retorna um array vazio em caso de erro
+        });
+    }
+
+    // Exemplo de uso da função
+    buscarDados().then((dados) => {
+      console.log(dados); // Exibe os dados no console
+    });
+
   </script>
   <script type="module">
-
-    
-
     // Variável global para armazenar o escolaId
     let escolaIdUsuario = null;
 
@@ -1305,8 +1325,6 @@
         isbnInput.addEventListener('blur', buscarLivroPorISBN);
       }
     });
-
-    // Intercepta o submit para perguntar se o ISBN não foi encontrado
     
 
       // Verifica se o ISBN não foi encontrado na API
