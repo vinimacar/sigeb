@@ -609,14 +609,7 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getFirestore, collection, getDocs, query, where, orderBy, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import {
-      getAuth, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
+// Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
@@ -628,6 +621,11 @@
       measurementId: "G-VJBDW2B7HZ"
     };
 
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+  
     // Inicialize o Firebase apenas uma vez
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
