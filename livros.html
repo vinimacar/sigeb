@@ -1299,13 +1299,7 @@
     });
 
     // Intercepta o submit para perguntar se o ISBN não foi encontrado
-    async function handleAddBookSubmission(event) {
-      event.preventDefault();
-      const form = document.getElementById('addBookForm');
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        return;
-      }
+    
 
       // Verifica se o ISBN não foi encontrado na API
       const isbnInput = document.getElementById('isbn');
