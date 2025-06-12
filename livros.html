@@ -610,6 +610,7 @@
   <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
   <script type="module">
 // Firebase configuration
+  
     const firebaseConfig = {
       apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
@@ -626,10 +627,6 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
   
-    // Inicialize o Firebase apenas uma vez
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
 
     // Variável global para armazenar o escolaId
     let escolaIdUsuario = null;
