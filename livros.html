@@ -608,23 +608,17 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
-   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-  <!-- Firebase Initialization -->
- 
-  <script>
-    // Configuração do Firebase
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, where, orderBy, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
     const firebaseConfig = {
-      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", 
+      apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
       authDomain: "sigeb-ccd3f.firebaseapp.com",
       databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
       projectId: "sigeb-ccd3f",
@@ -634,33 +628,11 @@
       measurementId: "G-VJBDW2B7HZ"
     };
 
-    // Inicializando Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    
-    // Exemplo de função que utiliza `return`
-    function buscarDados() {
-      return db.collection("exemplo").get()
-        .then((snapshot) => {
-          const dados = [];
-          snapshot.forEach((doc) => {
-            dados.push(doc.data());
-          });
-          return dados;  // Retorna os dados coletados
-        })
-        .catch((error) => {
-          console.error("Erro ao buscar dados: ", error);
-          return [];  // Retorna um array vazio em caso de erro
-        });
-    }
+    // Inicialize o Firebase apenas uma vez
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // Exemplo de uso da função
-    buscarDados().then((dados) => {
-      console.log(dados); // Exibe os dados no console
-    });
-
-  </script>
-  <script type="module">
     // Variável global para armazenar o escolaId
     let escolaIdUsuario = null;
 
@@ -891,7 +863,7 @@
       if (isbnInput && isbnInput.value && isbnInput.dataset.isbnEncontrado === "false") {
         const desejaIncluir = confirm("O ISBN informado não foi encontrado em nossa base de dados. Deseja cadastrar o livro manualmente mesmo assim?");
         if (!desejaIncluir) {
-          showAlert('info', 'Cadastro cancelado pelo usuário.');
+          showAlert('warning', 'Cadastro cancelado pelo usuário.');
           return;
         }
       }
@@ -1325,81 +1297,7 @@
         isbnInput.addEventListener('blur', buscarLivroPorISBN);
       }
     });
-    
-
-      // Verifica se o ISBN não foi encontrado na API
-      const isbnInput = document.getElementById('isbn');
-      if (isbnInput && isbnInput.value && isbnInput.dataset.isbnEncontrado === "false") {
-        const desejaIncluir = confirm("O ISBN informado não foi encontrado em nossa base de dados. Deseja cadastrar o livro manualmente mesmo assim?");
-        if (!desejaIncluir) {
-          showAlert('info', 'Cadastro cancelado pelo usuário.');
-          return;
-        }
-      }
-
-      const addBookButton = document.querySelector('button[form="addBookForm"][type="submit"]');
-      if (addBookButton) {
-        addBookButton.disabled = true;
-        addBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-      }
-
-      try {
-        const titulo = document.getElementById('titulo').value;
-        const autores = document.getElementById('autores').value.split(';').map(a => a.trim()).filter(a => a);
-        const editora = document.getElementById('editora').value;
-        const anoPublicacao = parseInt(document.getElementById('anoPublicacao').value);
-        const edicao = document.getElementById('edicao').value || null;
-        const isbn = document.getElementById('isbn').value;
-        const quantidade = parseInt(document.getElementById('quantidade').value);
-        const genero = document.getElementById('generos').value;
-        let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
-
-        await addDoc(collection(db, 'livros'), {
-          titulo,
-          autores,
-          editora,
-          ano: anoPublicacao,
-          edicao,
-          isbn,
-          quantidade,
-          genero,
-          capaUrl,
-          disponiveis: quantidade,
-          emprestados: 0,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        showAlert('success', 'Livro adicionado com sucesso!');
-        bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
-        form.reset();
-        form.classList.remove('was-validated');
-        loadBooks();
-
-      } catch (error) {
-        console.error('Erro ao adicionar livro:', error);
-        showAlert('danger', `Erro ao adicionar livro: ${error.message}`);
-      } finally {
-        if (addBookButton) {
-          addBookButton.disabled = false;
-          addBookButton.innerHTML = 'Salvar Livro';
-        }
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const addBookForm = document.getElementById('addBookForm');
-      if (addBookForm) {
-        addBookForm.removeEventListener('submit', handleAddBookSubmission); // Evita múltiplos binds
-        addBookForm.addEventListener('submit', handleAddBookSubmission);
-      }
-    });
-
-    // Ao carregar a página, buscar escolaId do usuário
-    document.addEventListener('DOMContentLoaded', async function() {
-      await buscarEscolaIdUsuario();
-      loadBooks();
-    });
   </script>
 </body>
 </html>
+
