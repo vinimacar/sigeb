@@ -1303,11 +1303,12 @@
     import { updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     /**
-     * Atualiza o estoque de um livro ao emprestar.
+     * Atualiza o estoque (quantidade e disponíveis) de um livro.
+     * Use esta função sempre que um livro for emprestado ou devolvido.
      * @param {string} livroId - ID do livro no Firestore
-     * @param {number} quantidadeEmprestada - Quantidade a ser emprestada
+     * @param {number} quantidadeDelta - Quantidade a subtrair (empréstimo: negativo, devolução: positivo)
      */
-    async function atualizarEstoqueLivroAoEmprestar(livroId, quantidadeEmprestada) {
+    async function atualizarEstoqueLivro(livroId, quantidadeDelta) {
       try {
         const livroRef = doc(db, 'livros', livroId);
         const livroSnap = await getDoc(livroRef);
@@ -1316,13 +1317,16 @@
           return;
         }
         const dadosLivro = livroSnap.data();
-        const novaQuantidade = (dadosLivro.quantidade ?? 0) - quantidadeEmprestada;
-        const novosDisponiveis = (dadosLivro.disponiveis ?? dadosLivro.quantidade ?? 0) - quantidadeEmprestada;
+        // Atualiza quantidade total e disponíveis
+        const novaQuantidade = (dadosLivro.quantidade ?? 0) + quantidadeDelta;
+        const novosDisponiveis = (dadosLivro.disponiveis ?? dadosLivro.quantidade ?? 0) + quantidadeDelta;
+        // Atualiza emprestados (apenas se for empréstimo)
+        const novosEmprestados = (dadosLivro.emprestados ?? 0) - quantidadeDelta;
 
         await updateDoc(livroRef, {
           quantidade: novaQuantidade < 0 ? 0 : novaQuantidade,
           disponiveis: novosDisponiveis < 0 ? 0 : novosDisponiveis,
-          emprestados: (dadosLivro.emprestados ?? 0) + quantidadeEmprestada
+          emprestados: novosEmprestados < 0 ? 0 : novosEmprestados
         });
       } catch (error) {
         console.error('Erro ao atualizar estoque do livro:', error);
@@ -1330,10 +1334,11 @@
       }
     }
 
-    // Exemplo de uso ao registrar um empréstimo (empréstimos.html):
-    // for (const livro of livrosEmprestados) {
-    //   await atualizarEstoqueLivroAoEmprestar(livro.id, livro.quantidade);
-    // }
+    // Exemplo de uso ao emprestar um livro:
+// await atualizarEstoqueLivro(livroId, -quantidadeEmprestada);
+
+// Exemplo de uso ao devolver um livro:
+// await atualizarEstoqueLivro(livroId, +quantidadeDevolvida);
   </script>
 </body>
 </html>
