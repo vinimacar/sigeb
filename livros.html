@@ -1297,7 +1297,43 @@
         isbnInput.addEventListener('blur', buscarLivroPorISBN);
       }
     });
+
+    // Função para atualizar o estoque de livros ao registrar um empréstimo
+    // Chame esta função ao registrar um novo empréstimo (por exemplo, na tela de empréstimos)
+    import { updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    /**
+     * Atualiza o estoque de um livro ao emprestar.
+     * @param {string} livroId - ID do livro no Firestore
+     * @param {number} quantidadeEmprestada - Quantidade a ser emprestada
+     */
+    async function atualizarEstoqueLivroAoEmprestar(livroId, quantidadeEmprestada) {
+      try {
+        const livroRef = doc(db, 'livros', livroId);
+        const livroSnap = await getDoc(livroRef);
+        if (!livroSnap.exists()) {
+          showAlert('danger', 'Livro não encontrado para atualizar estoque.');
+          return;
+        }
+        const dadosLivro = livroSnap.data();
+        const novaQuantidade = (dadosLivro.quantidade ?? 0) - quantidadeEmprestada;
+        const novosDisponiveis = (dadosLivro.disponiveis ?? dadosLivro.quantidade ?? 0) - quantidadeEmprestada;
+
+        await updateDoc(livroRef, {
+          quantidade: novaQuantidade < 0 ? 0 : novaQuantidade,
+          disponiveis: novosDisponiveis < 0 ? 0 : novosDisponiveis,
+          emprestados: (dadosLivro.emprestados ?? 0) + quantidadeEmprestada
+        });
+      } catch (error) {
+        console.error('Erro ao atualizar estoque do livro:', error);
+        showAlert('danger', 'Erro ao atualizar estoque do livro.');
+      }
+    }
+
+    // Exemplo de uso ao registrar um empréstimo (empréstimos.html):
+    // for (const livro of livrosEmprestados) {
+    //   await atualizarEstoqueLivroAoEmprestar(livro.id, livro.quantidade);
+    // }
   </script>
 </body>
 </html>
-
