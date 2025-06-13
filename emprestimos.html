@@ -1224,7 +1224,7 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Atualiza a quantidade de livros no estoque
+        // Atualiza a quantidade de livros no estoque (estoque = quantidadeDisponivel)
         for (const book of books) {
           const bookDocRef = db.collection('livros').doc(book.bookId);
           await bookDocRef.update({
@@ -1783,7 +1783,7 @@ if (snapshot.docs.length === 0) {
       } catch (error) {
         console.error('Erro ao buscar empréstimos:', error);
         showAlert('danger', 'Erro ao buscar empréstimos.');
-      }
+           }
     }
 
     // Atualize todos os usuários para ter o campo nomeSearch
