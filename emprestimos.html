@@ -1224,12 +1224,20 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Atualiza a quantidade de livros no estoque (estoque = quantidadeDisponivel)
+        // Atualiza a quantidade de livros no estoque (quantidade e quantidadeDisponivel)
         for (const book of books) {
           const bookDocRef = db.collection('livros').doc(book.bookId);
-          await bookDocRef.update({
-            quantidadeDisponivel: firebase.firestore.FieldValue.increment(-book.quantity)
-          });
+          const bookDoc = await bookDocRef.get();
+          if (bookDoc.exists) {
+            const data = bookDoc.data();
+            const novaQuantidade = (data.quantidade ?? 0) - book.quantity;
+            const novaDisponivel = (data.quantidadeDisponivel ?? data.quantidade ?? 0) - book.quantity;
+            await bookDocRef.update({
+              quantidade: novaQuantidade < 0 ? 0 : novaQuantidade,
+              quantidadeDisponivel: novaDisponivel < 0 ? 0 : novaDisponivel,
+              emprestados: (data.emprestados ?? 0) + book.quantity
+            });
+          }
         }
 
         // Fecha o modal e mostra mensagem de sucesso
@@ -1770,7 +1778,7 @@ if (snapshot.docs.length === 0) {
               <td>${livros}</td>
               <td>${userName}</td>
               <td>${data.loanDate}</td>
-                           <td>${data.returnDate}</td>
+              <td>${data.returnDate}</td>
               <td><span class="loan-status ${statusClass}">${data.status}</span></td>
               <td>
                 <div class="action-buttons">
@@ -1783,7 +1791,7 @@ if (snapshot.docs.length === 0) {
       } catch (error) {
         console.error('Erro ao buscar empréstimos:', error);
         showAlert('danger', 'Erro ao buscar empréstimos.');
-           }
+      }
     }
 
     // Atualize todos os usuários para ter o campo nomeSearch
