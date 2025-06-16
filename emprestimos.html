@@ -686,6 +686,10 @@
             <button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
           </div>
         </form>
+        <!-- Exemplo: Adicione este botão no modal de sucesso ou onde desejar -->
+        <button type="button" class="btn btn-success" id="btnEnviarWhatsapp" style="display:none; margin-top:10px;">
+          <i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
+        </button>
       </div>
     </div>
   </div>
@@ -1304,13 +1308,20 @@
         }
 
         // Fecha o modal e mostra mensagem de sucesso
+        showAlert('success', 'Empréstimo registrado com sucesso!');
+        document.getElementById('btnEnviarWhatsapp').style.display = 'inline-block';
+        document.getElementById('btnEnviarWhatsapp').onclick = function() {
+          sendWhatsAppOnLoan(userId, books, loanDate, returnDate);
+        };
         const addLoanModal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
         if (addLoanModal) addLoanModal.hide();
-        showAlert('success', 'Empréstimo registrado com sucesso!');
+        setTimeout(() => {
+          document.getElementById('btnEnviarWhatsapp').focus();
+          document.getElementById('addLoanModal').setAttribute('aria-hidden', 'true');
+        }, 500);
         loadLoans();
         updateLoanStats();
         updateNotReturnedBar();
-        await sendWhatsAppOnLoan(userId, books, loanDate, returnDate);
 
       } catch (error) {
         console.error('Erro ao registrar empréstimo:', error);
@@ -1735,6 +1746,7 @@
             searchLoans();
           }
         });
+     
       }
 
       // Carrega os dados iniciais dos gráficos
