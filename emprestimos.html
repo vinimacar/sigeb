@@ -407,6 +407,8 @@
       100% { transform: translateX(-100%);}
     }
   </style>
+  <!-- Adicione esta linha ANTES do seu <script> principal, logo após os outros scripts externos -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
 </head>
 <body>
   <div class="sidebar">
@@ -888,6 +890,43 @@
       await sendEmailNotification(RENEWAL_EMAIL_TEMPLATE_ID, userId, emailData, `${SYSTEM_CONFIG.schoolName} - Confirmação de Renovação`);
     }
 
+    // Função para enviar mensagem WhatsApp ao registrar novo empréstimo
+    async function sendWhatsAppOnLoan(userId, books, loanDate, returnDate) {
+      try {
+        const userDoc = await db.collection('usuarios').doc(userId).get();
+        const userData = userDoc.data();
+        if (!userData || !userData.telefone) {
+          console.warn('Telefone do usuário não encontrado.');
+          return;
+        }
+        // Monta a mensagem
+        let booksList = '';
+        for (const item of books) {
+          const bookDoc = await db.collection('livros').doc(item.bookId).get();
+          const bookData = bookDoc.data();
+          booksList += `\n- ${bookData ? bookData.titulo : item.bookId} (Qtd: ${item.quantity})`;
+        }
+        const msg = 
+          `Olá ${userData.nome}, seu empréstimo foi registrado na biblioteca!\n` +
+          `Livros:${booksList}\n` +
+          `Data do Empréstimo: ${loanDate}\n` +
+          `Data de Devolução: ${returnDate}\n` +
+          `Por favor, devolva os livros na data correta.`;
+
+        // Formata o telefone para padrão internacional (ex: 5511999999999)
+        let phone = userData.telefone.replace(/\D/g, '');
+        if (phone.length === 11 && !phone.startsWith('55')) {
+          phone = '55' + phone;
+        }
+
+        // Abre o WhatsApp Web em nova aba
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+      } catch (error) {
+        console.error('Erro ao enviar WhatsApp:', error);
+      }
+    }
+
     // Função para exibir alertas de feedback ao usuário
     function showAlert(type, message) {
       // Remove alertas antigos
@@ -1271,6 +1310,7 @@
         loadLoans();
         updateLoanStats();
         updateNotReturnedBar();
+        await sendWhatsAppOnLoan(userId, books, loanDate, returnDate);
 
       } catch (error) {
         console.error('Erro ao registrar empréstimo:', error);
@@ -1855,4 +1895,3 @@ db.collection('livros').get().then(snapshot => {
   </script>
 </body>
 </html>
-
