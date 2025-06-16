@@ -579,7 +579,7 @@
         }
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="Buscar por nome, matrícula ou registro do empréstimo...">
       <button class="add-button" onclick="searchLoans()">
@@ -724,7 +724,6 @@
     <div class="modal-dialog">
       <div class="modal-content" id="printArea">
         <div class="modal-header">
-          <h4 class="modal-title" id="printLoanModalLabel">SIGEB - Sistema de Gestão de Biblioteca</h4>
           <h5 class="modal-title" id="printLoanModalLabel">Comprovante de Empréstimo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
@@ -806,10 +805,6 @@
           <h2 style="color: #1a1a2e; margin-top: 0;">Comprovante de Empréstimo</h2>
           <p><strong>Usuário:</strong> {{userName}}</p>
           <p><strong>Email:</strong> {{userEmail}}</p>
-          <p><strong>Telefone:</strong> {{userTelefone}}</p>
-          <p><strong>Função:</strong> {{userFuncao}}</p>
-          <p><strong>Série:</strong> {{userSerie}}</p>
-          <p><strong>Turma:</strong> {{userTurma}}</p>
           <p><strong>Livros:</strong></p>
           <ul>{{booksList}}</ul>
           <p><strong>Data do Empréstimo:</strong> {{loanDate}}</p>
@@ -1060,7 +1055,7 @@
 
         try {
           const snapshot = await db.collection('usuarios')
-            .where('nomeSearch', 'array-contains', query.split(' ')[0]) // Busca por primeira palavra do nome
+            .where('nomeSearch', 'array-contains', query.split(' ')[0])
             .limit(10)
             .get();
 
@@ -1069,18 +1064,42 @@
           } else {
             snapshot.docs.forEach(doc => {
               const userData = doc.data();
+              let extraInfo = `<br><small>Função: ${userData.funcao || '-'}</small>`;
+              if ((userData.funcao || '').toLowerCase() === 'aluno') {
+                extraInfo += `<br><small>Série: ${userData.serie || '-'} | Turma: ${userData.turma || '-'} | Turno: ${userData.turno || '-'}</small>`;
+              }
               const a = document.createElement('a');
               a.className = 'dropdown-item';
               a.href = '#';
-              a.textContent = `${userData.nome} (${userData.matricula || 'N/A'})`;
+              a.innerHTML = `<strong>${userData.nome}</strong> (${userData.matricula || 'N/A'})${extraInfo}`;
               a.onclick = (e) => {
                 e.preventDefault();
-                // Corrigido: verifica se o campo existe antes de tentar acessar
-                const nomeInput = document.getElementById('usuarioSelecionadoNome');
-                if (nomeInput) {
-                  nomeInput.value = userData.nome;
-                }
+                // Exibe os dados do usuário selecionado em campos abaixo do input (ou em algum local desejado)
                 document.getElementById('selectedUserId').value = doc.id;
+
+                // Exemplo: Mostra dados em um bloco abaixo do campo de busca
+                let userDetails = `
+                  <div class="alert alert-info mt-2 mb-0 p-2">
+                    <div><strong>Nome:</strong> ${userData.nome || '-'}</div>
+                    <div><strong>Função:</strong> ${userData.funcao || '-'}</div>
+                `;
+                if ((userData.funcao || '').toLowerCase() === 'aluno') {
+                  userDetails += `
+                    <div><strong>Série:</strong> ${userData.serie || '-'}</div>
+                    <div><strong>Turma:</strong> ${userData.turma || '-'}</div>
+                    <div><strong>Turno:</strong> ${userData.turno || '-'}</div>
+                  `;
+                }
+                userDetails += `</div>`;
+                // Cria ou atualiza o bloco de detalhes
+                let detailsDiv = document.getElementById('userDetailsBlock');
+                if (!detailsDiv) {
+                  detailsDiv = document.createElement('div');
+                  detailsDiv.id = 'userDetailsBlock';
+                  document.getElementById('userSearch').parentNode.parentNode.appendChild(detailsDiv);
+                }
+                detailsDiv.innerHTML = userDetails;
+
                 userSearchResults.classList.remove('show');
               };
               userSearchResults.appendChild(a);
@@ -1836,3 +1855,4 @@ db.collection('livros').get().then(snapshot => {
   </script>
 </body>
 </html>
+
