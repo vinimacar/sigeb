@@ -724,6 +724,7 @@
     <div class="modal-dialog">
       <div class="modal-content" id="printArea">
         <div class="modal-header">
+          <h4 class="modal-title" id="printLoanModalLabel">SIGEB - Sistema de Gestão de Biblioteca</h4>
           <h5 class="modal-title" id="printLoanModalLabel">Comprovante de Empréstimo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
@@ -805,6 +806,10 @@
           <h2 style="color: #1a1a2e; margin-top: 0;">Comprovante de Empréstimo</h2>
           <p><strong>Usuário:</strong> {{userName}}</p>
           <p><strong>Email:</strong> {{userEmail}}</p>
+          <p><strong>Telefone:</strong> {{userTelefone}}</p>
+          <p><strong>Função:</strong> {{userFuncao}}</p>
+          <p><strong>Série:</strong> {{userSerie}}</p>
+          <p><strong>Turma:</strong> {{userTurma}}</p>
           <p><strong>Livros:</strong></p>
           <ul>{{booksList}}</ul>
           <p><strong>Data do Empréstimo:</strong> {{loanDate}}</p>
