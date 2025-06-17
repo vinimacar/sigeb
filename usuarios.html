@@ -1301,7 +1301,10 @@
     document.addEventListener('DOMContentLoaded', function() {
       const btnSalvar = document.getElementById('btnSalvarUsuario');
       if (btnSalvar) {
-        btnSalvar.addEventListener('click', handleUserSubmission);
+        btnSalvar.addEventListener('click', function(event) {
+          event.preventDefault();
+          handleUserSubmission(event);
+        });
       }
     });
 
