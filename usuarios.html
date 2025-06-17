@@ -915,6 +915,48 @@
 
       // Chame ao carregar a página
       document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
+
+      document.addEventListener('DOMContentLoaded', async function() {
+        // Cria o usuário admin se não existir
+        const adminSnapshot = await db.collection('usuarios')
+          .where('credenciais.username', '==', 'admin')
+          .get();
+
+        if (adminSnapshot.empty) {
+          // Cria hash da senha 'admin'
+          const encoder = new TextEncoder();
+          const data = encoder.encode('admin');
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hash = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+
+          await db.collection('usuarios').add({
+            nome: 'Administrador',
+            funcao: 'DIRETOR',
+            email: 'admin@sigeb.com',
+            matricula: 'admin',
+            status: 'Ativo',
+            telefone: '',
+            endereco: {
+              logradouro: '',
+              numero: '',
+              cep: '',
+              bairro: '',
+              cidade: '',
+              uf: ''
+            },
+            credenciais: {
+              username: 'admin',
+              password: hash
+            },
+            livrosEmprestados: 0,
+            dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log('Usuário admin criado com sucesso!');
+        }
+      });
+
     </script>
 
     <style>
