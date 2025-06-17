@@ -1907,5 +1907,21 @@ db.collection('livros').get().then(snapshot => {
   });
 });
   </script>
+  <script>
+document.addEventListener('focusin', function(e) {
+  let el = e.target;
+  while (el) {
+    if (el.getAttribute && el.getAttribute('aria-hidden') === 'true') {
+      // Remove o foco se estiver dentro de um aria-hidden
+      if (typeof el.blur === 'function') el.blur();
+      // Move o foco para o body
+      document.body.focus();
+      break;
+    }
+    el = el.parentElement;
+  }
+});
+</script>
 </body>
 </html>
+
