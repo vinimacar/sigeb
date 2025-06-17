@@ -684,6 +684,9 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
+            <button type="button" class="btn btn-success" id="btnEnviarWhatsappForm" style="display:none;">
+              <i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
+            </button>
           </div>
         </form>
         <!-- Exemplo: Adicione este botão no modal de sucesso ou onde desejar -->
@@ -1309,8 +1312,8 @@
 
         // Fecha o modal e mostra mensagem de sucesso
         showAlert('success', 'Empréstimo registrado com sucesso!');
-        document.getElementById('btnEnviarWhatsapp').style.display = 'inline-block';
-        document.getElementById('btnEnviarWhatsapp').onclick = function() {
+        document.getElementById('btnEnviarWhatsappForm').style.display = 'inline-block';
+        document.getElementById('btnEnviarWhatsappForm').onclick = function() {
           sendWhatsAppOnLoan(userId, books, loanDate, returnDate);
         };
         const addLoanModal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
