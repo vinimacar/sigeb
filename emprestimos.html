@@ -1922,6 +1922,36 @@ document.addEventListener('focusin', function(e) {
   }
 });
 </script>
+<script>
+// Garante que aria-hidden="true" seja removido de modais abertos
+function fixAriaHiddenOnOpenModals() {
+  document.querySelectorAll('.modal').forEach(function(modal) {
+    const isVisible = window.getComputedStyle(modal).display === 'block';
+    if (isVisible) {
+      // Remove aria-hidden se existir
+      if (modal.hasAttribute('aria-hidden')) {
+        modal.removeAttribute('aria-hidden');
+      }
+    }
+  });
+}
+
+// Monitora abertura de modais Bootstrap para garantir acessibilidade
+document.addEventListener('shown.bs.modal', fixAriaHiddenOnOpenModals);
+document.addEventListener('DOMContentLoaded', function() {
+  // Corrige ao carregar a página caso algum modal esteja aberto
+  fixAriaHiddenOnOpenModals();
+});
+
+// Também corrige ao abrir modal programaticamente (ex: printLoanModal)
+const printLoanModal = document.getElementById('printLoanModal');
+if (printLoanModal) {
+  printLoanModal.addEventListener('shown.bs.modal', function() {
+    if (printLoanModal.hasAttribute('aria-hidden')) {
+      printLoanModal.removeAttribute('aria-hidden');
+    }
+  });
+}
+</script>
 </body>
 </html>
-
