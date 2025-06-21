@@ -320,10 +320,12 @@ if (reportType.value === 'livros') {
 // Adicione o fechamento da função btnGerarRelatorio aqui
 });
 
-document.querySelector('.search-box input').addEventListener('input', filterLivros);
+const searchInput = document.querySelector('.search-box input');
+if (searchInput) {
+  searchInput.addEventListener('input', filterLivros);
+}
   // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
 
 </body>
 </html>
-
