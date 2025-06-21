@@ -381,14 +381,74 @@
       }
     }
 
+    // Função para buscar e filtrar empréstimos no Firestore conforme o texto digitado
+    async function filterEmprestimos() {
+      const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+      const tbody = document.querySelector('.emprestimos-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      try {
+        const snapshot = await db.collection('emprestimos').get();
+        for (const doc of snapshot.docs) {
+          const emprestimo = doc.data();
+
+          // Buscar nome do usuário
+          let nomeUsuario = '';
+          if (emprestimo.usuarioId) {
+            const userDoc = await db.collection('usuarios').doc(emprestimo.usuarioId).get();
+            nomeUsuario = userDoc.exists ? (userDoc.data().nome || '') : '';
+          }
+
+          // Buscar nomes dos livros
+          let nomesLivros = '';
+          if (Array.isArray(emprestimo.livrosIds)) {
+            const livrosPromises = emprestimo.livrosIds.map(async (livroId) => {
+              const livroDoc = await db.collection('livros').doc(livroId).get();
+              return livroDoc.exists ? (livroDoc.data().nome || '') : '';
+            });
+            const livrosNomesArray = await Promise.all(livrosPromises);
+            nomesLivros = livrosNomesArray.join(', ');
+          }
+
+          const dataEmprestimo = emprestimo.dataEmprestimo
+            ? new Date(emprestimo.dataEmprestimo.seconds * 1000).toLocaleDateString()
+            : '';
+          const dataDevolucao = emprestimo.dataDevolucao
+            ? new Date(emprestimo.dataDevolucao.seconds * 1000).toLocaleDateString()
+            : '';
+
+          // Filtro
+          if (
+            !search ||
+            nomeUsuario.toLowerCase().includes(search) ||
+            nomesLivros.toLowerCase().includes(search) ||
+            dataEmprestimo.includes(search) ||
+            dataDevolucao.includes(search)
+          ) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${nomeUsuario}</td>
+              <td>${nomesLivros}</td>
+              <td>${dataEmprestimo}</td>
+              <td>${dataDevolucao}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao buscar empréstimos:', e);
+      }
+    }
+
     // Adicione o evento ao campo de busca
     const searchInput = document.querySelector('.search-box input');
     if (searchInput) {
-      searchInput.addEventListener('input', filterLivros);
+      searchInput.addEventListener('input', filterEmprestimos);
     }
 
-    // Opcional: carregar todos os livros ao abrir a página
-    document.addEventListener('DOMContentLoaded', filterLivros);
+    // Opcional: carregar todos os empréstimos ao abrir a página
+    document.addEventListener('DOMContentLoaded', filterEmprestimos);
   });
 </script>
 </body>
