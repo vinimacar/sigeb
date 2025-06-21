@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -171,8 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
     reportResult.innerHTML = '<p>Carregando dados...</p>';
     let html = '';
 
-  
-  // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ...
 // Substitua o bloco do relatório de livros pelo código abaixo para garantir que traga Autor, Gênero e Quantidade:
 
 if (reportType.value === 'livros') {
@@ -304,10 +303,31 @@ if (reportType.value === 'livros') {
       doc.save('relatorio.pdf');
     }
   });
-});
+
+  function filterLivros() {
+  const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+  document.querySelectorAll('.livros-table tbody tr').forEach(tr => {
+    if (!search) {
+      tr.style.display = '';
+      return;
+    }
+    // Ajuste os índices conforme as colunas da sua tabela de livros
+    const titulo = tr.children[0].textContent.toLowerCase();
+    const autor = tr.children[1].textContent.toLowerCase();
+    const isbn = tr.children[2].textContent.toLowerCase();
+    if (
+      titulo.includes(search) ||
+      autor.includes(search) ||
+      isbn.includes(search)
+    ) {
+      tr.style.display = '';
+    } else {
+      tr.style.display = 'none';
+    }
+  });
+}
   // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
 
 </body>
 </html>
-
