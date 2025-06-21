@@ -7,16 +7,16 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <!-- Firebase Initialization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     body { font-family: 'Poppins', sans-serif; background: #f0f2f5; }
     .main-content { margin-left: 250px; padding: 20px; }
@@ -93,17 +93,17 @@
           <label class="form-label" for="usuariosStatus">Status</label>
           <select class="form-select" id="usuariosStatus" name="usuariosStatus">
             <option value="">Todos</option>
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
           </select>
         </div>
         <div class="col-md-3 d-none" id="emprestimosFilters">
           <label class="form-label" for="emprestimosSituacao">Situação</label>
           <select class="form-select" id="emprestimosSituacao" name="emprestimosSituacao">
             <option value="">Todos</option>
-            <option value="ativo">Ativo</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="atrasado">Atrasado</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Atrasado">Atrasado</option>
           </select>
         </div>
         <div class="col-md-3">
@@ -117,22 +117,9 @@
     <div class="report-section" id="reportResult">
       <p>Selecione o tipo de relatório e filtros desejados para visualizar e imprimir.</p>
     </div>
-    <div id="barraAtrasados" style="display:none; background: linear-gradient(90deg, #ff512f, #dd2476); color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
-      <span id="textoAtrasados"></span>
-    </div>
-    <div class="search-box">
-      <input type="text" placeholder="Buscar relatório...">
-    </div>
-    <table class="relatorios-table">
-      <tbody>
-        <!-- Linhas dos relatórios aqui -->
-      </tbody>
-    </table>
+    </tbody>
+    </table> -->
   </div>
-
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
   // Firebase config
@@ -147,6 +134,7 @@
     measurementId: "G-VJBDW2B7HZ"
   };
 
+  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 
   const auth = firebase.auth();
@@ -167,215 +155,181 @@
       }
     }
   }
-  // Adicione este script após a inicialização do Firebase, antes do </body>
 
-document.addEventListener('DOMContentLoaded', function () {
-  const btnGerarRelatorio = document.getElementById('btnGerarRelatorio');
-  const reportType = document.getElementById('reportType');
-  const reportResult = document.getElementById('reportResult');
-
-  btnGerarRelatorio.addEventListener('click', async function () {
-    reportResult.innerHTML = '<p>Carregando dados...</p>';
-    let html = '';
-
-  
-  // ...dentro do evento btnGerarRelatorio.addEventListener('click', async function () { ...
-// Substitua o bloco do relatório de livros pelo código abaixo para garantir que traga Autor, Gênero e Quantidade:
-
-if (reportType.value === 'livros') {
-  // Filtro de gênero
-  const genero = document.getElementById('livrosGenero').value;
-  let query = db.collection('livros');
-  if (genero) query = query.where('genero', '==', genero);
-
-  try {
-    const snapshot = await query.get();
-    if (snapshot.empty) {
-      html = '<p>Nenhum livro encontrado.</p>';
-    } else {
-      html = `<table class="table table-bordered table-sm"><thead>
-        <tr><th>Autor</th><th>Gênero</th><th>Quantidade</th></tr>
-      </thead><tbody>`;
-      snapshot.forEach(doc => {
-        const l = doc.data();
-        html += `<tr>
-          <td>${l.autor ? l.autor : ''}</td>
-          <td>${l.genero ? l.genero : ''}</td>
-          <td>${l.exemplares !== undefined ? l.exemplares : ''}</td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-    }
-  } catch (error) {
-    html = `<p class="text-danger">Erro ao carregar livros: ${error.message}</p>`;
-    console.error('Erro ao buscar livros:', error);
-  }
-}
-
-    if (reportType.value === 'usuarios') {
-      // Filtro de status
-      const status = document.getElementById('usuariosStatus').value;
-      let query = db.collection('usuarios');
-      if (status) query = query.where('status', '==', status.charAt(0).toUpperCase() + status.slice(1));
-
-      const snapshot = await query.get();
-      if (snapshot.empty) {
-        html = '<p>Nenhum usuário encontrado.</p>';
-      } else {
-        html = `<table class="table table-bordered table-sm"><thead>
-          <tr><th>Nome</th><th>Email</th><th>Matrícula</th><th>Status</th><th>Função</th></tr>
-        </thead><tbody>`;
-        snapshot.forEach(doc => {
-          const u = doc.data();
-          html += `<tr>
-            <td>${u.nome || ''}</td>
-            <td>${u.email || ''}</td>
-            <td>${u.matricula || ''}</td>
-            <td>${u.status || ''}</td>
-            <td>${u.funcao || ''}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-      }
-    }
-
-    if (reportType.value === 'emprestimos') {
-      // Filtro de situação
-      const situacao = document.getElementById('emprestimosSituacao').value;
-      let query = db.collection('emprestimos');
-      const hoje = new Date();
-
-      const snapshot = await query.get();
-      if (snapshot.empty) {
-        html = '<p>Nenhum empréstimo encontrado.</p>';
-      } else {
-        html = `<table class="table table-bordered table-sm"><thead>
-          <tr><th>Usuário</th><th>Livro(s)</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr>
-        </thead><tbody>`;
-        snapshot.forEach(doc => {
-          const e = doc.data();
-          let statusEmprestimo = e.status || '';
-          // Determina situação se necessário
-          if (situacao) {
-            if (situacao === 'atrasado') {
-              const dataDevolucao = e.dataDevolucao ? new Date(e.dataDevolucao) : null;
-              if (!dataDevolucao || dataDevolucao >= hoje || statusEmprestimo === 'Finalizado') return;
-            }
-            if (situacao === 'ativo' && statusEmprestimo !== 'Ativo') return;
-            if (situacao === 'finalizado' && statusEmprestimo !== 'Finalizado') return;
-          }
-          html += `<tr>
-            <td>${e.nomeUsuario || ''}</td>
-            <td>${Array.isArray(e.livros) ? e.livros.map(l => l.titulo).join(', ') : ''}</td>
-            <td>${e.dataEmprestimo || ''}</td>
-            <td>${e.dataDevolucao || ''}</td>
-            <td>${statusEmprestimo}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-      }
-    }
-
-    reportResult.innerHTML = html;
-  });
-
-  // Exibe/esconde filtros conforme o tipo de relatório
-  reportType.addEventListener('change', function () {
-    document.getElementById('livrosFilters').classList.toggle('d-none', reportType.value !== 'livros');
-    document.getElementById('usuariosFilters').classList.toggle('d-none', reportType.value !== 'usuarios');
-    document.getElementById('emprestimosFilters').classList.toggle('d-none', reportType.value !== 'emprestimos');
-  });
-
-  const btnBaixarPDF = document.getElementById('btnBaixarPDF');
-
-  btnBaixarPDF.addEventListener('click', function () {
-    const reportType = document.getElementById('reportType').value;
+  document.addEventListener('DOMContentLoaded', function () {
+    const btnGerarRelatorio = document.getElementById('btnGerarRelatorio');
+    const reportType = document.getElementById('reportType');
     const reportResult = document.getElementById('reportResult');
-    const doc = new jspdf.jsPDF();
+    const btnBaixarPDF = document.getElementById('btnBaixarPDF');
 
-    // Extrai o título do relatório
-    let titulo = '';
-    if (reportType === 'livros') titulo = 'Relatório de Livros';
-    if (reportType === 'usuarios') titulo = 'Relatório de Usuários';
-    if (reportType === 'emprestimos') titulo = 'Relatório de Empréstimos';
+    // Inicializa os filtros visíveis com base no tipo de relatório padrão (Livros)
+    reportType.dispatchEvent(new Event('change'));
 
-    doc.text(titulo, 14, 15);
+    btnGerarRelatorio.addEventListener('click', async function () {
+      reportResult.innerHTML = '<p>Carregando dados...</p>';
+      let html = '';
 
-    // Extrai a tabela HTML
-    const table = reportResult.querySelector('table');
-    if (table) {
-      doc.autoTable({ html: table, startY: 25 });
-      doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
-    } else {
-      doc.text('Nenhum dado para exportar.', 14, 30);
-      doc.save('relatorio.pdf');
-    }
-  });
+      if (reportType.value === 'livros') {
+        const genero = document.getElementById('livrosGenero').value;
+        let query = db.collection('livros');
+        if (genero) {
+          query = query.where('genero', '==', genero);
+        }
 
-  // Função para buscar e filtrar livros no Firestore conforme o texto digitado
-  async function filterLivros() {
-  const search = document.querySelector('.search-box input').value.trim().toLowerCase();
-  const tbody = document.querySelector('.livros-table tbody');
-  tbody.innerHTML = '';
+        try {
+          const snapshot = await query.get();
+          if (snapshot.empty) {
+            html = '<p>Nenhum livro encontrado com os filtros selecionados.</p>';
+          } else {
+            html = `
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr><th>Título</th><th>Autor</th><th>Gênero</th><th>Quantidade</th></tr>
+                </thead>
+                <tbody>
+            `;
+            snapshot.forEach(doc => {
+              const l = doc.data();
+              html += `
+                <tr>
+                  <td>${l.titulo || ''}</td>
+                  <td>${l.autor || ''}</td>
+                  <td>${l.genero || ''}</td>
+                  <td>${l.exemplares !== undefined ? l.exemplares : ''}</td>
+                </tr>
+              `;
+            });
+            html += '</tbody></table>';
+          }
+        } catch (error) {
+          html = `<p class="text-danger">Erro ao carregar livros: ${error.message}</p>`;
+          console.error('Erro ao buscar livros:', error);
+        }
+      }
 
-  try {
-    const snapshot = await db.collection('livros').get();
-    snapshot.forEach(doc => {
-      const livro = doc.data();
-      // Ajuste os campos conforme o seu banco
-      const nome = (livro.nome || '').toLowerCase();
-      const autor = (livro.autor || '').toLowerCase();
-      const genero = (livro.genero || '').toLowerCase();
-      const quantidade = (livro.quantidade || '').toString().toLowerCase();
-      if (
-        !search ||
-        nome.includes(search) ||
-        autor.includes(search) ||
-        genero.includes(search) ||
-        quantidade.includes(search)
-      ) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${livro.nome || ''}</td>
-          <td>${livro.autor || ''}</td>
-          <td>${livro.genero || ''}</td>
-          <td>${livro.quantidade || ''}</td>
-        `;
-        tbody.appendChild(tr);
+      if (reportType.value === 'usuarios') {
+        const status = document.getElementById('usuariosStatus').value;
+        let query = db.collection('usuarios');
+        if (status) {
+          query = query.where('status', '==', status); // Assume que o status é armazenado como 'Ativo', 'Inativo'
+        }
+
+        try {
+          const snapshot = await query.get();
+          if (snapshot.empty) {
+            html = '<p>Nenhum usuário encontrado com os filtros selecionados.</p>';
+          } else {
+            html = `
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr><th>Nome</th><th>Email</th><th>Matrícula</th><th>Status</th><th>Função</th></tr>
+                </thead>
+                <tbody>
+            `;
+            snapshot.forEach(doc => {
+              const u = doc.data();
+              html += `
+                <tr>
+                  <td>${u.nome || ''}</td>
+                  <td>${u.email || ''}</td>
+                  <td>${u.matricula || ''}</td>
+                  <td>${u.status || ''}</td>
+                  <td>${u.funcao || ''}</td>
+                </tr>
+              `;
+            });
+            html += '</tbody></table>';
+          }
+        } catch (error) {
+          html = `<p class="text-danger">Erro ao carregar usuários: ${error.message}</p>`;
+          console.error('Erro ao buscar usuários:', error);
+        }
+      }
+
+      if (reportType.value === 'emprestimos') {
+        const situacaoFiltro = document.getElementById('emprestimosSituacao').value;
+        let query = db.collection('emprestimos');
+
+        try {
+          const snapshot = await query.get();
+          if (snapshot.empty) {
+            html = '<p>Nenhum empréstimo encontrado com os filtros selecionados.</p>';
+          } else {
+            html = `
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr><th>Usuário</th><th>Livro(s)</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+            `;
+            const hoje = new Date();
+            snapshot.forEach(doc => {
+              const e = doc.data();
+              const dataDevolucao = e.dataDevolucao ? new Date(e.dataDevolucao) : null;
+              let statusAtual = e.status || 'Ativo'; // Assume 'Ativo' se não houver status
+              
+              if (statusAtual === 'Ativo' && dataDevolucao && dataDevolucao < hoje) {
+                statusAtual = 'Atrasado';
+              }
+
+              // Aplica o filtro de situação
+              if (situacaoFiltro && situacaoFiltro !== statusAtual) {
+                return; // Pula este empréstimo se não corresponder ao filtro
+              }
+
+              html += `
+                <tr>
+                  <td>${e.nomeUsuario || ''}</td>
+                  <td>${Array.isArray(e.livros) ? e.livros.map(l => l.titulo).join(', ') : ''}</td>
+                  <td>${e.dataEmprestimo || ''}</td>
+                  <td>${e.dataDevolucao || ''}</td>
+                  <td>${statusAtual}</td>
+                </tr>
+              `;
+            });
+            html += '</tbody></table>';
+          }
+        } catch (error) {
+          html = `<p class="text-danger">Erro ao carregar empréstimos: ${error.message}</p>`;
+          console.error('Erro ao buscar empréstimos:', error);
+        }
+      }
+      reportResult.innerHTML = html;
+    });
+
+    // Exibe/esconde filtros conforme o tipo de relatório
+    reportType.addEventListener('change', function () {
+      document.getElementById('livrosFilters').classList.toggle('d-none', this.value !== 'livros');
+      document.getElementById('usuariosFilters').classList.toggle('d-none', this.value !== 'usuarios');
+      document.getElementById('emprestimosFilters').classList.toggle('d-none', this.value !== 'emprestimos');
+    });
+
+    btnBaixarPDF.addEventListener('click', function () {
+      const reportType = document.getElementById('reportType').value;
+      const reportResult = document.getElementById('reportResult');
+      const doc = new jspdf.jsPDF();
+
+      let titulo = '';
+      if (reportType === 'livros') titulo = 'Relatório de Livros';
+      if (reportType === 'usuarios') titulo = 'Relatório de Usuários';
+      if (reportType === 'emprestimos') titulo = 'Relatório de Empréstimos';
+
+      doc.text(titulo, 14, 15);
+
+      const table = reportResult.querySelector('table');
+      if (table) {
+        doc.autoTable({ html: table, startY: 25 });
+        doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
+      } else {
+        doc.text('Nenhum dado para exportar.', 14, 30);
+        doc.save('relatorio.pdf');
       }
     });
-  } catch (e) {
-    console.error('Erro ao buscar livros:', e);
-  }
-}
 
-// Adicione o evento ao campo de busca
-const searchInput = document.querySelector('.search-box input');
-if (searchInput) {
-  searchInput.addEventListener('input', filterLivros);
-}
-
-// Opcional: carregar todos os livros ao abrir a página
-document.addEventListener('DOMContentLoaded', filterLivros);
-
-const btn = document.getElementById('meuBotao');
-if (btn) {
-  btn.addEventListener('click', minhaFuncao);
-}
-
-// Função para filtrar relatórios na tabela
-function filterRelatorios() {
-  const search = document.querySelector('.search-box input').value.trim().toLowerCase();
-  document.querySelectorAll('.relatorios-table tbody tr').forEach(tr => {
-    const texto = tr.textContent.toLowerCase();
-    tr.style.display = !search || texto.includes(search) ? '' : 'none';
+    // Removidas as funções de busca (filterLivros e filterRelatorios) e seus event listeners,
+    // pois a busca na sua implementação original operava em uma tabela fixa, não na gerada dinamicamente.
+    // Se precisar de uma busca no relatório gerado, será necessário reavaliar a abordagem.
   });
-}
-
-const searchInputRelatorios = document.querySelector('.search-box input');
-if (searchInputRelatorios) {
-  searchInputRelatorios.addEventListener('input', filterRelatorios);
-}
 </script>
 </body>
 </html>
