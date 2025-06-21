@@ -848,29 +848,6 @@
       // const user = await autenticarColaborador('usuario', 'senha');
       // if (user) { /* acesso liberado */ } else { /* acesso negado */ }
 
-      // Validação de login de colaborador ao iniciar o sistema
-      document.addEventListener('DOMContentLoaded', async function() {
-        // Exemplo simples de tela de login (pode ser substituído por um modal ou página dedicada)
-        let autenticado = false;
-        while (!autenticado) {
-          const username = prompt('Usuário (colaborador):');
-          const senha = prompt('Senha:');
-          if (!username || !senha) {
-            alert('Usuário e senha são obrigatórios.');
-            continue;
-          }
-          // Função já definida no seu código
-          const user = await autenticarColaborador(username, senha);
-          if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-            autenticado = true;
-            // Opcional: salvar sessão/localStorage
-          } else {
-            alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
-          }
-        }
-      });
-
-
       // Certifique-se de declarar usuarioLogado no escopo global, antes de qualquer função que o utilize:
       let usuarioLogado = null;
 
