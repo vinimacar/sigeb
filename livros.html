@@ -234,6 +234,21 @@
     .genre-badge {
       font-family: 'Poppins', sans-serif !important;
     }
+
+    #addBookForm input:focus, #addBookForm select:focus, #addBookForm textarea:focus {
+      border-color: #4facfe;
+      box-shadow: 0 0 0 0.2rem rgba(79,172,254,.15);
+    }
+    #addBookForm .form-label {
+      color: #16213e;
+    }
+    #addBookForm .btn-primary {
+      background: linear-gradient(90deg, #00f2fe, #4facfe);
+      border: none;
+    }
+    #addBookForm .btn-primary:hover {
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+    }
   </style>
 </head>
 <body>
@@ -350,149 +365,57 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="addBookForm" class="needs-validation" novalidate>
-              <div class="row">
-                <div class="col-md-8">
-                  <!-- Removido campo EAN -->
-                  <div class="mb-3">
-                    <label for="ean" class="form-label">EAN</label>
-                    <div class="input-group">
-                      <input type="text" class="form-control" id="ean" pattern="^\d{13}$" placeholder="Código EAN (13 dígitos)">
-                      <button class="btn btn-outline-secondary" type="button" id="scanEanBtn" title="Ler EAN com câmera">
-                        <i class='bx bx-barcode-reader'></i>
-                      </button>
-                    </div>
-                    <div class="invalid-feedback">
-                      Por favor, insira um EAN válido (13 dígitos).
-                    </div>
-                  </div>
-                  <!-- Modal para leitura do EAN -->
-                  <div class="modal fade" id="scanEanModal" tabindex="-1" aria-labelledby="scanEanModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="scanEanModalLabel">Ler EAN com Câmera</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                          <video id="eanVideo" width="100%" style="max-width:320px;" autoplay></video>
-                          <div id="eanScanFeedback" class="mt-2 text-danger"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <!-- Exemplo de formulário moderno para cadastro de novo livro usando Bootstrap 5 -->
+<form id="addBookForm" class="needs-validation p-4 rounded shadow" style="background: #fff; max-width: 600px; margin: auto;" novalidate>
+  <h4 class="mb-4 text-primary"><i class="bx bxs-book"></i> Cadastro de Novo Livro</h4>
+  <div class="row g-3">
+    <div class="col-md-8">
+      <label for="nomeLivro" class="form-label fw-semibold">Nome do Livro*</label>
+      <input type="text" class="form-control" id="nomeLivro" required placeholder="Digite o nome do livro">
+      <div class="invalid-feedback">Informe o nome do livro.</div>
+    </div>
+    <div class="col-md-4">
+      <label for="isbn" class="form-label fw-semibold">ISBN</label>
+      <input type="text" class="form-control" id="isbn" placeholder="ISBN">
+    </div>
+    <div class="col-md-6">
+      <label for="autor" class="form-label fw-semibold">Autor*</label>
+      <input type="text" class="form-control" id="autor" required placeholder="Nome do autor">
+      <div class="invalid-feedback">Informe o autor.</div>
+    </div>
+    <div class="col-md-6">
+      <label for="genero" class="form-label fw-semibold">Gênero*</label>
+      <select class="form-select" id="genero" required>
+        <option value="">Selecione o gênero</option>
+        <option>Romance</option>
+        <option>Aventura</option>
+        <option>Didático</option>
+        <option>Biografia</option>
+        <option>Ficção</option>
+        <option>Outros</option>
+      </select>
+      <div class="invalid-feedback">Selecione o gênero.</div>
+    </div>
+    <div class="col-md-4">
+      <label for="quantidade" class="form-label fw-semibold">Quantidade*</label>
+      <input type="number" class="form-control" id="quantidade" required min="1" placeholder="Ex: 10">
+      <div class="invalid-feedback">Informe a quantidade.</div>
+    </div>
+    <div class="col-md-8">
+      <label for="editora" class="form-label fw-semibold">Editora</label>
+      <input type="text" class="form-control" id="editora" placeholder="Nome da editora">
+    </div>
+    <div class="col-12">
+      <label for="descricao" class="form-label fw-semibold">Descrição</label>
+      <textarea class="form-control" id="descricao" rows="2" placeholder="Breve descrição do livro"></textarea>
+    </div>
+  </div>
+  <div class="mt-4 d-flex justify-content-end gap-2">
+    <button type="reset" class="btn btn-outline-secondary">Limpar</button>
+    <button type="submit" class="btn btn-primary"><i class="bx bx-save"></i> Salvar Livro</button>
+  </div>
+</form>
 
-                  <div class="mb-3">
-                    <label for="isbn" class="form-label">ISBN*</label>
-                    <div class="input-group">
-                      <input type="text" class="form-control" id="isbn" required
-                        pattern="^(97(8|9))?\d{9}(\d|X)$">
-                      <button class="btn btn-outline-secondary" type="button" id="scanIsbnBtn" title="Ler ISBN com câmera">
-                        <i class='bx bx-barcode-reader'></i>
-                      </button>
-                    </div>
-                    <div class="invalid-feedback">
-                      Por favor, insira um ISBN válido (10 ou 13 dígitos, pode terminar com X).
-                    </div>
-                  </div>
-                  <!-- Modal para leitura do ISBN -->
-                  <div class="modal fade" id="scanIsbnModal" tabindex="-1" aria-labelledby="scanIsbnModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="scanIsbnModalLabel">Ler ISBN com Câmera</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                          <video id="isbnVideo" width="100%" style="max-width:320px;" autoplay></video>
-                          <div id="isbnScanFeedback" class="mt-2 text-danger"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label for="titulo" class="form-label">Título*</label>
-                    <input type="text" class="form-control" id="titulo" required>
-                    <div class="invalid-feedback">
-                      Por favor, insira o título do livro.
-                    </div>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label for="autores" class="form-label">Autor(es)*</label>
-                    <input type="text" class="form-control" id="autores" required>
-                    <small class="text-muted">Separe múltiplos autores com ponto e vírgula (;)</small>
-                    <div class="invalid-feedback">
-                      Por favor, insira pelo menos um autor.
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label for="editora" class="form-label">Editora*</label>
-                    <input type="text" class="form-control" id="editora" required>
-                    <div class="invalid-feedback">
-                      Por favor, insira a editora.
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="mb-3">
-                        <label for="anoPublicacao" class="form-label">Ano de Publicação*</label>
-                        <input type="number" class="form-control" id="anoPublicacao" 
-                               min="1800" max="2024" required
-                               placeholder="Ex: 2024">
-                        <div class="invalid-feedback">
-                          Por favor, insira um ano válido (1800-2024).
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="mb-3">
-                        <label for="edicao" class="form-label">Edição</label>
-                        <input type="number" class="form-control" id="edicao" min="1">
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label for="quantidade" class="form-label">Quantidade*</label>
-                    <input type="number" class="form-control" id="quantidade" min="1" required>
-                    <div class="invalid-feedback">
-                      Por favor, insira a quantidade.
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label for="generos" class="form-label">Gênero*</label>
-                    <select class="form-select" id="generos" required>
-                      <option value="">Selecione...</option>
-                      <option value="ROMANCE">Romance</option>
-                      <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
-                      <option value="FANTASIA">Fantasia</option>
-                      <option value="MISTERIO">Mistério</option>
-                      <option value="TERROR">Terror</option>
-                      <option value="DRAMA">Drama</option>
-                      <option value="AVENTURA">Aventura</option>
-                      <option value="BIOGRAFIA">Biografia</option>
-                      <option value="HISTORIA">História</option>
-                      <option value="CIENCIAS">Ciências</option>
-                      <option value="TECNOLOGIA">Tecnologia</option>
-                      <option value="AUTOAJUDA">Autoajuda</option>
-                      <option value="EDUCACAO">Educação</option>
-                      <option value="INFANTIL">Infantil</option>
-                      <option value="POESIA">Poesia</option>
-                      <option value="OUTROS">Outros</option>
-                    </select>
-                    <div class="invalid-feedback">
-                      Por favor, selecione um gênero.
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </form>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
