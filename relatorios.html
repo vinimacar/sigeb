@@ -304,7 +304,23 @@ if (reportType.value === 'livros') {
       doc.save('relatorio.pdf');
     }
   });
+
+  function filterLivros() {
+  const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+  document.querySelectorAll('.livros-table tbody tr').forEach(tr => {
+    const nomeLivro = tr.children[0].textContent.toLowerCase(); // Supondo que o nome do livro está na primeira coluna
+    if (!search || nomeLivro.includes(search)) {
+      tr.style.display = '';
+    } else {
+      tr.style.display = 'none';
+    }
+  });
+}
+
+// Adicione o fechamento da função btnGerarRelatorio aqui
 });
+
+document.querySelector('.search-box input').addEventListener('input', filterLivros);
   // (Removido bloco de código inválido e fechamento de função desnecessário)
 </script>
 
