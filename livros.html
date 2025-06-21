@@ -771,492 +771,62 @@
 
     // Função para lidar com a submissão do formulário de adicionar livro
     async function handleAddBookSubmission(event) {
-      event.preventDefault();
+      event.preventDefault?.();
+
       const form = document.getElementById('addBookForm');
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated');
+      if (!form) return;
+
+      form.classList.add('was-validated');
+      if (!form.checkValidity()) return;
+
+      // Pegue os campos e verifique se existem antes de acessar .value
+      const nomeLivroInput = document.getElementById('nomeLivro');
+      const isbnInput = document.getElementById('isbn');
+      const autorInput = document.getElementById('autor');
+      const generoInput = document.getElementById('genero');
+      const quantidadeInput = document.getElementById('quantidade');
+      const editoraInput = document.getElementById('editora');
+
+      if (!nomeLivroInput || !autorInput || !generoInput || !quantidadeInput) {
+        alert('Preencha todos os campos obrigatórios.');
         return;
       }
 
-      // Verifica se o ISBN não foi encontrado na API
-      const isbnInput = document.getElementById('isbn');
-      if (isbnInput && isbnInput.value && isbnInput.dataset.isbnEncontrado === "false") {
-        const desejaIncluir = confirm("O ISBN informado não foi encontrado em nossa base de dados. Deseja cadastrar o livro manualmente mesmo assim?");
-        if (!desejaIncluir) {
-          showAlert('warning', 'Cadastro cancelado pelo usuário.');
-          return;
-        }
-      }
+      const nome = nomeLivroInput.value.trim();
+      const isbn = isbnInput ? isbnInput.value.trim() : '';
+      const autor = autorInput.value.trim();
+      const genero = generoInput.value;
+      const quantidade = quantidadeInput.value;
+      const editora = editoraInput ? editoraInput.value.trim() : '';
 
-      const addBookButton = document.querySelector('button[form="addBookForm"][type="submit"]');
-      if (addBookButton) {
-        addBookButton.disabled = true;
-        addBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-      }
+      const livro = {
+        nome,
+        isbn,
+        autor,
+        genero,
+        quantidade: Number(quantidade),
+        editora
+      };
 
       try {
-        const titulo = document.getElementById('titulo').value;
-        const autores = document.getElementById('autores').value.split(';').map(a => a.trim()).filter(a => a);
-        const editora = document.getElementById('editora').value;
-        const anoPublicacao = parseInt(document.getElementById('anoPublicacao').value);
-        const edicao = document.getElementById('edicao').value || null;
-        const isbn = document.getElementById('isbn').value;
-        const quantidade = parseInt(document.getElementById('quantidade').value);
-        const genero = document.getElementById('generos').value;
-        let capaUrl = 'https://via.placeholder.com/200x300?text=Capa+Indisponível';
-
-        await addDoc(collection(db, 'livros'), {
-          titulo,
-          autores,
-          editora,
-          ano: anoPublicacao,
-          edicao,
-          isbn,
-          quantidade,
-          genero,
-          capaUrl,
-          disponiveis: quantidade,
-          emprestados: 0,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        showAlert('success', 'Livro adicionado com sucesso!');
-        bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
+        await db.collection('livros').add(livro);
+        alert('Livro cadastrado com sucesso!');
         form.reset();
         form.classList.remove('was-validated');
-        loadBooks();
-
+        if (typeof loadLivros === 'function') loadLivros();
       } catch (error) {
         console.error('Erro ao adicionar livro:', error);
-        showAlert('danger', `Erro ao adicionar livro: ${error.message}`);
-      } finally {
-        if (addBookButton) {
-          addBookButton.disabled = false;
-          addBookButton.innerHTML = 'Salvar Livro';
-        }
+        alert('Erro ao adicionar livro.');
       }
     }
 
-    // Função para gerar relatório PDF
-    function generatePdfReport(books) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      doc.setFontSize(18);
-      doc.text('Relatório de Livros', 14, 22);
-      doc.setFontSize(11);
-      doc.setTextColor(100);
-
-      const tableColumn = ["Título", "Autor(es)", "Editora", "Ano", "Gênero(s)", "Qtd."];
-      const tableRows = [];
-
-      books.forEach(book => {
-        const bookData = [
-          book.titulo,
-          Array.isArray(book.autores) ? book.autores.join(', ') : book.autores,
-          book.editora,
-          book.ano,
-          Array.isArray(book.generos) ? book.generos.join(', ') : book.generos,
-          book.quantidade
-        ];
-        tableRows.push(bookData);
-      });
-
-      doc.autoTable(tableColumn, tableRows, { startY: 30 });
-      doc.save('relatorio_livros.pdf');
-      showAlert('success', 'Relatório PDF gerado com sucesso!');
-    }
-
-    // Função para gerar relatório XLS
-    function generateXlsReport(books) {
-      const worksheet = XLSX.utils.json_to_sheet(books.map(book => ({
-        'Título': book.titulo,
-        'Autor(es)': Array.isArray(book.autores) ? book.autores.join(', ') : book.autores,
-        'Editora': book.editora,
-        'Ano': book.ano,
-        'Gênero(s)': Array.isArray(book.generos) ? book.generos.join(', ') : book.generos,
-        'ISBN': book.isbn,
-        'Quantidade': book.quantidade,
-        'Disponíveis': book.disponiveis,
-        'Emprestados': book.emprestados,
-        'Idioma': book.idioma
-      })));
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Livros');
-      XLSX.writeFile(workbook, 'relatorio_livros.xlsx');
-      showAlert('success', 'Relatório XLS gerado com sucesso!');
-    }
-
-
-    // Função para obter os livros filtrados atualmente
-    async function getFilteredBooks() {
-      const filterTitulo = document.getElementById('filterTitulo') ? document.getElementById('filterTitulo').value : '';
-      const filterAutor = document.getElementById('filterAutor') ? document.getElementById('filterAutor').value : '';
-      const filterEditora = document.getElementById('filterEditora') ? document.getElementById('filterEditora').value : '';
-      const selectedGenre = document.getElementById('genreFilter') ? document.getElementById('genreFilter').value : '';
-
-      let q = query(collection(db, 'livros'), orderBy('titulo'));
-      if (selectedGenre) {
-        q = query(q, where('generos', 'array-contains', selectedGenre));
-      }
-
-      const snapshot = await getDocs(q);
-      let books = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      if (filterTitulo.trim()) {
-        const lowerTitulo = filterTitulo.toLowerCase().trim();
-        books = books.filter(book => book.titulo && book.titulo.toLowerCase().includes(lowerTitulo));
-      }
-      if (filterAutor.trim()) {
-        const lowerAutor = filterAutor.toLowerCase().trim();
-        books = books.filter(book => {
-          if (Array.isArray(book.autores)) {
-            return book.autores.some(author => author.toLowerCase().includes(lowerAutor));
-          } else if (typeof book.autores === 'string') {
-            return book.autores.toLowerCase().includes(lowerAutor);
-          }
-          return false;
-        });
-      }
-      if (filterEditora.trim()) {
-        const lowerEditora = filterEditora.toLowerCase().trim();
-        books = books.filter(book => book.editora && book.editora.toLowerCase().includes(lowerEditora));
-      }
-      return books;
-    }
-
-
-    // Inicialização e Event Listeners para busca e relatórios
+    // Adicione o event listener corretamente:
     document.addEventListener('DOMContentLoaded', function() {
-      const filterTituloInput = document.getElementById('filterTitulo');
-      const filterAutorInput = document.getElementById('filterAutor');
-      const filterEditoraInput = document.getElementById('filterEditora');
-      const genreFilter = document.getElementById('genreFilter');
-      const searchButton = document.getElementById('searchButton');
-      const printReportButton = document.getElementById('printReportButton');
-      const showAllBooksButton = document.getElementById('showAllBooksButton');
-
-      let searchDebounceTimer;
-
-      function performSearch() {
-        const titulo = filterTituloInput ? filterTituloInput.value : '';
-        const autor = filterAutorInput ? filterAutorInput.value : '';
-        const editora = filterEditoraInput ? filterEditoraInput.value : '';
-        const selectedGenre = genreFilter ? genreFilter.value : '';
-        loadBooks(titulo, autor, editora, selectedGenre);
-      }
-
-      if (searchButton) {
-        searchButton.addEventListener('click', performSearch);
-      }
-
-      if (genreFilter) {
-        genreFilter.addEventListener('change', performSearch);
-      }
-
-      [filterTituloInput, filterAutorInput, filterEditoraInput].forEach(input => {
-        if (input) {
-          input.addEventListener('input', () => {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-              performSearch();
-            }, 500); // Debounce de 500ms
-          });
-          input.addEventListener('keypress', function(event) {
-              if (event.key === 'Enter') {
-                  event.preventDefault();
-                  performSearch();
-              }
-          });
-        }
-      });
-
-      if (printReportButton) {
-        printReportButton.addEventListener('click', async () => {
-          const books = await getFilteredBooks();
-          if (books.length === 0) {
-            showAlert('warning', 'Nenhum livro encontrado para gerar o relatório com os filtros atuais.');
-            return;
-          }
-          // Modal para escolher o formato do relatório
-          const modalContent = `
-            <div class="modal" tabindex="-1" id="reportFormatModal">
-              <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Escolha o Formato</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    <p>Selecione o formato para o relatório:</p>
-                    <button type="button" class="btn btn-primary w-100 mb-2" id="generatePdfBtn">Gerar PDF</button>
-                    <button type="button" class="btn btn-success w-100" id="generateXlsBtn">Gerar XLS (Excel)</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-          const modalElement = document.createElement('div');
-          modalElement.innerHTML = modalContent;
-          document.body.appendChild(modalElement.firstChild);
-
-          const reportModal = new bootstrap.Modal(document.getElementById('reportFormatModal'));
-          reportModal.show();
-
-          document.getElementById('generatePdfBtn').addEventListener('click', () => {
-            generatePdfReport(books);
-            reportModal.hide();
-            document.getElementById('reportFormatModal').remove();
-          });
-          document.getElementById('generateXlsBtn').addEventListener('click', () => {
-            generateXlsReport(books);
-            reportModal.hide();
-            document.getElementById('reportFormatModal').remove();
-          });
-          document.getElementById('reportFormatModal').addEventListener('hidden.bs.modal', function () {
-            this.remove();
-          });
-        });
-      }
-      
-      // Carregar livros iniciais (sem filtros)
-      loadBooks();
-      
-      const addBookForm = document.getElementById('addBookForm');
-      if (addBookForm) {
-        addBookForm.addEventListener('submit', handleAddBookSubmission);
-      }
-
-      const editBookForm = document.getElementById('editBookForm');
-      if (editBookForm) {
-        editBookForm.addEventListener('submit', handleEditSubmission);
-      }
-
-      if (showAllBooksButton) {
-        showAllBooksButton.addEventListener('click', () => {
-          document.getElementById('filterTitulo').value = '';
-          document.getElementById('filterAutor').value = '';
-          document.getElementById('filterEditora').value = '';
-          document.getElementById('genreFilter').value = '';
-          loadBooks('', '', '', '');
-        });
+      const form = document.getElementById('addBookForm');
+      if (form) {
+        form.addEventListener('submit', handleAddBookSubmission);
       }
     });
-
-    // Aguarda o carregamento da biblioteca ZXing
-    function waitForZXingBrowser(callback) {
-      if (window.ZXingBrowser && window.ZXingBrowser.BrowserMultiFormatReader) {
-        callback();
-      } else {
-        setTimeout(() => waitForZXingBrowser(callback), 100);
-      }
-    }
-
-    // ZXing Barcode Scanner para ISBN (câmera digital)
-    let codeReader = null;
-    document.addEventListener('DOMContentLoaded', function() {
-      const scanBtn = document.getElementById('scanIsbnBtn');
-      const scanModal = new bootstrap.Modal(document.getElementById('scanIsbnModal'));
-      const video = document.getElementById('isbnVideo');
-      const feedback = document.getElementById('isbnScanFeedback');
-      const isbnInput = document.getElementById('isbn');
-
-      if (scanBtn) {
-        scanBtn.addEventListener('click', () => {
-          waitForZXingBrowser(async () => {
-            feedback.textContent = '';
-            scanModal.show();
-
-            if (!window.codeReader) {
-              window.codeReader = new ZXingBrowser.BrowserMultiFormatReader();
-            }
-            try {
-              const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-              let selectedDeviceId = devices[0]?.deviceId;
-              if (devices.length > 1) {
-                const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
-                if (backCam) selectedDeviceId = backCam.deviceId;
-              }
-              if (!selectedDeviceId) {
-                feedback.textContent = 'Nenhuma câmera encontrada.';
-                return;
-              }
-              window.codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
-                if (result) {
-                  isbnInput.value = result.text;
-                  scanModal.hide();
-                  window.codeReader.reset();
-                  isbnInput.dispatchEvent(new Event('blur'));
-                }
-              }, { facingMode: { exact: "environment" } });
-            } catch (e) {
-              feedback.textContent = 'Erro ao acessar a câmera.';
-            }
-          });
-        });
-      }
-
-      document.getElementById('scanIsbnModal').addEventListener('hidden.bs.modal', () => {
-        if (window.codeReader) window.codeReader.reset();
-        if (video && video.srcObject) {
-          video.srcObject.getTracks().forEach(track => track.stop());
-          video.srcObject = null;
-        }
-      });
-
-      if (isbnInput) {
-        isbnInput.addEventListener('input', function (e) {
-          const val = isbnInput.value.replace(/[^0-9Xx]/g, '');
-          if (val.length === 10 || val.length === 13) {
-            isbnInput.dispatchEvent(new Event('blur'));
-          }
-        });
-      }
-    });
-
-    // ZXing Barcode Scanner para EAN (câmera digital)
-    let eanCodeReader = null;
-    document.addEventListener('DOMContentLoaded', function() {
-      const scanEanBtn = document.getElementById('scanEanBtn');
-      const scanEanModal = new bootstrap.Modal(document.getElementById('scanEanModal'));
-      const eanVideo = document.getElementById('eanVideo');
-      const eanFeedback = document.getElementById('eanScanFeedback');
-      const eanInput = document.getElementById('ean');
-
-      if (scanEanBtn) {
-        scanEanBtn.addEventListener('click', () => {
-          waitForZXingBrowser(async () => {
-            eanFeedback.textContent = '';
-            scanEanModal.show();
-
-            if (!window.eanCodeReader) {
-              window.eanCodeReader = new ZXingBrowser.BrowserMultiFormatReader();
-            }
-            try {
-              const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-              let selectedDeviceId = devices[0]?.deviceId;
-              if (devices.length > 1) {
-                const backCam = devices.find(d => /back|traseira|rear/i.test(d.label));
-                if (backCam) selectedDeviceId = backCam.deviceId;
-              }
-              if (!selectedDeviceId) {
-                eanFeedback.textContent = 'Nenhuma câmera encontrada.';
-                return;
-              }
-              window.eanCodeReader.decodeFromVideoDevice(selectedDeviceId, eanVideo, (result, err) => {
-                if (result) {
-                  eanInput.value = result.text;
-                  scanEanModal.hide();
-                  window.eanCodeReader.reset();
-                }
-              }, { facingMode: { exact: "environment" } });
-            } catch (e) {
-              eanFeedback.textContent = 'Erro ao acessar a câmera.';
-            }
-          });
-        });
-      }
-
-      document.getElementById('scanEanModal').addEventListener('hidden.bs.modal', () => {
-        if (window.eanCodeReader) window.eanCodeReader.reset();
-        if (eanVideo && eanVideo.srcObject) {
-          eanVideo.srcObject.getTracks().forEach(track => track.stop());
-          eanVideo.srcObject = null;
-        }
-      });
-
-      if (eanInput) {
-        eanInput.addEventListener('input', function (e) {
-          const val = eanInput.value.replace(/\D/g, '');
-          if (val.length === 13) {
-            // ação automática se desejar
-          }
-        });
-      }
-    });
-
-    // Busca dados do livro pelo ISBN usando Open Library e preenche o formulário automaticamente
-    async function buscarLivroPorISBN() {
-      const isbn = document.getElementById("isbn").value.trim().replace(/[^0-9Xx]/g, '');
-      if (!isbn) return;
-      const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        const livro = data[`ISBN:${isbn}`];
-
-        if (livro) {
-          document.getElementById("titulo").value = livro.title || "";
-          document.getElementById("autores").value = livro.authors?.map(a => a.name).join("; ") || "";
-          document.getElementById("editora").value = livro.publishers?.map(p => p.name).join(", ") || "";
-          // Ano de publicação: tenta extrair apenas o ano
-          if (livro.publish_date) {
-            const ano = livro.publish_date.match(/\d{4}/) ? livro.publish_date.match(/\d{4}/)[0] : livro.publish_date;
-            document.getElementById("anoPublicacao").value = ano;
-          }
-          // Marca que o ISBN foi encontrado
-          document.getElementById("isbn").dataset.isbnEncontrado = "true";
-        } else {
-          // Não encontrou o livro, pergunta se deseja cadastrar manualmente
-          document.getElementById("isbn").dataset.isbnEncontrado = "false";
-          showAlert('warning', 'ISBN não encontrado. Você deseja cadastrar o livro manualmente?');
-          // O botão de salvar será habilitado normalmente, mas a confirmação será feita ao tentar salvar
-        }
-      } catch (error) {
-        showAlert('danger', 'Erro ao buscar o livro. Preencha os dados manualmente.');
-        console.error(error);
-        document.getElementById("isbn").dataset.isbnEncontrado = "false";
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const isbnInput = document.getElementById('isbn');
-      if (isbnInput) {
-        isbnInput.addEventListener('blur', buscarLivroPorISBN);
-      }
-    });
-
-    // Função para atualizar o estoque de livros ao registrar um empréstimo
-    // Chame esta função ao registrar um novo empréstimo (por exemplo, na tela de empréstimos)
-    /**
-     * Atualiza o estoque (quantidade e disponíveis) de um livro.
-     * Use esta função sempre que um livro for emprestado ou devolvido.
-     * @param {string} livroId - ID do livro no Firestore
-     * @param {number} quantidadeDelta - Quantidade a subtrair (empréstimo: negativo, devolução: positivo)
-     */
-    async function atualizarEstoqueLivro(livroId, quantidadeDelta) {
-      try {
-        const livroRef = doc(db, 'livros', livroId);
-        const livroSnap = await getDoc(livroRef);
-        if (!livroSnap.exists()) {
-          showAlert('danger', 'Livro não encontrado para atualizar estoque.');
-          return;
-        }
-        const dadosLivro = livroSnap.data();
-        // Atualiza quantidade total e disponíveis
-        const novaQuantidade = (dadosLivro.quantidade ?? 0) + quantidadeDelta;
-        const novosDisponiveis = (dadosLivro.disponiveis ?? dadosLivro.quantidade ?? 0) + quantidadeDelta;
-        // Atualiza emprestados (apenas se for empréstimo)
-        const novosEmprestados = (dadosLivro.emprestados ?? 0) - quantidadeDelta;
-
-        await updateDoc(livroRef, {
-          quantidade: novaQuantidade < 0 ? 0 : novaQuantidade,
-          disponiveis: novosDisponiveis < 0 ? 0 : novosDisponiveis,
-          emprestados: novosEmprestados < 0 ? 0 : novosEmprestados
-        });
-      } catch (error) {
-        console.error('Erro ao atualizar estoque do livro:', error);
-        showAlert('danger', 'Erro ao atualizar estoque do livro.');
-      }
-    }
-
-    // Exemplo de uso ao emprestar um livro:
-// await atualizarEstoqueLivro(livroId, -quantidadeEmprestada);
-
-// Exemplo de uso ao devolver um livro:
-// await atualizarEstoqueLivro(livroId, +quantidadeDevolvida);
   </script>
 </body>
 </html>
