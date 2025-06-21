@@ -120,6 +120,14 @@
     <div id="barraAtrasados" style="display:none; background: linear-gradient(90deg, #ff512f, #dd2476); color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
       <span id="textoAtrasados"></span>
     </div>
+    <div class="search-box">
+      <input type="text" placeholder="Buscar relatório...">
+    </div>
+    <table class="relatorios-table">
+      <tbody>
+        <!-- Linhas dos relatórios aqui -->
+      </tbody>
+    </table>
   </div>
 
 <!-- jsPDF -->
@@ -159,7 +167,6 @@
       }
     }
   }
-
   // Adicione este script após a inicialização do Firebase, antes do </body>
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -305,27 +312,70 @@ if (reportType.value === 'livros') {
     }
   });
 
-  function filterLivros() {
+  // Função para buscar e filtrar livros no Firestore conforme o texto digitado
+  async function filterLivros() {
   const search = document.querySelector('.search-box input').value.trim().toLowerCase();
-  document.querySelectorAll('.livros-table tbody tr').forEach(tr => {
-    const nomeLivro = tr.children[0].textContent.toLowerCase(); // Supondo que o nome do livro está na primeira coluna
-    if (!search || nomeLivro.includes(search)) {
-      tr.style.display = '';
-    } else {
-      tr.style.display = 'none';
-    }
-  });
+  const tbody = document.querySelector('.livros-table tbody');
+  tbody.innerHTML = '';
+
+  try {
+    const snapshot = await db.collection('livros').get();
+    snapshot.forEach(doc => {
+      const livro = doc.data();
+      // Ajuste os campos conforme o seu banco
+      const nome = (livro.nome || '').toLowerCase();
+      const autor = (livro.autor || '').toLowerCase();
+      const genero = (livro.genero || '').toLowerCase();
+      const quantidade = (livro.quantidade || '').toString().toLowerCase();
+      if (
+        !search ||
+        nome.includes(search) ||
+        autor.includes(search) ||
+        genero.includes(search) ||
+        quantidade.includes(search)
+      ) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${livro.nome || ''}</td>
+          <td>${livro.autor || ''}</td>
+          <td>${livro.genero || ''}</td>
+          <td>${livro.quantidade || ''}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+  } catch (e) {
+    console.error('Erro ao buscar livros:', e);
+  }
 }
 
-// Adicione o fechamento da função btnGerarRelatorio aqui
-});
-
+// Adicione o evento ao campo de busca
 const searchInput = document.querySelector('.search-box input');
 if (searchInput) {
   searchInput.addEventListener('input', filterLivros);
 }
-  // (Removido bloco de código inválido e fechamento de função desnecessário)
-</script>
 
+// Opcional: carregar todos os livros ao abrir a página
+document.addEventListener('DOMContentLoaded', filterLivros);
+
+const btn = document.getElementById('meuBotao');
+if (btn) {
+  btn.addEventListener('click', minhaFuncao);
+}
+
+// Função para filtrar relatórios na tabela
+function filterRelatorios() {
+  const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+  document.querySelectorAll('.relatorios-table tbody tr').forEach(tr => {
+    const texto = tr.textContent.toLowerCase();
+    tr.style.display = !search || texto.includes(search) ? '' : 'none';
+  });
+}
+
+const searchInputRelatorios = document.querySelector('.search-box input');
+if (searchInputRelatorios) {
+  searchInputRelatorios.addEventListener('input', filterRelatorios);
+}
+</script>
 </body>
 </html>
