@@ -343,8 +343,52 @@
     // Chame a função ao carregar a página
     document.addEventListener('DOMContentLoaded', buscarQuantidadeLivros);
 
-    // No HTML, adicione um elemento para mostrar o resultado:
-    // <span id=
+    // Função para buscar e filtrar livros no Firestore conforme o texto digitado
+    async function filterLivros() {
+      const search = document.querySelector('.search-box input').value.trim().toLowerCase();
+      const tbody = document.querySelector('.livros-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      try {
+        const snapshot = await db.collection('livros').get();
+        snapshot.forEach(doc => {
+          const livro = doc.data();
+          const nome = (livro.nome || '').toLowerCase();
+          const autor = (livro.autor || '').toLowerCase();
+          const genero = (livro.genero || '').toLowerCase();
+          const quantidade = (livro.quantidade || '').toString().toLowerCase();
+
+          if (
+            !search ||
+            nome.includes(search) ||
+            autor.includes(search) ||
+            genero.includes(search) ||
+            quantidade.includes(search)
+          ) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${livro.nome || ''}</td>
+              <td>${livro.autor || ''}</td>
+              <td>${livro.genero || ''}</td>
+              <td>${livro.quantidade || ''}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+        });
+      } catch (e) {
+        console.error('Erro ao buscar livros:', e);
+      }
+    }
+
+    // Adicione o evento ao campo de busca
+    const searchInput = document.querySelector('.search-box input');
+    if (searchInput) {
+      searchInput.addEventListener('input', filterLivros);
+    }
+
+    // Opcional: carregar todos os livros ao abrir a página
+    document.addEventListener('DOMContentLoaded', filterLivros);
   });
 </script>
 </body>
