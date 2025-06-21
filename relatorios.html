@@ -117,6 +117,7 @@
     <div class="report-section" id="reportResult">
       <p>Selecione o tipo de relatório e filtros desejados para visualizar e imprimir.</p>
     </div>
+    <span id="quantidadeLivros" style="display:none;"></span>
     </tbody>
     </table> -->
   </div>
@@ -326,9 +327,24 @@
       }
     });
 
-    // Removidas as funções de busca (filterLivros e filterRelatorios) e seus event listeners,
-    // pois a busca na sua implementação original operava em uma tabela fixa, não na gerada dinamicamente.
-    // Se precisar de uma busca no relatório gerado, será necessário reavaliar a abordagem.
+    // Exemplo para buscar a quantidade total de livros cadastrados no Firestore
+    async function buscarQuantidadeLivros() {
+      try {
+        const snapshot = await db.collection('livros').get();
+        const quantidade = snapshot.size; // Número total de documentos (livros)
+        console.log('Quantidade de livros:', quantidade);
+        // Exemplo: exibir na tela
+        document.getElementById('quantidadeLivros').textContent = quantidade;
+      } catch (e) {
+        console.error('Erro ao buscar quantidade de livros:', e);
+      }
+    }
+
+    // Chame a função ao carregar a página
+    document.addEventListener('DOMContentLoaded', buscarQuantidadeLivros);
+
+    // No HTML, adicione um elemento para mostrar o resultado:
+    // <span id=
   });
 </script>
 </body>
