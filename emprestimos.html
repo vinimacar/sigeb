@@ -1615,10 +1615,88 @@
     }
 
     function showLoansByStatus(status) {
-      // Implementar lógica para filtrar a tabela por status
-      showAlert('info', `Filtrando empréstimos por status: ${status}`);
-      // Esta função precisaria de uma lógica mais complexa para interagir com a tabela de empréstimos
-      // e recarregar os dados filtrados do Firestore.
+      const tbody = document.getElementById('loansTableBody');
+      tbody.innerHTML = '<tr><td colspan="6">Buscando...</td></tr>';
+      db.collection('emprestimos')
+        .where('status', '==', status)
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(async (snapshot) => {
+          tbody.innerHTML = '';
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+            return;
+          }
+          for (const doc of snapshot.docs) {
+            const data = doc.data();
+            let livros = '';
+            if (Array.isArray(data.books)) {
+              const titles = await Promise.all(
+                data.books.map(async (b) => {
+                  const bookDoc = await db.collection('livros').doc(b.bookId).get();
+                  const bookData = bookDoc.data();
+                  return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
+                })
+              );
+              livros = titles.join('<br>');
+            }
+            let userName = '';
+            try {
+              const userDoc = await db.collection('usuarios').doc(data.userId).get();
+              if (userDoc.exists) userName = userDoc.data().nome;
+              else userName = 'Usuário não encontrado';
+            } catch {
+              userName = 'Usuário não encontrado';
+            }
+            let statusClass = '';
+            if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
+            else if (data.status === 'ATRASADO') statusClass = 'status-atrasado';
+            else if (data.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
+
+            let actionBtns = `
+              <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
+                <i class="bx bx-edit"></i>
+              </button>
+            `;
+            if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
+              actionBtns += `
+                <button class="btn btn-sm btn-outline-info return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
+                  <i class="bx bx-check-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-success renew-button" title="Renovar" onclick="renewLoan('${doc.id}')">
+                  <i class="bx bx-refresh"></i>
+                </button>
+              `;
+            }
+            actionBtns += `
+              <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="deleteLoan('${doc.id}')">
+                <i class="bx bx-trash"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-primary" title="Imprimir Comprovante" onclick="openPrintLoanModal('${doc.id}')">
+                <i class="bx bx-printer"></i>
+              </button>
+            `;
+
+            tbody.innerHTML += `
+              <tr>
+                <td>${livros}</td>
+                <td>${userName}</td>
+                <td>${data.loanDate}</td>
+                <td>${data.returnDate}</td>
+                <td><span class="loan-status ${statusClass}">${data.status}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    ${actionBtns}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao buscar empréstimos:', error);
+          showAlert('danger', 'Erro ao buscar empréstimos.');
+        });
     }
 
     // Funções de impressão de comprovante
@@ -1646,6 +1724,11 @@
               }
             }
           }
+
+
+
+
+
 
           const receiptContent = `
             <p><strong>Registro:</strong> ${data.registroNumero}</p>
@@ -1919,10 +2002,10 @@ document.addEventListener('focusin', function(e) {
       break;
     }
     el = el.parentElement;
-  }
-});
-</script>
-<script>
+
+
+
+</script>});  }<script>
 // Garante que aria-hidden="true" seja removido de modais abertos
 function fixAriaHiddenOnOpenModals() {
   document.querySelectorAll('.modal').forEach(function(modal) {
