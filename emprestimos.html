@@ -470,7 +470,7 @@
         </div>
         <div class="pie-label">Emprestados</div>
       </div>
-      <div class="pie-btn shadow-lg" id="btnAtrasado" onclick="showLoansByStatus('ATRASADO')">
+      <div class="pie-btn shadow-lg" id="btnAtrasado" onclick="showOverdueLoans()">
         <div class="pie-chart pie-atrasado">
           <span id="countAtrasado"></span>
           <svg class="pie-svg" width="90" height="90">
@@ -1724,11 +1724,6 @@
               }
             }
           }
-
-
-
-
-
 
           const receiptContent = `
             <p><strong>Registro:</strong> ${data.registroNumero}</p>
