@@ -851,48 +851,6 @@
       // Certifique-se de declarar usuarioLogado no escopo global, antes de qualquer função que o utilize:
       let usuarioLogado = null;
 
-      // Exibe o usuário logado no topo da tela
-      async function mostrarUsuarioLogado() {
-        // Tenta recuperar do localStorage
-        if (!usuarioLogado) {
-          try {
-            const userStr = localStorage.getItem('usuarioLogado');
-            if (userStr) {
-              usuarioLogado = JSON.parse(userStr);
-            }
-          } catch {}
-        }
-        // Se não tiver no localStorage, pega do último login (prompt)
-        if (!usuarioLogado || !usuarioLogado.nome) {
-          // Pega do Firestore após login
-          let autenticado = false;
-          while (!autenticado) {
-            const username = prompt('Usuário (colaborador):');
-            const senha = prompt('Senha:');
-            if (!username || !senha) {
-              alert('Usuário e senha são obrigatórios.');
-              continue;
-            }
-            const user = await autenticarColaborador(username, senha);
-            if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-              usuarioLogado = user;
-              localStorage.setItem('usuarioLogado', JSON.stringify(user));
-              autenticado = true;
-            } else {
-              alert('Acesso negado! Apenas colaboradores cadastrados podem acessar.');
-            }
-          }
-        }
-        // Mostra na tela
-        if (usuarioLogado && usuarioLogado.nome) {
-          document.getElementById('usuario-logado').innerHTML =
-            `<i class='bx bxs-user'></i> Usuário logado: <span style="color:#4facfe">${usuarioLogado.nome}</span> (${usuarioLogado.funcao || ''})`;
-        }
-      }
-
-      // Chame ao carregar a página
-      document.addEventListener('DOMContentLoaded', mostrarUsuarioLogado);
-
       document.addEventListener('DOMContentLoaded', async function() {
         // Cria o usuário admin se não existir
         const adminSnapshot = await db.collection('usuarios')
@@ -1357,4 +1315,5 @@
   </script>
 </body>
 </html>
+
 
