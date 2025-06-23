@@ -760,6 +760,10 @@
         document.getElementById('addUserForm').reset();
         document.getElementById('usuarioId').value = '';
         document.getElementById('addUserForm').classList.remove('was-validated');
+        // Remove o foco de qualquer elemento dentro do modal ao fechar
+        if (document.activeElement && document.getElementById('addUserModal').contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
       });
 
       // Função para autenticar colaborador pelo username e senha (já existe no seu código)
@@ -1313,4 +1317,5 @@
   </script>
 </body>
 </html>
+
 
