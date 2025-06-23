@@ -810,7 +810,8 @@
       };
 
       try {
-        await db.collection('livros').add(livro);
+        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        await addDoc(collection(db, 'livros'), livro);
         alert('Livro cadastrado com sucesso!');
         form.reset();
         form.classList.remove('was-validated');
