@@ -111,10 +111,33 @@
     .save-button:hover {
       transform: translateY(-2px);
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .form-check-input:checked {
+    }    .form-check-input:checked {
       background-color: #4facfe;
       border-color: #4facfe;
+    }
+    .backup-info {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    .backup-info h6 {
+      color: #495057;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .backup-info ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .backup-warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      color: #856404;
     }
     @media (max-width: 768px) {
       .sidebar {
@@ -218,19 +241,68 @@
           </div>
         </div>
       </form>
-    </div>
-
-    <div class="settings-card">
+    </div>    <div class="settings-card">
       <h5>Backup e Restauração</h5>
-      <div class="mb-3">
-        <button class="save-button">
-          <i class='bx bx-download'></i>
-          Fazer Backup
-        </button>
+      
+      <div class="backup-info">
+        <h6><i class='bx bx-info-circle'></i> Informações sobre Backup</h6>
+        <ul>
+          <li><strong>Backup Completo:</strong> Exporta todos os dados do sistema (usuários, livros, empréstimos e escolas)</li>
+          <li><strong>Backups Específicos:</strong> Exporta apenas uma categoria de dados</li>
+          <li><strong>Formato:</strong> Arquivos JSON compatíveis com o sistema</li>
+          <li><strong>Restauração:</strong> Substitui todos os dados existentes pelos do backup</li>
+        </ul>
       </div>
+
+      <div class="mb-3">
+        <button class="save-button" id="btnBackup">
+          <i class='bx bx-download'></i>
+          Fazer Backup Completo
+        </button>
+        <small class="text-muted d-block mt-2">
+          Exporta todos os dados: usuários, livros, empréstimos e configurações
+        </small>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <button class="save-button w-100" id="btnBackupLivros" style="background: linear-gradient(90deg, #28a745, #20c997);">
+            <i class='bx bx-book'></i>
+            Backup Livros
+          </button>
+        </div>
+        <div class="col-md-4 mb-3">
+          <button class="save-button w-100" id="btnBackupUsuarios" style="background: linear-gradient(90deg, #fd7e14, #e0a800);">
+            <i class='bx bx-user'></i>
+            Backup Usuários
+          </button>
+        </div>
+        <div class="col-md-4 mb-3">
+          <button class="save-button w-100" id="btnBackupEmprestimos" style="background: linear-gradient(90deg, #6f42c1, #d63384);">
+            <i class='bx bx-bookmark'></i>
+            Backup Empréstimos
+          </button>
+        </div>
+      </div>
+      
+      <hr class="my-4">
+      
+      <div class="backup-warning">
+        <h6><i class='bx bx-error'></i> Atenção - Restauração de Backup</h6>
+        <p class="mb-0">A restauração de backup irá <strong>sobrescrever todos os dados existentes</strong>. 
+        Certifique-se de fazer um backup atual antes de restaurar dados antigos.</p>
+      </div>
+      
       <div class="mb-3">
         <label class="form-label">Restaurar Backup</label>
-        <input type="file" class="form-control">
+        <input type="file" class="form-control" id="inputRestoreBackup" accept=".json">
+        <small class="text-muted">Selecione um arquivo de backup em formato JSON</small>
+      </div>
+      <div class="mb-3">
+        <button class="save-button" id="btnRestoreBackup" style="background: linear-gradient(90deg, #dc3545, #fd7e14);">
+          <i class='bx bx-upload'></i>
+          Restaurar Backup
+        </button>
       </div>
     </div>
 
@@ -421,13 +493,228 @@
       } catch {
         alert('Erro ao buscar o CEP.');
       }
-    });
-
-    // Mostra o formulário ao clicar no botão "Cadastro da Escola"
+    });    // Mostra o formulário ao clicar no botão "Cadastro da Escola"
     document.getElementById('abrirCadastroEscola').onclick = function() {
       document.getElementById('schoolForm').style.display = 'block';
       this.style.display = 'none';
     };
+
+    // Funções de Backup
+    async function exportarDados(colecao, nomeArquivo) {
+      try {
+        const snapshot = await db.collection(colecao).get();
+        const dados = [];
+        
+        snapshot.forEach(doc => {
+          dados.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        // Criar arquivo JSON para download
+        const dataStr = JSON.stringify(dados, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = nomeArquivo;
+        link.click();
+        
+        alert(`Backup de ${colecao} realizado com sucesso! ${dados.length} registros exportados.`);
+      } catch (error) {
+        console.error(`Erro ao fazer backup de ${colecao}:`, error);
+        alert(`Erro ao fazer backup de ${colecao}: ${error.message}`);
+      }
+    }    async function fazerBackupCompleto() {
+      const btnBackup = document.getElementById('btnBackup');
+      const textoOriginal = btnBackup.innerHTML;
+      
+      try {
+        // Desabilitar botão e mostrar progresso
+        btnBackup.disabled = true;
+        btnBackup.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Fazendo backup...';
+        
+        // Buscar dados de todas as coleções
+        btnBackup.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Coletando dados...';
+        const [usuariosSnapshot, livrosSnapshot, emprestimosSnapshot, escolasSnapshot] = await Promise.all([
+          db.collection('usuarios').get(),
+          db.collection('livros').get(),
+          db.collection('emprestimos').get(),
+          db.collection('escolas').get()
+        ]);
+
+        btnBackup.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processando dados...';
+
+        const backupData = {
+          timestamp: new Date().toISOString(),
+          versao: '1.0',
+          usuario_exportacao: 'SIGEB Admin',
+          sistema: 'SIGEB - Sistema de Gerenciamento de Biblioteca',
+          estatisticas: {
+            total_usuarios: usuariosSnapshot.size,
+            total_livros: livrosSnapshot.size,
+            total_emprestimos: emprestimosSnapshot.size,
+            total_escolas: escolasSnapshot.size,
+            data_backup: new Date().toLocaleString('pt-BR')
+          },
+          dados: {
+            usuarios: [],
+            livros: [],
+            emprestimos: [],
+            escolas: []
+          }
+        };
+
+        // Exportar usuários
+        usuariosSnapshot.forEach(doc => {
+          backupData.dados.usuarios.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        // Exportar livros
+        livrosSnapshot.forEach(doc => {
+          backupData.dados.livros.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        // Exportar empréstimos
+        emprestimosSnapshot.forEach(doc => {
+          backupData.dados.emprestimos.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        // Exportar escolas
+        escolasSnapshot.forEach(doc => {
+          backupData.dados.escolas.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        btnBackup.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Gerando arquivo...';
+
+        // Criar arquivo para download
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const agora = new Date();
+        const timestamp = agora.toISOString().slice(0, 19).replace(/:/g, '-');
+        const nomeArquivo = `SIGEB_Backup_Completo_${timestamp}.json`;
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = nomeArquivo;
+        link.click();
+        
+        // Calcular tamanho do arquivo
+        const tamanhoKB = Math.round(dataBlob.size / 1024);
+        
+        alert(`✅ Backup completo realizado com sucesso!\n\n📊 Estatísticas:\n• Usuários: ${backupData.estatisticas.total_usuarios}\n• Livros: ${backupData.estatisticas.total_livros}\n• Empréstimos: ${backupData.estatisticas.total_emprestimos}\n• Escolas: ${backupData.estatisticas.total_escolas}\n\n📁 Arquivo: ${nomeArquivo}\n📐 Tamanho: ${tamanhoKB} KB\n🕒 Data: ${backupData.estatisticas.data_backup}`);
+        
+      } catch (error) {
+        console.error('Erro ao fazer backup completo:', error);
+        alert(`❌ Erro ao fazer backup completo: ${error.message}`);
+      } finally {
+        // Restaurar botão
+        btnBackup.disabled = false;
+        btnBackup.innerHTML = textoOriginal;
+      }
+    }
+
+    async function restaurarBackup() {
+      const fileInput = document.getElementById('inputRestoreBackup');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert('Por favor, selecione um arquivo de backup.');
+        return;
+      }
+
+      if (!confirm('ATENÇÃO: A restauração irá sobrescrever todos os dados existentes. Deseja continuar?')) {
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const backupData = JSON.parse(text);
+        
+        // Validar estrutura do backup
+        if (!backupData.dados || !backupData.dados.usuarios || !backupData.dados.livros || !backupData.dados.emprestimos) {
+          throw new Error('Arquivo de backup inválido ou corrompido.');
+        }
+
+        let totalRestaurado = 0;
+
+        // Restaurar usuários
+        for (const usuario of backupData.dados.usuarios) {
+          const { id, ...data } = usuario;
+          await db.collection('usuarios').doc(id).set(data);
+          totalRestaurado++;
+        }
+
+        // Restaurar livros
+        for (const livro of backupData.dados.livros) {
+          const { id, ...data } = livro;
+          await db.collection('livros').doc(id).set(data);
+          totalRestaurado++;
+        }
+
+        // Restaurar empréstimos
+        for (const emprestimo of backupData.dados.emprestimos) {
+          const { id, ...data } = emprestimo;
+          await db.collection('emprestimos').doc(id).set(data);
+          totalRestaurado++;
+        }
+
+        // Restaurar escolas (se existir)
+        if (backupData.dados.escolas) {
+          for (const escola of backupData.dados.escolas) {
+            const { id, ...data } = escola;
+            await db.collection('escolas').doc(id).set(data);
+            totalRestaurado++;
+          }
+        }
+
+        alert(`Backup restaurado com sucesso!\n\nItens restaurados: ${totalRestaurado}\nData do backup: ${new Date(backupData.timestamp).toLocaleString('pt-BR')}`);
+        
+        // Limpar o input
+        fileInput.value = '';
+        
+      } catch (error) {
+        console.error('Erro ao restaurar backup:', error);
+        alert(`Erro ao restaurar backup: ${error.message}`);
+      }
+    }
+
+    // Event listeners para os botões de backup
+    document.getElementById('btnBackup').addEventListener('click', fazerBackupCompleto);
+    
+    document.getElementById('btnBackupLivros').addEventListener('click', () => {
+      const agora = new Date();
+      const timestamp = agora.toISOString().slice(0, 19).replace(/:/g, '-');
+      exportarDados('livros', `SIGEB_Backup_Livros_${timestamp}.json`);
+    });
+    
+    document.getElementById('btnBackupUsuarios').addEventListener('click', () => {
+      const agora = new Date();
+      const timestamp = agora.toISOString().slice(0, 19).replace(/:/g, '-');
+      exportarDados('usuarios', `SIGEB_Backup_Usuarios_${timestamp}.json`);
+    });
+    
+    document.getElementById('btnBackupEmprestimos').addEventListener('click', () => {
+      const agora = new Date();
+      const timestamp = agora.toISOString().slice(0, 19).replace(/:/g, '-');
+      exportarDados('emprestimos', `SIGEB_Backup_Emprestimos_${timestamp}.json`);
+    });
+    
+    document.getElementById('btnRestoreBackup').addEventListener('click', restaurarBackup);
   </script>
 </body>
 </html>
