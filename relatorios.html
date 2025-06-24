@@ -109,8 +109,32 @@
         <div class="col-md-3">
           <button class="btn btn-gradient w-100" id="btnGerarRelatorio"><i class='bx bx-printer'></i> Gerar Relatório</button>
         </div>
+      </div>
+      <!-- Segunda linha para filtros de data dos empréstimos -->
+      <div class="row g-3 align-items-end mt-2" id="emprestimosDateFilters" style="display: none;">
+        <div class="col-md-3" id="emprestimosDataInicioFilter">
+          <label class="form-label" for="dataInicio">Data Início</label>
+          <input type="date" class="form-control" id="dataInicio" name="dataInicio">
+          <small class="text-muted">Empréstimos a partir desta data</small>
+        </div>
+        <div class="col-md-3" id="emprestimosDataFimFilter">
+          <label class="form-label" for="dataFim">Data Fim</label>
+          <input type="date" class="form-control" id="dataFim" name="dataFim">
+          <small class="text-muted">Empréstimos até esta data</small>
+        </div>
         <div class="col-md-3">
           <button class="btn btn-secondary w-100" id="btnBaixarPDF"><i class='bx bx-download'></i> Baixar PDF</button>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-outline-secondary w-100" onclick="document.getElementById('dataInicio').value=''; document.getElementById('dataFim').value='';">
+            <i class='bx bx-refresh'></i> Limpar Datas
+          </button>
+        </div>
+      </div>
+      <!-- Botão PDF para outros relatórios -->
+      <div class="row g-3 align-items-end mt-2" id="otherReportsActions">
+        <div class="col-md-3">
+          <button class="btn btn-secondary w-100" id="btnBaixarPDF2"><i class='bx bx-download'></i> Baixar PDF</button>
         </div>
       </div>
     </div>
@@ -271,6 +295,8 @@
 
       if (reportType.value === 'emprestimos') {
         const situacaoFiltro = document.getElementById('emprestimosSituacao').value;
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
         let query = db.collection('emprestimos');
 
         try {
@@ -289,8 +315,54 @@
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             
+            // Converter datas do filtro para objetos Date para comparação
+            let dataInicioObj = null;
+            let dataFimObj = null;
+            
+            if (dataInicio) {
+              dataInicioObj = new Date(dataInicio);
+              dataInicioObj.setHours(0, 0, 0, 0);
+            }
+            
+            if (dataFim) {
+              dataFimObj = new Date(dataFim);
+              dataFimObj.setHours(23, 59, 59, 999);
+            }
+            
+            let emprestimosExibidos = 0;
+            
             for (const doc of snapshot.docs) {
               const e = doc.data();
+              
+              // Filtro por data
+              let passaFiltroPorData = true;
+              if (dataInicioObj || dataFimObj) {
+                // Converter data do empréstimo para Date
+                let dataEmprestimoObj = null;
+                if (e.loanDate) {
+                  const dateParts = e.loanDate.split('/');
+                  if (dateParts.length === 3) {
+                    dataEmprestimoObj = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                    dataEmprestimoObj.setHours(0, 0, 0, 0);
+                  }
+                }
+                
+                if (dataEmprestimoObj) {
+                  if (dataInicioObj && dataEmprestimoObj < dataInicioObj) {
+                    passaFiltroPorData = false;
+                  }
+                  if (dataFimObj && dataEmprestimoObj > dataFimObj) {
+                    passaFiltroPorData = false;
+                  }
+                } else {
+                  // Se não conseguir converter a data, não exibe se há filtro de data
+                  if (dataInicioObj || dataFimObj) {
+                    passaFiltroPorData = false;
+                  }
+                }
+              }
+              
+              if (!passaFiltroPorData) continue;
               
               // Buscar nome do usuário
               let nomeUsuario = 'Usuário não encontrado';
@@ -348,6 +420,8 @@
                 continue; // Pula este empréstimo
               }
 
+              emprestimosExibidos++;
+
               html += `
                 <tr>
                   <td>${nomeUsuario}</td>
@@ -358,15 +432,22 @@
                 </tr>
               `;
             }
-            html += '</tbody></table>';
             
-            // Adiciona estatísticas resumidas
-            html += `
-              <div class="mt-3">
-                <h5>Resumo:</h5>
-                <p><strong>Total de empréstimos:</strong> ${snapshot.size}</p>
-              </div>
-            `;
+            if (emprestimosExibidos === 0) {
+              html = '<p>Nenhum empréstimo encontrado com os filtros selecionados.</p>';
+            } else {
+              html += '</tbody></table>';
+              
+              // Adiciona estatísticas resumidas
+              html += `
+                <div class="mt-3">
+                  <h5>Resumo:</h5>
+                  <p><strong>Total de empréstimos encontrados:</strong> ${emprestimosExibidos}</p>
+                  <p><strong>Total de empréstimos no sistema:</strong> ${snapshot.size}</p>
+                  ${dataInicio || dataFim ? `<p><strong>Período:</strong> ${dataInicio ? new Date(dataInicio).toLocaleDateString('pt-BR') : 'Início'} até ${dataFim ? new Date(dataFim).toLocaleDateString('pt-BR') : 'Fim'}</p>` : ''}
+                </div>
+              `;
+            }
           }
         } catch (error) {
           html = `<p class="text-danger">Erro ao carregar empréstimos: ${error.message}</p>`;
@@ -381,9 +462,22 @@
       document.getElementById('livrosFilters').classList.toggle('d-none', this.value !== 'livros');
       document.getElementById('usuariosFilters').classList.toggle('d-none', this.value !== 'usuarios');
       document.getElementById('emprestimosFilters').classList.toggle('d-none', this.value !== 'emprestimos');
+      
+      // Controla a exibição dos filtros de data dos empréstimos
+      const emprestimosDateFilters = document.getElementById('emprestimosDateFilters');
+      const otherReportsActions = document.getElementById('otherReportsActions');
+      
+      if (this.value === 'emprestimos') {
+        emprestimosDateFilters.style.display = 'flex';
+        otherReportsActions.style.display = 'none';
+      } else {
+        emprestimosDateFilters.style.display = 'none';
+        otherReportsActions.style.display = 'flex';
+      }
     });
 
-    btnBaixarPDF.addEventListener('click', function () {
+    // Função para baixar PDF (duplicada para os dois botões)
+    function baixarPDF() {
       const reportType = document.getElementById('reportType').value;
       const reportResult = document.getElementById('reportResult');
       const doc = new jspdf.jsPDF();
@@ -392,6 +486,21 @@
       if (reportType === 'livros') titulo = 'Relatório de Livros';
       if (reportType === 'usuarios') titulo = 'Relatório de Usuários';
       if (reportType === 'emprestimos') titulo = 'Relatório de Empréstimos';
+
+      // Adiciona informações de filtro ao título
+      if (reportType === 'emprestimos') {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        const situacao = document.getElementById('emprestimosSituacao').value;
+        
+        if (dataInicio || dataFim || situacao) {
+          let filtros = [];
+          if (situacao) filtros.push(`Situação: ${situacao}`);
+          if (dataInicio) filtros.push(`De: ${new Date(dataInicio).toLocaleDateString('pt-BR')}`);
+          if (dataFim) filtros.push(`Até: ${new Date(dataFim).toLocaleDateString('pt-BR')}`);
+          titulo += ` (${filtros.join(', ')})`;
+        }
+      }
 
       doc.text(titulo, 14, 15);
 
@@ -403,7 +512,10 @@
         doc.text('Nenhum dado para exportar.', 14, 30);
         doc.save('relatorio.pdf');
       }
-    });
+    }
+
+    btnBaixarPDF.addEventListener('click', baixarPDF);
+    document.getElementById('btnBaixarPDF2').addEventListener('click', baixarPDF);
 
     // Exemplo para buscar a quantidade total de livros cadastrados no Firestore
     async function buscarQuantidadeLivros() {
@@ -424,4 +536,3 @@
 </script>
 </body>
 </html>
-
