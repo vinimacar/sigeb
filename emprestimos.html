@@ -1292,23 +1292,21 @@
           returnDate: returnDate,
           status: 'EMPRESTADO',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // Atualiza a quantidade de livros no estoque (quantidade e quantidadeDisponivel)
+        });        // Atualiza a quantidade de livros no estoque usando operações atômicas
+        const updatePromises = [];
         for (const book of books) {
           const bookDocRef = db.collection('livros').doc(book.bookId);
-          const bookDoc = await bookDocRef.get();
-          if (bookDoc.exists) {
-            const data = bookDoc.data();
-            const novaQuantidade = (data.quantidade ?? 0) - book.quantity;
-            const novaDisponivel = (data.quantidadeDisponivel ?? data.quantidade ?? 0) - book.quantity;
-            await bookDocRef.update({
-              quantidade: novaQuantidade < 0 ? 0 : novaQuantidade,
-              quantidadeDisponivel: novaDisponivel < 0 ? 0 : novaDisponivel,
-              emprestados: (data.emprestados ?? 0) + book.quantity
-            });
-          }
+          updatePromises.push(
+            bookDocRef.update({
+              quantidade: firebase.firestore.FieldValue.increment(-book.quantity),
+              quantidadeDisponivel: firebase.firestore.FieldValue.increment(-book.quantity),
+              emprestados: firebase.firestore.FieldValue.increment(book.quantity)
+            })
+          );
         }
+        
+        // Executa todas as atualizações de estoque em paralelo
+        await Promise.all(updatePromises);
 
         // Fecha o modal e mostra mensagem de sucesso
         showAlert('success', 'Empréstimo registrado com sucesso!');
@@ -1396,15 +1394,15 @@
           status: 'DEVOLVIDO',
           returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
           actualReturnDate: new Date().toLocaleDateString('pt-BR')
-        });
-
-        // Retorna a quantidade de livros ao estoque
+        });        // Retorna a quantidade de livros ao estoque
         const updatePromises = [];
         for (const book of loanData.books) {
           const bookDocRef = db.collection('livros').doc(book.bookId);
           updatePromises.push(
             bookDocRef.update({
-              quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity)
+              quantidade: firebase.firestore.FieldValue.increment(book.quantity),
+              quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity),
+              emprestados: firebase.firestore.FieldValue.increment(-book.quantity)
             })
           );
         }
@@ -1459,12 +1457,13 @@
       try {
         // Opcional: Reverter quantidade de livros se o empréstimo não foi devolvido
         const loanDoc = await db.collection('emprestimos').doc(loanId).get();
-        const loanData = loanDoc.data();
-        if (loanData.status !== 'DEVOLVIDO') {
+        const loanData = loanDoc.data();        if (loanData.status !== 'DEVOLVIDO') {
           for (const book of loanData.books) {
             const bookDocRef = db.collection('livros').doc(book.bookId);
             await bookDocRef.update({
-              quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity)
+              quantidade: firebase.firestore.FieldValue.increment(book.quantity),
+              quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity),
+              emprestados: firebase.firestore.FieldValue.increment(-book.quantity)
             });
           }
         }
