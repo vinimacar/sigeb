@@ -1612,14 +1612,11 @@
       const strokeDashoffset = circumference * (1 - percentage);
       document.querySelector(`.pie-fg-${status}`).style.strokeDasharray = `${circumference} ${circumference}`;
       document.querySelector(`.pie-fg-${status}`).style.strokeDashoffset = strokeDashoffset;
-    }
-
-    function showLoansByStatus(status) {
+    }    function showLoansByStatus(status) {
       const tbody = document.getElementById('loansTableBody');
       tbody.innerHTML = '<tr><td colspan="6">Buscando...</td></tr>';
       db.collection('emprestimos')
         .where('status', '==', status)
-        .orderBy('createdAt', 'desc')
         .get()
         .then(async (snapshot) => {
           tbody.innerHTML = '';
