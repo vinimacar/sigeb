@@ -1573,14 +1573,20 @@
         let devolvidoCount = 0;
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        for (const doc of snapshot.docs) {
+        today.setHours(0, 0, 0, 0);        for (const doc of snapshot.docs) {
           const data = doc.data();
           if (data.status === 'EMPRESTADO') {
-            const returnDate = new Date(data.returnDate);
-            returnDate.setHours(0, 0, 0, 0);
-            if (returnDate < today) {
+            // Converte a data de devolução do formato DD/MM/AAAA para Date
+            let returnDate;
+            if (data.returnDate) {
+              const dateParts = data.returnDate.split('/');
+              if (dateParts.length === 3) {
+                returnDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                returnDate.setHours(0, 0, 0, 0);
+              }
+            }
+            
+            if (returnDate && returnDate < today) {
               atrasadoCount++;
             } else {
               emprestadoCount++;
@@ -1615,85 +1621,190 @@
     }    function showLoansByStatus(status) {
       const tbody = document.getElementById('loansTableBody');
       tbody.innerHTML = '<tr><td colspan="6">Buscando...</td></tr>';
-      db.collection('emprestimos')
-        .where('status', '==', status)
-        .get()
-        .then(async (snapshot) => {
-          tbody.innerHTML = '';
-          if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
-            return;
-          }
-          for (const doc of snapshot.docs) {
-            const data = doc.data();
-            let livros = '';
-            if (Array.isArray(data.books)) {
-              const titles = await Promise.all(
-                data.books.map(async (b) => {
-                  const bookDoc = await db.collection('livros').doc(b.bookId).get();
-                  const bookData = bookDoc.data();
-                  return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
-                })
-              );
-              livros = titles.join('<br>');
+      
+      // Para atrasos, busca empréstimos ativos e verifica as datas
+      if (status === 'ATRASADO') {
+        db.collection('emprestimos')
+          .where('status', 'in', ['EMPRESTADO', 'ATRASADO'])
+          .get()
+          .then(async (snapshot) => {
+            tbody.innerHTML = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas a data
+            
+            const overdueLoans = [];
+            
+            for (const doc of snapshot.docs) {
+              const data = doc.data();
+              
+              // Converte a data de devolução para Date
+              let returnDate;
+              if (data.returnDate) {
+                // Assume formato DD/MM/AAAA
+                const dateParts = data.returnDate.split('/');
+                if (dateParts.length === 3) {
+                  returnDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                }
+              }
+              
+              // Verifica se está atrasado (data de devolução menor que hoje)
+              if (returnDate && returnDate < today) {
+                overdueLoans.push({ doc, data });
+              }
             }
-            let userName = '';
-            try {
-              const userDoc = await db.collection('usuarios').doc(data.userId).get();
-              if (userDoc.exists) userName = userDoc.data().nome;
-              else userName = 'Usuário não encontrado';
-            } catch {
-              userName = 'Usuário não encontrado';
+            
+            if (overdueLoans.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo atrasado encontrado.</td></tr>';
+              return;
             }
-            let statusClass = '';
-            if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
-            else if (data.status === 'ATRASADO') statusClass = 'status-atrasado';
-            else if (data.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
-
-            let actionBtns = `
-              <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
-                <i class="bx bx-edit"></i>
-              </button>
-            `;
-            if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
-              actionBtns += `
+            
+            for (const { doc, data } of overdueLoans) {
+              let livros = '';
+              if (Array.isArray(data.books)) {
+                const titles = await Promise.all(
+                  data.books.map(async (b) => {
+                    const bookDoc = await db.collection('livros').doc(b.bookId).get();
+                    const bookData = bookDoc.data();
+                    return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
+                  })
+                );
+                livros = titles.join('<br>');
+              }
+              
+              let userName = '';
+              try {
+                const userDoc = await db.collection('usuarios').doc(data.userId).get();
+                if (userDoc.exists) userName = userDoc.data().nome;
+                else userName = 'Usuário não encontrado';
+              } catch {
+                userName = 'Usuário não encontrado';
+              }
+              
+              // Calcula dias de atraso
+              const returnDate = new Date(data.returnDate.split('/').reverse().join('-'));
+              const diffTime = Math.abs(today - returnDate);
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
+              let actionBtns = `
+                <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
+                  <i class="bx bx-edit"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-info return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
                   <i class="bx bx-check-circle"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-success renew-button" title="Renovar" onclick="renewLoan('${doc.id}')">
                   <i class="bx bx-refresh"></i>
                 </button>
+                <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="deleteLoan('${doc.id}')">
+                  <i class="bx bx-trash"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" title="Imprimir Comprovante" onclick="openPrintLoanModal('${doc.id}')">
+                  <i class="bx bx-printer"></i>
+                </button>
+              `;
+
+              tbody.innerHTML += `
+                <tr style="background-color: #ffe6e6;">
+                  <td>${livros}</td>
+                  <td>${userName}</td>
+                  <td>${data.loanDate}</td>
+                  <td>${data.returnDate}</td>
+                  <td><span class="loan-status status-atrasado">ATRASADO (${diffDays} dias)</span></td>
+                  <td>
+                    <div class="action-buttons">
+                      ${actionBtns}
+                    </div>
+                  </td>
+                </tr>
               `;
             }
-            actionBtns += `
-              <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="deleteLoan('${doc.id}')">
-                <i class="bx bx-trash"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-primary" title="Imprimir Comprovante" onclick="openPrintLoanModal('${doc.id}')">
-                <i class="bx bx-printer"></i>
-              </button>
-            `;
+          })
+          .catch((error) => {
+            console.error('Erro ao buscar empréstimos atrasados:', error);
+            showAlert('danger', 'Erro ao buscar empréstimos atrasados.');
+          });
+      } else {
+        // Para outros status, mantém a lógica original
+        db.collection('emprestimos')
+          .where('status', '==', status)
+          .get()
+          .then(async (snapshot) => {
+            tbody.innerHTML = '';
+            if (snapshot.empty) {
+              tbody.innerHTML = '<tr><td colspan="6">Nenhum empréstimo encontrado.</td></tr>';
+              return;
+            }
+            for (const doc of snapshot.docs) {
+              const data = doc.data();
+              let livros = '';
+              if (Array.isArray(data.books)) {
+                const titles = await Promise.all(
+                  data.books.map(async (b) => {
+                    const bookDoc = await db.collection('livros').doc(b.bookId).get();
+                    const bookData = bookDoc.data();
+                    return bookData ? `${bookData.titulo} (Qtd: ${b.quantity})` : b.bookId;
+                  })
+                );
+                livros = titles.join('<br>');
+              }
+              let userName = '';
+              try {
+                const userDoc = await db.collection('usuarios').doc(data.userId).get();
+                if (userDoc.exists) userName = userDoc.data().nome;
+                else userName = 'Usuário não encontrado';
+              } catch {
+                userName = 'Usuário não encontrado';
+              }
+              let statusClass = '';
+              if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
+              else if (data.status === 'ATRASADO') statusClass = 'status-atrasado';
+              else if (data.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
 
-            tbody.innerHTML += `
-              <tr>
-                <td>${livros}</td>
-                <td>${userName}</td>
-                <td>${data.loanDate}</td>
-                <td>${data.returnDate}</td>
-                <td><span class="loan-status ${statusClass}">${data.status}</span></td>
-                <td>
-                  <div class="action-buttons">
-                    ${actionBtns}
-                  </div>
-                </td>
-              </tr>
-            `;
-          }
-        })
-        .catch((error) => {
-          console.error('Erro ao buscar empréstimos:', error);
-          showAlert('danger', 'Erro ao buscar empréstimos.');
-        });
+              let actionBtns = `
+                <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
+                  <i class="bx bx-edit"></i>
+                </button>
+              `;
+              if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
+                actionBtns += `
+                  <button class="btn btn-sm btn-outline-info return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
+                    <i class="bx bx-check-circle"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success renew-button" title="Renovar" onclick="renewLoan('${doc.id}')">
+                    <i class="bx bx-refresh"></i>
+                  </button>
+                `;
+              }
+              actionBtns += `
+                <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="deleteLoan('${doc.id}')">
+                  <i class="bx bx-trash"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" title="Imprimir Comprovante" onclick="openPrintLoanModal('${doc.id}')">
+                  <i class="bx bx-printer"></i>
+                </button>
+              `;
+
+              tbody.innerHTML += `
+                <tr>
+                  <td>${livros}</td>
+                  <td>${userName}</td>
+                  <td>${data.loanDate}</td>
+                  <td>${data.returnDate}</td>
+                  <td><span class="loan-status ${statusClass}">${data.status}</span></td>
+                  <td>
+                    <div class="action-buttons">
+                      ${actionBtns}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }
+          })
+          .catch((error) => {
+            console.error('Erro ao buscar empréstimos:', error);
+            showAlert('danger', 'Erro ao buscar empréstimos.');
+          });
+      }
     }
 
     // Funções de impressão de comprovante
@@ -2030,3 +2141,4 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
