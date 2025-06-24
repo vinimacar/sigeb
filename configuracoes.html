@@ -252,15 +252,13 @@
           <li><strong>Formato:</strong> Arquivos JSON compatíveis com o sistema</li>
           <li><strong>Restauração:</strong> Substitui todos os dados existentes pelos do backup</li>
         </ul>
-      </div>
-
-      <div class="mb-3">
-        <button class="save-button" id="btnBackup">
+      </div>      <div class="mb-3">
+        <button class="save-button" id="btnBackup" style="background: linear-gradient(90deg, #dc3545, #fd7e14);">
           <i class='bx bx-download'></i>
-          Fazer Backup Completo
+          Backup Completo + Apagar Dados
         </button>
         <small class="text-muted d-block mt-2">
-          Exporta todos os dados: usuários, livros, empréstimos e configurações
+          ⚠️ <strong>ATENÇÃO:</strong> Exporta todos os dados e <span style="color: #dc3545; font-weight: bold;">APAGA TUDO</span> do Firestore
         </small>
       </div>
       
@@ -530,6 +528,16 @@
       const btnBackup = document.getElementById('btnBackup');
       const textoOriginal = btnBackup.innerHTML;
       
+      // Confirmar se o usuário deseja apagar os dados após o backup
+      if (!confirm('ATENÇÃO: Este backup irá APAGAR TODOS OS DADOS do Firestore após a exportação!\n\nTodos os dados (usuários, livros, empréstimos e escolas) serão permanentemente removidos do sistema.\n\nDeseja continuar?')) {
+        return;
+      }
+
+      // Segunda confirmação para ter certeza
+      if (!confirm('⚠️ CONFIRMAÇÃO FINAL ⚠️\n\nVocê tem CERTEZA de que deseja apagar todos os dados do sistema após o backup?\n\nEsta ação é IRREVERSÍVEL!\n\nClique OK apenas se tiver ABSOLUTA CERTEZA.')) {
+        return;
+      }
+      
       try {
         // Desabilitar botão e mostrar progresso
         btnBackup.disabled = true;
@@ -612,11 +620,58 @@
         link.href = URL.createObjectURL(dataBlob);
         link.download = nomeArquivo;
         link.click();
-        
-        // Calcular tamanho do arquivo
+          // Calcular tamanho do arquivo
         const tamanhoKB = Math.round(dataBlob.size / 1024);
         
-        alert(`✅ Backup completo realizado com sucesso!\n\n📊 Estatísticas:\n• Usuários: ${backupData.estatisticas.total_usuarios}\n• Livros: ${backupData.estatisticas.total_livros}\n• Empréstimos: ${backupData.estatisticas.total_emprestimos}\n• Escolas: ${backupData.estatisticas.total_escolas}\n\n📁 Arquivo: ${nomeArquivo}\n📐 Tamanho: ${tamanhoKB} KB\n🕒 Data: ${backupData.estatisticas.data_backup}`);
+        // Aguardar um momento para garantir que o download foi iniciado
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Confirmar se deve apagar os dados após o backup
+        const confirmarApagar = confirm(`✅ Backup completo realizado com sucesso!\n\n📊 Estatísticas:\n• Usuários: ${backupData.estatisticas.total_usuarios}\n• Livros: ${backupData.estatisticas.total_livros}\n• Empréstimos: ${backupData.estatisticas.total_emprestimos}\n• Escolas: ${backupData.estatisticas.total_escolas}\n\n📁 Arquivo: ${nomeArquivo}\n📐 Tamanho: ${tamanhoKB} KB\n🕒 Data: ${backupData.estatisticas.data_backup}\n\n⚠️ ATENÇÃO: Deseja APAGAR todos os dados do Firestore agora?\n(Esta ação não pode ser desfeita)`);
+        
+        if (!confirmarApagar) {
+          alert('✅ Backup salvo com sucesso!\n\nOs dados do Firestore foram mantidos.');
+          return;
+        }
+        
+        // Confirmar novamente para segurança
+        const confirmarDefinitivo = confirm('🚨 CONFIRMAÇÃO FINAL 🚨\n\nVocê está prestes a APAGAR TODOS OS DADOS do sistema:\n• Todos os usuários\n• Todos os livros\n• Todos os empréstimos\n• Todas as escolas\n\nEsta ação é IRREVERSÍVEL!\n\nTem certeza absoluta que deseja continuar?');
+        
+        if (!confirmarDefinitivo) {
+          alert('✅ Backup salvo com sucesso!\n\nOs dados do Firestore foram mantidos.');
+          return;
+        }
+        
+        // APAGAR TODOS OS DADOS DO FIRESTORE
+        btnBackup.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Apagando dados do Firestore...';
+        
+        let totalApagado = 0;
+        
+        // Apagar usuários
+        for (const doc of usuariosSnapshot.docs) {
+          await doc.ref.delete();
+          totalApagado++;
+        }
+        
+        // Apagar livros
+        for (const doc of livrosSnapshot.docs) {
+          await doc.ref.delete();
+          totalApagado++;
+        }
+        
+        // Apagar empréstimos
+        for (const doc of emprestimosSnapshot.docs) {
+          await doc.ref.delete();
+          totalApagado++;
+        }
+        
+        // Apagar escolas
+        for (const doc of escolasSnapshot.docs) {
+          await doc.ref.delete();
+          totalApagado++;
+        }
+        
+        alert(`✅ Backup completo realizado com sucesso!\n🗑️ Todos os dados foram APAGADOS do Firestore!\n\n📊 Estatísticas do Backup:\n• Usuários: ${backupData.estatisticas.total_usuarios}\n• Livros: ${backupData.estatisticas.total_livros}\n• Empréstimos: ${backupData.estatisticas.total_emprestimos}\n• Escolas: ${backupData.estatisticas.total_escolas}\n\n🗑️ Total de registros apagados: ${totalApagado}\n\n📁 Arquivo: ${nomeArquivo}\n📐 Tamanho: ${tamanhoKB} KB\n🕒 Data: ${backupData.estatisticas.data_backup}\n\n⚠️ IMPORTANTE: O sistema agora está vazio. Use a função "Restaurar Backup" para recuperar os dados quando necessário.`);
         
       } catch (error) {
         console.error('Erro ao fazer backup completo:', error);
