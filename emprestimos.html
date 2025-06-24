@@ -1373,33 +1373,55 @@
         console.error('Erro ao atualizar empréstimo:', error);
         showAlert('danger', 'Erro ao atualizar empréstimo.');
       }
-    });
-
-    async function returnLoan(loanId) {
+    });    async function returnLoan(loanId) {
       if (!confirm('Tem certeza que deseja registrar a devolução deste empréstimo?')) return;
       try {
+        // Busca os dados do empréstimo
         const loanDoc = await db.collection('emprestimos').doc(loanId).get();
+        if (!loanDoc.exists) {
+          showAlert('danger', 'Empréstimo não encontrado.');
+          return;
+        }
+        
         const loanData = loanDoc.data();
+        
+        // Verifica se o empréstimo já foi devolvido
+        if (loanData.status === 'DEVOLVIDO') {
+          showAlert('warning', 'Este empréstimo já foi devolvido.');
+          return;
+        }
 
         // Atualiza o status do empréstimo
         await db.collection('emprestimos').doc(loanId).update({
           status: 'DEVOLVIDO',
-          returnedAt: firebase.firestore.FieldValue.serverTimestamp()
+          returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          actualReturnDate: new Date().toLocaleDateString('pt-BR')
         });
 
         // Retorna a quantidade de livros ao estoque
+        const updatePromises = [];
         for (const book of loanData.books) {
           const bookDocRef = db.collection('livros').doc(book.bookId);
-          await bookDocRef.update({
-            quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity)
-          });
+          updatePromises.push(
+            bookDocRef.update({
+              quantidadeDisponivel: firebase.firestore.FieldValue.increment(book.quantity)
+            })
+          );
         }
-
-        showAlert('success', 'Empréstimo devolvido com sucesso!');
+        
+        // Executa todas as atualizações de estoque em paralelo
+        await Promise.all(updatePromises);
+        
+        console.log(`Estoque atualizado para ${loanData.books.length} livro(s)`);
+        showAlert('success', 'Empréstimo devolvido com sucesso! Estoque atualizado.');
+        
+        // Atualiza a interface
         loadLoans();
+        updateLoanStats();
+        
       } catch (error) {
         console.error('Erro ao devolver empréstimo:', error);
-        showAlert('danger', 'Erro ao devolver empréstimo.');
+        showAlert('danger', 'Erro ao devolver empréstimo: ' + error.message);
       }
     }
 
@@ -2141,4 +2163,3 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
-
