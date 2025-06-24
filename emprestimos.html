@@ -1983,8 +1983,7 @@ db.collection('livros').get().then(snapshot => {
     const tituloSearch = titulo.toLowerCase().split(' ');
     db.collection('livros').doc(doc.id).update({ tituloSearch });
   });
-});
-  </script>
+});  </script>
   <script>
 document.addEventListener('focusin', function(e) {
   let el = e.target;
@@ -1997,10 +1996,11 @@ document.addEventListener('focusin', function(e) {
       break;
     }
     el = el.parentElement;
+  }
+});
 
-
-
-</script>});  }<script>
+</script>
+<script>
 // Garante que aria-hidden="true" seja removido de modais abertos
 function fixAriaHiddenOnOpenModals() {
   document.querySelectorAll('.modal').forEach(function(modal) {
