@@ -172,9 +172,26 @@
     }
     .edit-button {
       color: #4facfe;
-    }
-    .delete-button {
+    }    .delete-button {
       color: #c62828;
+    }
+    .user-checkbox {
+      cursor: pointer;
+    }
+    #selectAll {
+      cursor: pointer;
+    }
+    #gerarCartaoBtn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .cartao-preview {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
     @media (max-width: 768px) {
       .sidebar {
@@ -243,21 +260,24 @@
       <button class="add-button">
         <i class='bx bx-search'></i>
       </button>
-    </div>
-
-    <!-- Adicione o botão de importação acima da tabela de usuários -->
+    </div>    <!-- Adicione o botão de importação acima da tabela de usuários -->
     <div class="d-flex justify-content-end mb-3">
       <input type="file" id="xlsInput" accept=".xls,.xlsx" style="display:none" />
       <button class="btn btn-success me-2" id="importXlsBtn" type="button">
         <i class='bx bx-upload'></i> Importar Usuários XLS
       </button>
+      <button class="btn btn-primary me-2" id="gerarCartaoBtn" type="button" disabled>
+        <i class='bx bx-id-card'></i> Cartão de Leitor
+      </button>
     </div>
 
     <div class="users-table">
-      <div class="table-responsive">
-        <table class="table">
+      <div class="table-responsive">        <table class="table" id="usuariosTable">
           <thead>
             <tr>
+              <th>
+                <input type="checkbox" id="selectAll" class="form-check-input">
+              </th>
               <th>Nome</th>
               <th>Email</th>
               <th>Matrícula</th>
@@ -265,8 +285,11 @@
               <th>Ações</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="usuariosTableBody">
             <tr>
+              <td>
+                <input type="checkbox" class="form-check-input user-checkbox" data-user-id="user1">
+              </td>
               <td>Maria Silva</td>
               <td>maria.silva@email.com</td>
               <td>2023001</td>
@@ -283,6 +306,9 @@
               </td>
             </tr>
             <tr>
+              <td>
+                <input type="checkbox" class="form-check-input user-checkbox" data-user-id="user2">
+              </td>
               <td>João Santos</td>
               <td>joao.santos@email.com</td>
               <td>2023002</td>
@@ -299,6 +325,9 @@
               </td>
             </tr>
             <tr>
+              <td>
+                <input type="checkbox" class="form-check-input user-checkbox" data-user-id="user3">
+              </td>
               <td>Ana Oliveira</td>
               <td>ana.oliveira@email.com</td>
               <td>2023003</td>
@@ -1033,36 +1062,49 @@
           alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
           return null;
         }
-      }
-
-      // Atualize o loadUsers para adicionar eventos nos botões
+      }      // Atualize o loadUsers para adicionar eventos nos botões
       async function loadUsers() {
-        const tbody = document.querySelector('.users-table tbody');
-        tbody.innerHTML = '';
+        const tbody = document.querySelector('#usuariosTableBody');
+        
+        // Mantém os exemplos estáticos se não houver dados do Firestore
+        let hasFirestoreData = false;
 
         try {
           const snapshot = await db.collection('usuarios').get();
-          snapshot.forEach(doc => {
-            const user = doc.data();
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${user.nome || ''}</td>
-              <td>${user.email || ''}</td>
-              <td>${user.matricula || ''}</td>
-              <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
-              <td>
-                <div class="action-buttons">
-                  <button class="action-button edit-button" data-id="${doc.id}">
-                    <i class='bx bx-edit-alt'></i>
-                  </button>
-                  <button class="action-button delete-button" data-id="${doc.id}">
-                    <i class='bx bx-trash'></i>
-                  </button>
-                </div>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
+          
+          if (!snapshot.empty) {
+            hasFirestoreData = true;
+            tbody.innerHTML = ''; // Limpa dados estáticos
+            
+            snapshot.forEach(doc => {
+              const user = doc.data();
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>
+                  <input type="checkbox" class="form-check-input user-checkbox" data-user-id="${doc.id}">
+                </td>
+                <td>${user.nome || ''}</td>
+                <td>${user.email || ''}</td>
+                <td>${user.matricula || ''}</td>
+                <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="action-button edit-button" data-id="${doc.id}">
+                      <i class='bx bx-edit-alt'></i>
+                    </button>
+                    <button class="action-button delete-button" data-id="${doc.id}">
+                      <i class='bx bx-trash'></i>
+                    </button>
+                  </div>
+                </td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+          
+          // Atualiza estado do botão após carregar dados
+          updateCartaoButton();
+          
         } catch (e) {
           console.error('Erro ao buscar usuários do Firestore:', e);
         }
@@ -1580,12 +1622,243 @@
       document.getElementById('camposAluno').style.display = funcao === 'ALUNO' ? '' : 'none';
       ['matricula','serie','periodo','turma','turno'].forEach(id => {
         document.getElementById(id).required = funcao === 'ALUNO';
-      });
+      });    }
+
+    // SISTEMA DE CARTÃO DE LEITOR
+    
+    // Função para habilitar/desabilitar botão de cartão baseado na seleção
+    function updateCartaoButton() {
+      const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+      const cartaoBtn = document.getElementById('gerarCartaoBtn');
+      cartaoBtn.disabled = checkedBoxes.length === 0;
+      
+      if (checkedBoxes.length > 0) {
+        cartaoBtn.textContent = `Cartão de Leitor (${checkedBoxes.length} selecionado${checkedBoxes.length > 1 ? 's' : ''})`;
+      } else {
+        cartaoBtn.innerHTML = '<i class="bx bx-id-card"></i> Cartão de Leitor';
+      }
     }
+
+    // Checkbox "Selecionar Todos"
+    document.getElementById('selectAll').addEventListener('change', function() {
+      const checkboxes = document.querySelectorAll('.user-checkbox');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      updateCartaoButton();
+    });
+
+    // Event listeners para checkboxes individuais
+    document.addEventListener('change', function(e) {
+      if (e.target.classList.contains('user-checkbox')) {
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        
+        // Atualiza o checkbox "Selecionar Todos"
+        if (checkedCheckboxes.length === 0) {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.indeterminate = false;
+        } else if (checkedCheckboxes.length === allCheckboxes.length) {
+          selectAllCheckbox.checked = true;
+          selectAllCheckbox.indeterminate = false;
+        } else {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.indeterminate = true;
+        }
+        
+        updateCartaoButton();
+      }
+    });
+
+    // Função para gerar cartões de leitor em PDF
+    async function gerarCartoesLeitor() {
+      const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+      
+      if (checkedBoxes.length === 0) {
+        showAlert('warning', 'Selecione pelo menos um usuário para gerar o cartão.');
+        return;
+      }
+
+      try {
+        // Coleta dados dos usuários selecionados
+        const usuariosSelecionados = [];
+        
+        for (const checkbox of checkedBoxes) {
+          const row = checkbox.closest('tr');
+          const nome = row.cells[1].textContent;
+          const email = row.cells[2].textContent;
+          const matricula = row.cells[3].textContent;
+          
+          // Busca dados completos do usuário no Firestore
+          try {
+            const userId = checkbox.dataset.userId;
+            let dadosCompletos = null;
+            
+            if (userId && userId.startsWith('user')) {
+              // Dados de exemplo (usuários estáticos)
+              dadosCompletos = {
+                nome: nome,
+                email: email,
+                matricula: matricula,
+                funcao: nome === 'Maria Silva' ? 'ALUNO' : nome === 'João Santos' ? 'PROFESSOR' : 'ALUNO',
+                telefone: nome === 'Maria Silva' ? '(11) 99999-9999' : nome === 'João Santos' ? '(11) 88888-8888' : '(11) 77777-7777'
+              };
+            } else {
+              // Busca no Firestore
+              const userDoc = await db.collection('usuarios').doc(userId).get();
+              if (userDoc.exists) {
+                dadosCompletos = userDoc.data();
+              }
+            }
+            
+            usuariosSelecionados.push(dadosCompletos || {
+              nome: nome,
+              email: email,
+              matricula: matricula,
+              funcao: 'USUÁRIO',
+              telefone: ''
+            });
+          } catch (error) {
+            console.error('Erro ao buscar dados do usuário:', error);
+            usuariosSelecionados.push({
+              nome: nome,
+              email: email,
+              matricula: matricula,
+              funcao: 'USUÁRIO',
+              telefone: ''
+            });
+          }
+        }
+
+        // Gera PDF com os cartões
+        await criarPDFCartoes(usuariosSelecionados);
+        
+      } catch (error) {
+        console.error('Erro ao gerar cartões:', error);
+        showAlert('danger', 'Erro ao gerar cartões de leitor.');
+      }
+    }
+
+    // Função para criar PDF com múltiplos cartões
+    async function criarPDFCartoes(usuarios) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Configurações do cartão
+      const cartaoWidth = 85.6; // Tamanho padrão de cartão de crédito em mm
+      const cartaoHeight = 53.98;
+      const margem = 10;
+      const cartoesPerRow = 2;
+      const cartoesPerPage = 4; // 2x2
+      
+      let cartaoAtual = 0;
+      
+      for (let i = 0; i < usuarios.length; i++) {
+        const usuario = usuarios[i];
+        
+        // Calcula posição do cartão na página
+        const row = Math.floor(cartaoAtual % cartoesPerPage / cartoesPerRow);
+        const col = cartaoAtual % cartoesPerRow;
+        
+        const x = margem + (col * (cartaoWidth + margem));
+        const y = margem + (row * (cartaoHeight + margem * 2));
+        
+        // Nova página se necessário
+        if (cartaoAtual > 0 && cartaoAtual % cartoesPerPage === 0) {
+          doc.addPage();
+        }
+        
+        // Desenha o cartão
+        criarCartaoUsuario(doc, usuario, x, y, cartaoWidth, cartaoHeight);
+        
+        cartaoAtual++;
+      }
+      
+      // Salva o PDF
+      const dataAtual = new Date().toISOString().split('T')[0];
+      doc.save(`cartoes-leitor-${dataAtual}.pdf`);
+      
+      showAlert('success', `Cartões de leitor gerados com sucesso! ${usuarios.length} cartão(ões) criado(s).`);
+    }
+
+    // Função para criar um cartão individual
+    function criarCartaoUsuario(doc, usuario, x, y, width, height) {
+      // Fundo do cartão com gradiente (simulado com retângulos)
+      doc.setFillColor(26, 26, 46); // Cor azul escura
+      doc.rect(x, y, width, height, 'F');
+      
+      // Borda do cartão
+      doc.setDrawColor(79, 172, 254);
+      doc.setLineWidth(0.5);
+      doc.rect(x, y, width, height);
+      
+      // Logo/Título da biblioteca
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('SIGEB', x + 5, y + 8);
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.text('Sistema de Gerenciamento de Biblioteca', x + 5, y + 12);
+      
+      // Linha separadora
+      doc.setDrawColor(79, 172, 254);
+      doc.line(x + 5, y + 15, x + width - 5, y + 15);
+      
+      // Informações do usuário
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      
+      // Nome (limitado para caber no cartão)
+      const nomeMaxLength = 25;
+      const nomeDisplay = usuario.nome.length > nomeMaxLength ? 
+        usuario.nome.substring(0, nomeMaxLength) + '...' : usuario.nome;
+      doc.text(nomeDisplay, x + 5, y + 22);
+      
+      // Matrícula
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Matrícula: ${usuario.matricula || 'N/A'}`, x + 5, y + 27);
+      
+      // Função
+      doc.text(`Função: ${usuario.funcao || 'USUÁRIO'}`, x + 5, y + 31);
+      
+      // Email (truncado se muito longo)
+      const emailMaxLength = 30;
+      const emailDisplay = usuario.email && usuario.email.length > emailMaxLength ? 
+        usuario.email.substring(0, emailMaxLength) + '...' : (usuario.email || '');
+      if (emailDisplay) {
+        doc.setFontSize(7);
+        doc.text(emailDisplay, x + 5, y + 35);
+      }
+      
+      // Código de barras simulado (apenas visual)
+      doc.setFillColor(255, 255, 255);
+      for (let i = 0; i < 15; i++) {
+        const barWidth = Math.random() > 0.5 ? 1 : 0.5;
+        doc.rect(x + 5 + (i * 2), y + height - 12, barWidth, 8, 'F');
+      }
+      
+      // Data de validade
+      const dataValidade = new Date();
+      dataValidade.setFullYear(dataValidade.getFullYear() + 1);
+      doc.setTextColor(200, 200, 200);
+      doc.setFontSize(6);
+      doc.text(`Válido até: ${dataValidade.toLocaleDateString('pt-BR')}`, x + 5, y + height - 2);
+      
+      // Número do cartão (baseado na matrícula)
+      doc.text(`Card: ${usuario.matricula || '000000'}`, x + width - 25, y + height - 2);
+    }
+
+    // Event listener para o botão de gerar cartão
+    document.getElementById('gerarCartaoBtn').addEventListener('click', gerarCartoesLeitor);
 
     document.addEventListener('DOMContentLoaded', loadUsers);
   </script>
 </body>
 </html>
+
 
 
