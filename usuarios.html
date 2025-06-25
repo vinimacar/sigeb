@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SIGEB - Usuários</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <!-- jsPDF para geração de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- Firebase SDKs: SEMPRE antes do firebase-config.js -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -568,10 +569,11 @@
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div class="modal-footer">
+              </div>              <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnImprimirFicha" style="display: none;">
+                  <i class="bx bx-printer"></i> Imprimir Ficha
+                </button>
                 <button type="button" class="btn btn-primary" id="btnSalvarUsuario">Salvar Usuário</button>
               </div>
             </form>
@@ -645,9 +647,7 @@
         return Array.from(new Uint8Array(hash))
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
-      }
-
-      // Função para exibir alertas
+      }      // Função para exibir alertas
       function showAlert(type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -658,6 +658,240 @@
         `;
         document.querySelector('.main-content').prepend(alertDiv);
         setTimeout(() => alertDiv.remove(), 5000);
+      }
+
+      // Variável global para armazenar dados do último usuário cadastrado
+      let ultimoUsuarioCadastrado = null;
+
+      // Função para gerar ficha cadastral em PDF
+      function gerarFichaCadastral(dadosUsuario) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configurações
+        const margin = 20;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const contentWidth = pageWidth - (margin * 2);
+        let yPosition = margin;
+        
+        // Função auxiliar para adicionar texto
+        const addText = (text, x, y, options = {}) => {
+          if (options.fontSize) doc.setFontSize(options.fontSize);
+          if (options.fontStyle) doc.setFont('helvetica', options.fontStyle);
+          doc.text(text, x, y);
+          if (options.fontSize || options.fontStyle) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12);
+          }
+        };
+        
+        // Função auxiliar para adicionar linha
+        const addLine = (x1, y1, x2, y2) => {
+          doc.line(x1, y1, x2, y2);
+        };
+        
+        // Cabeçalho
+        doc.setFillColor(26, 26, 46);
+        doc.rect(margin, yPosition, contentWidth, 25, 'F');
+        
+        addText('SISTEMA DE GERENCIAMENTO DE BIBLIOTECA ESCOLAR - SIGEB', margin + 5, yPosition + 10, {
+          fontSize: 14,
+          fontStyle: 'bold'
+        });
+        doc.setTextColor(255, 255, 255);
+        addText('FICHA CADASTRAL DE USUÁRIO', margin + 5, yPosition + 20, {
+          fontSize: 12,
+          fontStyle: 'bold'
+        });
+        doc.setTextColor(0, 0, 0);
+        
+        yPosition += 35;
+        
+        // Informações pessoais
+        addText('DADOS PESSOAIS', margin, yPosition, {
+          fontSize: 14,
+          fontStyle: 'bold'
+        });
+        yPosition += 10;
+        addLine(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 15;
+        
+        // Nome
+        addText('Nome Completo:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.nome || '', margin + 35, yPosition);
+        yPosition += 15;
+        
+        // Email e Matrícula
+        addText('Email:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.email || '', margin + 20, yPosition);
+        addText('Matrícula:', margin + 100, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.matricula || '', margin + 135, yPosition);
+        yPosition += 15;
+        
+        // Função e Status
+        addText('Função:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.funcao || '', margin + 25, yPosition);
+        addText('Status:', margin + 100, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.status || '', margin + 125, yPosition);
+        yPosition += 15;
+        
+        // Telefone
+        addText('Telefone:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.telefone || '', margin + 30, yPosition);
+        yPosition += 20;
+        
+        // Endereço
+        addText('ENDEREÇO', margin, yPosition, {
+          fontSize: 14,
+          fontStyle: 'bold'
+        });
+        yPosition += 10;
+        addLine(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 15;
+        
+        // Logradouro e Número
+        addText('Logradouro:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.logradouro || '', margin + 35, yPosition);
+        addText('Nº:', margin + 120, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.numero || '', margin + 130, yPosition);
+        yPosition += 15;
+        
+        // Bairro e CEP
+        addText('Bairro:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.bairro || '', margin + 25, yPosition);
+        addText('CEP:', margin + 100, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.cep || '', margin + 120, yPosition);
+        yPosition += 15;
+        
+        // Cidade e UF
+        addText('Cidade:', margin, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.cidade || '', margin + 25, yPosition);
+        addText('UF:', margin + 120, yPosition, { fontStyle: 'bold' });
+        addText(dadosUsuario.endereco?.uf || '', margin + 135, yPosition);
+        yPosition += 20;
+        
+        // Dados acadêmicos (se for aluno)
+        if (dadosUsuario.funcao === 'ALUNO') {
+          addText('DADOS ACADÊMICOS', margin, yPosition, {
+            fontSize: 14,
+            fontStyle: 'bold'
+          });
+          yPosition += 10;
+          addLine(margin, yPosition, pageWidth - margin, yPosition);
+          yPosition += 15;
+          
+          // Série e Período
+          addText('Série:', margin, yPosition, { fontStyle: 'bold' });
+          addText(dadosUsuario.serie ? `${dadosUsuario.serie}º ano` : '', margin + 25, yPosition);
+          addText('Período:', margin + 80, yPosition, { fontStyle: 'bold' });
+          addText(dadosUsuario.periodo || '', margin + 115, yPosition);
+          yPosition += 15;
+          
+          // Turma e Turno
+          addText('Turma:', margin, yPosition, { fontStyle: 'bold' });
+          addText(dadosUsuario.turma || '', margin + 25, yPosition);
+          addText('Turno:', margin + 80, yPosition, { fontStyle: 'bold' });
+          addText(dadosUsuario.turno || '', margin + 110, yPosition);
+          yPosition += 20;
+        }
+        
+        // Regras da biblioteca
+        addText('REGRAS DA BIBLIOTECA', margin, yPosition, {
+          fontSize: 14,
+          fontStyle: 'bold'
+        });
+        yPosition += 10;
+        addLine(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 15;
+        
+        const regras = [
+          '• Prazo de empréstimo: 7 dias (renovável por mais 7 dias)',
+          '• Multa por atraso: R$ 0,50 por dia',
+          '• Limite de livros: 3 livros por usuário',
+          '• É obrigatório apresentar a carteirinha ou documento com foto',
+          '• Danos ou perda do livro: pagamento do valor integral',
+          '• Manter silêncio e organização no ambiente'
+        ];
+        
+        regras.forEach(regra => {
+          addText(regra, margin, yPosition, { fontSize: 10 });
+          yPosition += 10;
+        });
+        
+        yPosition += 10;
+        
+        // Assinaturas
+        addText('ASSINATURAS', margin, yPosition, {
+          fontSize: 14,
+          fontStyle: 'bold'
+        });
+        yPosition += 10;
+        addLine(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 30;
+        
+        // Linha para assinatura do usuário
+        addLine(margin, yPosition, margin + 80, yPosition);
+        addText('Usuário', margin + 30, yPosition + 10, { fontSize: 10 });
+        
+        // Linha para assinatura do responsável
+        addLine(margin + 100, yPosition, margin + 180, yPosition);
+        addText('Bibliotecário(a)', margin + 120, yPosition + 10, { fontSize: 10 });
+        
+        yPosition += 30;
+        
+        // Data de emissão
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        addText(`Emitido em: ${dataAtual}`, margin, yPosition, {
+          fontSize: 10,
+          fontStyle: 'italic'
+        });
+        
+        // Rodapé
+        yPosition = doc.internal.pageSize.getHeight() - 20;
+        addText('SIGEB - Sistema de Gerenciamento de Biblioteca Escolar', margin, yPosition, {
+          fontSize: 8,
+          fontStyle: 'italic'
+        });
+        
+        return doc;
+      }
+      
+      // Função para imprimir ficha cadastral
+      function imprimirFichaCadastral() {
+        if (!ultimoUsuarioCadastrado) {
+          showAlert('warning', 'Nenhum usuário foi cadastrado para impressão.');
+          return;
+        }
+        
+        try {
+          const doc = gerarFichaCadastral(ultimoUsuarioCadastrado);
+          
+          // Gerar nome do arquivo
+          const nomeArquivo = `ficha_cadastral_${ultimoUsuarioCadastrado.nome?.replace(/\s+/g, '_').toLowerCase() || 'usuario'}.pdf`;
+          
+          // Opções para o usuário
+          const opcao = confirm(
+            'Como deseja proceder com a ficha cadastral?\n\n' +
+            'OK - Fazer download do PDF\n' +
+            'Cancelar - Abrir para visualização/impressão'
+          );
+          
+          if (opcao) {
+            // Download do PDF
+            doc.save(nomeArquivo);
+            showAlert('success', 'Ficha cadastral baixada com sucesso!');
+          } else {
+            // Abrir para visualização/impressão
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+            showAlert('info', 'Ficha cadastral aberta em nova aba. Use Ctrl+P para imprimir.');
+          }
+          
+        } catch (error) {
+          console.error('Erro ao gerar ficha cadastral:', error);
+          showAlert('danger', 'Erro ao gerar ficha cadastral. Tente novamente.');
+        }
       }
 
       // Função para carregar todos os usuários do Firestore e Realtime Database e renderizar na tabela
@@ -753,13 +987,17 @@
             handleUserSubmission(event);
           });
         }
-      });
-
-      // Limpa o formulário e o campo usuarioId ao fechar o modal
+      });      // Limpa o formulário e o campo usuarioId ao fechar o modal
       document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('addUserForm').reset();
         document.getElementById('usuarioId').value = '';
         document.getElementById('addUserForm').classList.remove('was-validated');
+        
+        // Resetar estado do modal
+        document.getElementById('addUserModalLabel').textContent = 'Adicionar Novo Usuário';
+        document.getElementById('btnSalvarUsuario').style.display = 'inline-block';
+        document.getElementById('btnImprimirFicha').style.display = 'none';
+        
         // Remove o foco de qualquer elemento dentro do modal ao fechar
         if (document.activeElement && document.getElementById('addUserModal').contains(document.activeElement)) {
           document.activeElement.blur();
@@ -914,11 +1152,25 @@
       .input-group .btn-outline-secondary:hover {
         background-color: #f8f9fa;
         border-color: #4facfe;
-      }
-
-      hr {
+      }      hr {
         margin: 1.5rem 0;
         opacity: 0.15;
+      }
+      
+      #btnImprimirFicha {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        border: none;
+        transition: all 0.3s ease;
+      }
+      
+      #btnImprimirFicha:hover {
+        background: linear-gradient(90deg, #20c997, #28a745);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+      }
+      
+      .modal-footer .btn {
+        min-width: 120px;
       }
     </style>
   </div>
@@ -1209,9 +1461,7 @@
       
       // Remove arrays vazios
       return arrData.filter(arr => arr.length > 0);
-    }
-
-    // Função para salvar/atualizar usuário ao submeter o formulário do modal
+    }    // Função para salvar/atualizar usuário ao submeter o formulário do modal
     async function handleUserSubmission(event) {
       event.preventDefault?.();
 
@@ -1269,25 +1519,45 @@
         if (id) {
           await db.collection('usuarios').doc(id).update(usuario);
           showAlert('success', 'Usuário atualizado com sucesso!');
+          // Para edição, não mostra botão de impressão
+          document.getElementById('btnImprimirFicha').style.display = 'none';
         } else {
           await db.collection('usuarios').add(usuario);
           showAlert('success', 'Usuário cadastrado com sucesso!');
+          
+          // Armazenar dados para impressão
+          ultimoUsuarioCadastrado = usuario;
+          
+          // Mostrar botão de impressão
+          document.getElementById('btnImprimirFicha').style.display = 'inline-block';
+          document.getElementById('btnSalvarUsuario').style.display = 'none';
+          
+          // Mudar título do modal
+          document.getElementById('addUserModalLabel').textContent = 'Usuário Cadastrado com Sucesso!';
+          
+          showAlert('info', 'Clique em "Imprimir Ficha" para gerar a ficha cadastral do usuário.');
         }
-        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+        
         loadUsers();
       } catch (error) {
         console.error('Erro ao salvar usuário:', error);
         showAlert('danger', 'Erro ao salvar usuário.');
       }
-    }
-
-    // Certifique-se de adicionar o event listener após a definição da função:
+    }    // Certifique-se de adicionar o event listener após a definição da função:
     document.addEventListener('DOMContentLoaded', function() {
       const btnSalvar = document.getElementById('btnSalvarUsuario');
       if (btnSalvar) {
         btnSalvar.addEventListener('click', function(event) {
           event.preventDefault();
           handleUserSubmission(event);
+        });
+      }
+      
+      // Event listener para botão de impressão
+      const btnImprimir = document.getElementById('btnImprimirFicha');
+      if (btnImprimir) {
+        btnImprimir.addEventListener('click', function() {
+          imprimirFichaCadastral();
         });
       }
     });
