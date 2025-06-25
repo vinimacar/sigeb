@@ -421,13 +421,17 @@
                     <option value="TERROR">Terror</option>
                   </select>
                   <div class="invalid-feedback">Selecione o gênero.</div>
-                </div>
-                <div class="col-md-4">
+                </div>                <div class="col-md-4">
                   <label for="quantidade" class="form-label fw-semibold">Quantidade*</label>
                   <input type="number" class="form-control" id="quantidade" required min="1" placeholder="Ex: 10">
                   <div class="invalid-feedback">Informe a quantidade.</div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-4">
+                  <label for="anoPublicacao" class="form-label fw-semibold">Ano de Publicação</label>
+                  <input type="number" class="form-control" id="anoPublicacao" min="1000" max="2030" placeholder="Ex: 2023">
+                  <div class="invalid-feedback">Informe um ano válido.</div>
+                </div>
+                <div class="col-md-4">
                   <label for="editora" class="form-label fw-semibold">Editora</label>
                   <input type="text" class="form-control" id="editora" placeholder="Nome da editora">
                 </div>
@@ -830,10 +834,9 @@
     card.className = 'book-card';
     card.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <h5>${book.titulo}</h5>
+        <div>          <h5>${book.titulo}</h5>
           <p class="text-muted mb-1">${Array.isArray(book.autores) ? book.autores.join(', ') : book.autores}</p>
-          <p class="text-muted mb-2">${book.editora || ''}${book.ano ? ', ' + book.ano : ''}</p>
+          <p class="text-muted mb-2">${book.editora || ''}${(book.anoPublicacao || book.ano) ? ', ' + (book.anoPublicacao || book.ano) : ''}</p>
           <span class="book-status ${book.quantidade > 0 ? 'status-disponivel' : 'status-emprestado'}">
             ${book.quantidade > 0 ? `${book.quantidade} disponíveis` : 'Indisponível'}
           </span>
@@ -861,13 +864,12 @@
         showAlert('danger', 'Livro não encontrado');
         return;
       }
-      const book = docSnap.data();
-      document.getElementById('editBookId').value = id;
+      const book = docSnap.data();      document.getElementById('editBookId').value = id;
       document.getElementById('editTitulo').value = book.titulo || '';
       document.getElementById('editISBN').value = book.isbn || '';
       document.getElementById('editAutores').value = Array.isArray(book.autores) ? book.autores.join(', ') : book.autores || '';
       document.getElementById('editEditora').value = book.editora || '';
-      document.getElementById('editAno').value = book.ano || '';
+      document.getElementById('editAno').value = book.anoPublicacao || book.ano || '';
       document.getElementById('editEdicao').value = book.edicao || '';
       document.getElementById('editGenero').value = book.genero || '';
       document.getElementById('editQuantidade').value = book.quantidade || 0;
@@ -894,14 +896,12 @@
     try {
       const id = document.getElementById('editBookId').value;
       let autores = document.getElementById('editAutores').value;
-      autores = autores.split(',').map(a => a.trim()).filter(a => a);
-
-      const bookData = {
+      autores = autores.split(',').map(a => a.trim()).filter(a => a);      const bookData = {
         titulo: document.getElementById('editTitulo').value,
         isbn: document.getElementById('editISBN').value,
         autores: autores,
         editora: document.getElementById('editEditora').value,
-        ano: parseInt(document.getElementById('editAno').value),
+        anoPublicacao: parseInt(document.getElementById('editAno').value),
         edicao: document.getElementById('editEdicao').value,
         genero: document.getElementById('editGenero').value,
         quantidade: parseInt(document.getElementById('editQuantidade').value),
@@ -1063,14 +1063,13 @@
         
         const titulo = getTextContent('titulo') || getTextContent('title') || getTextContent('nome');
         const autor = getTextContent('autor') || getTextContent('author') || getTextContent('autores');
-        
-        if (titulo && autor) {
+          if (titulo && autor) {
           const book = {
             titulo,
             autor,
             isbn: getTextContent('isbn'),
             editora: getTextContent('editora') || getTextContent('publisher'),
-            ano: parseInt(getTextContent('ano') || getTextContent('year')) || new Date().getFullYear(),
+            anoPublicacao: parseInt(getTextContent('ano') || getTextContent('year') || getTextContent('anoPublicacao')) || new Date().getFullYear(),
             genero: getTextContent('genero') || getTextContent('genre') || 'Outros',
             quantidade: parseInt(getTextContent('quantidade') || getTextContent('quantity')) || 1,
             valid: true
@@ -1127,13 +1126,12 @@
         
         // Pular linhas vazias
         if (!row || row.every(cell => !cell)) continue;
-        
-        // Extrair dados (assumindo ordem: título, autor, isbn, editora, ano, gênero, quantidade)
+          // Extrair dados (assumindo ordem: título, autor, isbn, editora, ano, gênero, quantidade)
         const titulo = row[0] ? String(row[0]).trim() : '';
         const autor = row[1] ? String(row[1]).trim() : '';
         const isbn = row[2] ? String(row[2]).trim() : '';
         const editora = row[3] ? String(row[3]).trim() : '';
-        const ano = row[4] ? parseInt(row[4]) || new Date().getFullYear() : new Date().getFullYear();
+        const anoPublicacao = row[4] ? parseInt(row[4]) || new Date().getFullYear() : new Date().getFullYear();
         const genero = row[5] ? String(row[5]).trim() : 'Outros';
         const quantidade = row[6] ? parseInt(row[6]) || 1 : 1;
         
@@ -1143,20 +1141,19 @@
             autor,
             isbn,
             editora,
-            ano,
+            anoPublicacao,
             genero,
             quantidade,
             valid: true
           };
-          data.push(book);
-        } else if (titulo || autor) {
+          data.push(book);        } else if (titulo || autor) {
           // Dados incompletos
           const book = {
             titulo,
             autor,
             isbn,
             editora,
-            ano,
+            anoPublicacao,
             genero,
             quantidade,
             valid: false
@@ -1362,15 +1359,14 @@
     if (!form) return;
 
     form.classList.add('was-validated');
-    if (!form.checkValidity()) return;
-
-    // Pegue os campos e verifique se existem antes de acessar .value
+    if (!form.checkValidity()) return;    // Pegue os campos e verifique se existem antes de acessar .value
     const nomeLivroInput = document.getElementById('nomeLivro');
     const isbnInput = document.getElementById('isbn');
     const autorInput = document.getElementById('autor');
     const generoInput = document.getElementById('genero');
     const quantidadeInput = document.getElementById('quantidade');
     const editoraInput = document.getElementById('editora');
+    const anoPublicacaoInput = document.getElementById('anoPublicacao');
 
     if (!nomeLivroInput || !autorInput || !generoInput || !quantidadeInput) {
       alert('Preencha todos os campos obrigatórios.');
@@ -1383,6 +1379,7 @@
     const genero = generoInput.value;
     const quantidade = Number(quantidadeInput.value);
     const editora = editoraInput ? editoraInput.value.trim() : '';
+    const anoPublicacao = anoPublicacaoInput ? Number(anoPublicacaoInput.value) : null;
 
     const livro = {
       titulo,
@@ -1391,6 +1388,7 @@
       genero,
       quantidade,
       editora,
+      anoPublicacao,
       createdAt: serverTimestamp()
     };
 
@@ -1570,3 +1568,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
