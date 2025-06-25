@@ -456,12 +456,12 @@
           <div class="modal-body">
             <div class="row">
               <div class="col-12">
-                <div class="alert alert-info">
-                  <h6><i class="bx bx-info-circle"></i> Formatos Suportados:</h6>
+                <div class="alert alert-info">                  <h6><i class="bx bx-info-circle"></i> Formatos Suportados:</h6>
                   <ul class="mb-0">
                     <li><strong>CSV:</strong> titulo,autor,isbn,editora,ano,genero,quantidade</li>
                     <li><strong>TXT:</strong> Uma linha por livro (separado por vírgula ou tab)</li>
                     <li><strong>XML:</strong> Estrutura com tags &lt;livro&gt;</li>
+                    <li><strong>XLS/XLSX:</strong> Planilha Excel com colunas organizadas</li>
                   </ul>
                 </div>
               </div>
@@ -470,9 +470,8 @@
             <div class="row">
               <div class="col-12">
                 <div class="mb-3">
-                  <label for="importFile" class="form-label">Selecione o arquivo para importar:</label>
-                  <input type="file" class="form-control" id="importFile" accept=".csv,.txt,.xml" required>
-                  <small class="form-text text-muted">Formatos aceitos: CSV, TXT, XML</small>
+                  <label for="importFile" class="form-label">Selecione o arquivo para importar:</label>                  <input type="file" class="form-control" id="importFile" accept=".csv,.txt,.xml,.xls,.xlsx" required>
+                  <small class="form-text text-muted">Formatos aceitos: CSV, TXT, XML, XLS, XLSX</small>
                 </div>
               </div>
             </div>
@@ -480,18 +479,16 @@
             <div class="row">
               <div class="col-12">
                 <div class="mb-3">
-                  <label for="importFormat" class="form-label">Formato do arquivo:</label>
-                  <select class="form-select" id="importFormat">
+                  <label for="importFormat" class="form-label">Formato do arquivo:</label>                  <select class="form-select" id="importFormat">
                     <option value="auto">Detectar automaticamente</option>
                     <option value="csv">CSV (Comma Separated Values)</option>
                     <option value="txt">TXT (Texto separado por vírgula/tab)</option>
                     <option value="xml">XML (Extensible Markup Language)</option>
+                    <option value="xls">XLS/XLSX (Planilha Excel)</option>
                   </select>
                 </div>
               </div>
-            </div>
-
-            <div class="row" id="csvOptions" style="display: none;">
+            </div>            <div class="row" id="csvOptions" style="display: none;">
               <div class="col-12">
                 <div class="mb-3">
                   <label class="form-label">Opções CSV:</label>
@@ -508,6 +505,40 @@
                       <option value=";">Ponto e vírgula (;)</option>
                       <option value="\t">Tab</option>
                     </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="xlsOptions" style="display: none;">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="form-label">Opções Excel:</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="xlsHasHeader" checked>
+                    <label class="form-check-label" for="xlsHasHeader">
+                      Primeira linha contém cabeçalhos
+                    </label>
+                  </div>
+                  <div class="mt-2">
+                    <label for="xlsSheet" class="form-label">Planilha:</label>
+                    <select class="form-select" id="xlsSheet">
+                      <option value="0">Primeira planilha</option>
+                    </select>
+                    <small class="form-text text-muted">As planilhas disponíveis serão carregadas após selecionar o arquivo</small>
+                  </div>                  <div class="mt-2">
+                    <div class="alert alert-info small">
+                      <strong>📋 Ordem esperada das colunas:</strong><br>
+                      <div class="row text-center mt-2">
+                        <div class="col">A<br><small>Título</small></div>
+                        <div class="col">B<br><small>Autor</small></div>
+                        <div class="col">C<br><small>ISBN</small></div>
+                        <div class="col">D<br><small>Editora</small></div>
+                        <div class="col">E<br><small>Ano</small></div>
+                        <div class="col">F<br><small>Gênero</small></div>
+                        <div class="col">G<br><small>Quantidade</small></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -911,7 +942,6 @@
 
   // FUNCIONALIDADES DE IMPORTAÇÃO
   let parsedImportData = [];
-
   // Função para detectar formato do arquivo
   function detectFileFormat(filename, content) {
     const extension = filename.toLowerCase().split('.').pop();
@@ -919,6 +949,7 @@
     if (extension === 'xml') return 'xml';
     if (extension === 'csv') return 'csv';
     if (extension === 'txt') return 'txt';
+    if (extension === 'xls' || extension === 'xlsx') return 'xls';
     
     // Tentar detectar pelo conteúdo
     if (content.trim().startsWith('<')) return 'xml';
@@ -997,7 +1028,6 @@
     
     return data;
   }
-
   // Função para parsear XML
   function parseXML(content) {
     const data = [];
@@ -1044,6 +1074,105 @@
     return data;
   }
 
+  // Variável global para armazenar dados do Excel
+  let currentWorkbook = null;
+
+  // Função para parsear XLS/XLSX
+  function parseXLS(arrayBuffer, sheetIndex = 0, hasHeader = true) {
+    const data = [];
+    
+    try {
+      // Ler o arquivo Excel
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      currentWorkbook = workbook;
+      
+      // Atualizar lista de planilhas
+      updateSheetList(workbook.SheetNames);
+      
+      // Obter a planilha especificada
+      const sheetName = workbook.SheetNames[sheetIndex];
+      if (!sheetName) {
+        throw new Error('Planilha não encontrada');
+      }
+      
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Converter para JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1, // Usar arrays ao invés de objetos
+        defval: '' // Valor padrão para células vazias
+      });
+      
+      if (jsonData.length === 0) {
+        throw new Error('Planilha vazia');
+      }
+      
+      const startRow = hasHeader ? 1 : 0;
+      
+      // Processar cada linha
+      for (let i = startRow; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        
+        // Pular linhas vazias
+        if (!row || row.every(cell => !cell)) continue;
+        
+        // Extrair dados (assumindo ordem: título, autor, isbn, editora, ano, gênero, quantidade)
+        const titulo = row[0] ? String(row[0]).trim() : '';
+        const autor = row[1] ? String(row[1]).trim() : '';
+        const isbn = row[2] ? String(row[2]).trim() : '';
+        const editora = row[3] ? String(row[3]).trim() : '';
+        const ano = row[4] ? parseInt(row[4]) || new Date().getFullYear() : new Date().getFullYear();
+        const genero = row[5] ? String(row[5]).trim() : 'Outros';
+        const quantidade = row[6] ? parseInt(row[6]) || 1 : 1;
+        
+        if (titulo && autor) {
+          const book = {
+            titulo,
+            autor,
+            isbn,
+            editora,
+            ano,
+            genero,
+            quantidade,
+            valid: true
+          };
+          data.push(book);
+        } else if (titulo || autor) {
+          // Dados incompletos
+          const book = {
+            titulo,
+            autor,
+            isbn,
+            editora,
+            ano,
+            genero,
+            quantidade,
+            valid: false
+          };
+          data.push(book);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Erro ao parsear Excel:', error);
+      showAlert('danger', 'Erro ao processar arquivo Excel: ' + error.message);
+    }
+    
+    return data;
+  }
+
+  // Função para atualizar lista de planilhas
+  function updateSheetList(sheetNames) {
+    const sheetSelect = document.getElementById('xlsSheet');
+    sheetSelect.innerHTML = '';
+    
+    sheetNames.forEach((name, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = `${index + 1}. ${name}`;
+      sheetSelect.appendChild(option);
+    });
+  }
   // Função para processar arquivo de importação
   async function processImportFile() {
     const fileInput = document.getElementById('importFile');
@@ -1055,26 +1184,38 @@
     }
     
     const file = fileInput.files[0];
-    const content = await file.text();
     
     let format = formatSelect.value;
     if (format === 'auto') {
-      format = detectFileFormat(file.name, content);
+      format = detectFileFormat(file.name, '');
     }
     
     // Processar baseado no formato
     switch (format) {
       case 'csv':
+        const content = await file.text();
         const separator = document.getElementById('csvSeparator').value;
         const hasHeader = document.getElementById('csvHasHeader').checked;
         parsedImportData = parseCSV(content, separator, hasHeader);
         break;
+        
       case 'txt':
-        parsedImportData = parseTXT(content);
+        const txtContent = await file.text();
+        parsedImportData = parseTXT(txtContent);
         break;
+        
       case 'xml':
-        parsedImportData = parseXML(content);
+        const xmlContent = await file.text();
+        parsedImportData = parseXML(xmlContent);
         break;
+        
+      case 'xls':
+        const arrayBuffer = await file.arrayBuffer();
+        const xlsSheetIndex = parseInt(document.getElementById('xlsSheet').value) || 0;
+        const xlsHasHeader = document.getElementById('xlsHasHeader').checked;
+        parsedImportData = parseXLS(arrayBuffer, xlsSheetIndex, xlsHasHeader);
+        break;
+        
       default:
         showAlert('danger', 'Formato de arquivo não suportado');
         return;
@@ -1261,46 +1402,79 @@
     const editForm = document.getElementById('editBookForm');
     if (editForm) {
       editForm.addEventListener('submit', handleEditSubmission);
-    }
-
-    // EVENT LISTENERS PARA IMPORTAÇÃO
+    }    // EVENT LISTENERS PARA IMPORTAÇÃO
     const importFormatSelect = document.getElementById('importFormat');
     const csvOptionsDiv = document.getElementById('csvOptions');
+    const xlsOptionsDiv = document.getElementById('xlsOptions');
     const previewBtn = document.getElementById('previewImportBtn');
     const startImportBtn = document.getElementById('startImportBtn');
     const importFileInput = document.getElementById('importFile');
 
-    // Mostrar/ocultar opções CSV
-    if (importFormatSelect && csvOptionsDiv) {
+    // Mostrar/ocultar opções baseado no formato
+    if (importFormatSelect && csvOptionsDiv && xlsOptionsDiv) {
       importFormatSelect.addEventListener('change', function() {
-        if (this.value === 'csv' || (this.value === 'auto' && importFileInput.files[0]?.name.toLowerCase().endsWith('.csv'))) {
+        const format = this.value;
+        const filename = importFileInput.files[0]?.name.toLowerCase() || '';
+        
+        // Esconder todas as opções primeiro
+        csvOptionsDiv.style.display = 'none';
+        xlsOptionsDiv.style.display = 'none';
+        
+        // Mostrar opções específicas
+        if (format === 'csv' || (format === 'auto' && filename.endsWith('.csv'))) {
           csvOptionsDiv.style.display = 'block';
-        } else {
-          csvOptionsDiv.style.display = 'none';
+        } else if (format === 'xls' || (format === 'auto' && (filename.endsWith('.xls') || filename.endsWith('.xlsx')))) {
+          xlsOptionsDiv.style.display = 'block';
         }
       });
     }
 
     // Event listener para mudança no arquivo
     if (importFileInput) {
-      importFileInput.addEventListener('change', function() {
+      importFileInput.addEventListener('change', async function() {
         document.getElementById('importPreview').style.display = 'none';
         document.getElementById('startImportBtn').disabled = true;
         parsedImportData = [];
         
-        // Auto-detectar formato e mostrar opções CSV se necessário
+        // Auto-detectar formato e mostrar opções apropriadas
         if (this.files[0]) {
           const filename = this.files[0].name.toLowerCase();
           const formatSelect = document.getElementById('importFormat');
           
           if (formatSelect.value === 'auto') {
+            // Esconder todas as opções primeiro
+            csvOptionsDiv.style.display = 'none';
+            xlsOptionsDiv.style.display = 'none';
+            
             if (filename.endsWith('.csv')) {
               csvOptionsDiv.style.display = 'block';
-            } else {
-              csvOptionsDiv.style.display = 'none';
+            } else if (filename.endsWith('.xls') || filename.endsWith('.xlsx')) {
+              xlsOptionsDiv.style.display = 'block';
+              
+              // Carregar planilhas automaticamente para arquivos Excel
+              try {
+                const arrayBuffer = await this.files[0].arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                updateSheetList(workbook.SheetNames);
+                currentWorkbook = workbook;
+                showAlert('info', `Arquivo Excel carregado. ${workbook.SheetNames.length} planilha(s) encontrada(s).`);
+              } catch (error) {
+                showAlert('warning', 'Erro ao carregar planilhas do Excel: ' + error.message);
+              }
             }
           }
         }
+      });
+    }
+
+    // Event listener para mudança de planilha no Excel
+    const xlsSheetSelect = document.getElementById('xlsSheet');
+    if (xlsSheetSelect) {
+      xlsSheetSelect.addEventListener('change', function() {
+        // Limpar prévia quando mudar de planilha
+        document.getElementById('importPreview').style.display = 'none';
+        document.getElementById('startImportBtn').disabled = true;
+        parsedImportData = [];
       });
     }
 
@@ -1384,5 +1558,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
 
