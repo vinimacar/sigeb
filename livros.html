@@ -187,9 +187,27 @@
       color: white;
       border-radius: 15px 15px 0 0;
       border-bottom: none;
-    }
-    .modal-header .btn-close {
+    }    .modal-header .btn-close {
       filter: brightness(0) invert(1);
+      opacity: 1;
+      z-index: 10;
+      position: relative;
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      width: 1em;
+      height: 1em;
+    }    .modal-header .btn-close:hover {
+      opacity: 0.8;
+    }
+    #addBookForm {
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+    }
+    #addBookForm h4 {
+      margin-bottom: 20px;
+      color: #1a1a2e;
     }
     .modal-title {
       font-weight: 600;
@@ -245,9 +263,51 @@
     #addBookForm .btn-primary {
       background: linear-gradient(90deg, #00f2fe, #4facfe);
       border: none;
-    }
-    #addBookForm .btn-primary:hover {
+    }    #addBookForm .btn-primary:hover {
       background: linear-gradient(90deg, #4facfe, #00f2fe);
+    }
+    /* Garantir visibilidade do botão de fechar nos modais */
+    #addBookModal .modal-header .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 1 !important;
+      z-index: 1000;
+      position: relative;
+      background: none !important;
+      border: none !important;
+      font-size: 1.25rem;
+      width: 1em;
+      height: 1em;
+      display: block !important;
+      visibility: visible !important;
+    }    #addBookModal .modal-header .btn-close:hover,
+    #addBookModal .modal-header .btn-close:focus {
+      opacity: 0.8 !important;
+      transform: scale(1.1);
+    }    /* Garantir que o botão de fechar seja sempre visível em todos os modais */
+    .btn-close {
+      position: relative !important;
+      z-index: 9999 !important;
+      background-color: transparent !important;
+      border: none !important;
+      font-size: 1.25rem !important;
+      opacity: 1 !important;
+      padding: 0.5rem !important;
+      margin: 0 !important;
+      width: auto !important;
+      height: auto !important;
+    }
+    
+    .btn-close:before {
+      content: '×' !important;
+      display: inline-block !important;
+      color: #000 !important;
+      font-weight: bold !important;
+      font-size: 1.5rem !important;
+      line-height: 1 !important;
+    }
+
+    .btn-close:hover:before {
+      color: #dc3545 !important;
     }
   </style>
 </head>
@@ -376,7 +436,7 @@
           </div>
           <div class="modal-body">
             <!-- Exemplo de formulário moderno para cadastro de novo livro usando Bootstrap 5 -->
-            <form id="addBookForm" class="needs-validation p-4 rounded shadow" style="background: #fff; max-width: 600px; margin: auto;" novalidate>
+            <form id="addBookForm" class="needs-validation" novalidate>
               <h4 class="mb-4 text-primary"><i class="bx bxs-book"></i> Cadastro de Novo Livro</h4>
               <div class="row g-3">
                 <div class="col-md-8">
@@ -1601,6 +1661,3 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
