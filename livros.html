@@ -289,11 +289,16 @@
       <div>
         <h2>Gerenciamento de Livros</h2>
         <p>Gerencie o acervo da biblioteca</p>
+      </div>      <div class="d-flex gap-2">
+        <button class="add-button" data-bs-toggle="modal" data-bs-target="#addBookModal">
+          <i class='bx bx-plus'></i>
+          Adicionar Livro
+        </button>
+        <button class="add-button" data-bs-toggle="modal" data-bs-target="#importBooksModal">
+          <i class='bx bx-import'></i>
+          Importar Livros
+        </button>
       </div>
-      <button class="add-button" data-bs-toggle="modal" data-bs-target="#addBookModal">
-        <i class='bx bx-plus'></i>
-        Adicionar Livro
-      </button>
     </div>
 
     <div class="search-box">
@@ -435,6 +440,131 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Importar Livros -->
+    <div class="modal fade" id="importBooksModal" tabindex="-1" aria-labelledby="importBooksModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="importBooksModalLabel">Importar Livros</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-12">
+                <div class="alert alert-info">
+                  <h6><i class="bx bx-info-circle"></i> Formatos Suportados:</h6>
+                  <ul class="mb-0">
+                    <li><strong>CSV:</strong> titulo,autor,isbn,editora,ano,genero,quantidade</li>
+                    <li><strong>TXT:</strong> Uma linha por livro (separado por vírgula ou tab)</li>
+                    <li><strong>XML:</strong> Estrutura com tags &lt;livro&gt;</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label for="importFile" class="form-label">Selecione o arquivo para importar:</label>
+                  <input type="file" class="form-control" id="importFile" accept=".csv,.txt,.xml" required>
+                  <small class="form-text text-muted">Formatos aceitos: CSV, TXT, XML</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label for="importFormat" class="form-label">Formato do arquivo:</label>
+                  <select class="form-select" id="importFormat">
+                    <option value="auto">Detectar automaticamente</option>
+                    <option value="csv">CSV (Comma Separated Values)</option>
+                    <option value="txt">TXT (Texto separado por vírgula/tab)</option>
+                    <option value="xml">XML (Extensible Markup Language)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="csvOptions" style="display: none;">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="form-label">Opções CSV:</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="csvHasHeader" checked>
+                    <label class="form-check-label" for="csvHasHeader">
+                      Primeira linha contém cabeçalhos
+                    </label>
+                  </div>
+                  <div class="mt-2">
+                    <label for="csvSeparator" class="form-label">Separador:</label>
+                    <select class="form-select" id="csvSeparator">
+                      <option value=",">Vírgula (,)</option>
+                      <option value=";">Ponto e vírgula (;)</option>
+                      <option value="\t">Tab</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-3">
+                  <button type="button" class="btn btn-outline-primary" id="previewImportBtn">
+                    <i class="bx bx-search"></i> Visualizar Prévia
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="importPreview" style="display: none;">
+              <hr>
+              <h6>Prévia dos dados:</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>Título</th>
+                      <th>Autor</th>
+                      <th>ISBN</th>
+                      <th>Editora</th>
+                      <th>Ano</th>
+                      <th>Gênero</th>
+                      <th>Quantidade</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="previewTableBody">
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3">
+                <div class="alert alert-warning">
+                  <strong>Atenção:</strong> Verifique os dados antes de importar. Livros com dados incompletos serão ignorados.
+                </div>
+              </div>
+            </div>
+
+            <div id="importProgress" style="display: none;">
+              <hr>
+              <h6>Progresso da Importação:</h6>
+              <div class="progress mb-3">
+                <div class="progress-bar" role="progressbar" style="width: 0%" id="importProgressBar"></div>
+              </div>
+              <div id="importStatus"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="startImportBtn" disabled>
+              <i class="bx bx-import"></i> Importar Livros
+            </button>
           </div>
         </div>
       </div>
@@ -762,8 +892,7 @@
       showAlert('danger', 'Erro ao excluir livro');
     }
   };
-
-  // Mostrar alertas
+  // Função para mostrar alertas
   function showAlert(type, message) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -778,6 +907,298 @@
     setTimeout(() => {
       alertDiv.remove();
     }, 5000);
+  }
+
+  // FUNCIONALIDADES DE IMPORTAÇÃO
+  let parsedImportData = [];
+
+  // Função para detectar formato do arquivo
+  function detectFileFormat(filename, content) {
+    const extension = filename.toLowerCase().split('.').pop();
+    
+    if (extension === 'xml') return 'xml';
+    if (extension === 'csv') return 'csv';
+    if (extension === 'txt') return 'txt';
+    
+    // Tentar detectar pelo conteúdo
+    if (content.trim().startsWith('<')) return 'xml';
+    if (content.includes(',') && content.split('\n').length > 1) return 'csv';
+    return 'txt';
+  }
+
+  // Função para parsear CSV
+  function parseCSV(content, separator = ',', hasHeader = true) {
+    const lines = content.trim().split('\n');
+    if (lines.length === 0) return [];
+    
+    const data = [];
+    const startIndex = hasHeader ? 1 : 0;
+    
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = line.split(separator).map(v => v.trim().replace(/^["']|["']$/g, ''));
+      
+      if (values.length >= 4) { // Mínimo: título, autor, ISBN, quantidade
+        const book = {
+          titulo: values[0] || '',
+          autor: values[1] || '',
+          isbn: values[2] || '',
+          editora: values[3] || '',
+          ano: values[4] ? parseInt(values[4]) : new Date().getFullYear(),
+          genero: values[5] || 'Outros',
+          quantidade: values[6] ? parseInt(values[6]) : 1,
+          valid: !!(values[0] && values[1])
+        };
+        data.push(book);
+      }
+    }
+    
+    return data;
+  }
+
+  // Função para parsear TXT
+  function parseTXT(content) {
+    const lines = content.trim().split('\n');
+    const data = [];
+    
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      
+      // Tentar diferentes separadores
+      let values = [];
+      if (line.includes('\t')) {
+        values = line.split('\t');
+      } else if (line.includes(',')) {
+        values = line.split(',');
+      } else if (line.includes(';')) {
+        values = line.split(';');
+      } else {
+        continue; // Linha não reconhecida
+      }
+      
+      values = values.map(v => v.trim().replace(/^["']|["']$/g, ''));
+      
+      if (values.length >= 2) {
+        const book = {
+          titulo: values[0] || '',
+          autor: values[1] || '',
+          isbn: values[2] || '',
+          editora: values[3] || '',
+          ano: values[4] ? parseInt(values[4]) : new Date().getFullYear(),
+          genero: values[5] || 'Outros',
+          quantidade: values[6] ? parseInt(values[6]) : 1,
+          valid: !!(values[0] && values[1])
+        };
+        data.push(book);
+      }
+    }
+    
+    return data;
+  }
+
+  // Função para parsear XML
+  function parseXML(content) {
+    const data = [];
+    
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(content, 'text/xml');
+      
+      // Verificar se há erros de parsing
+      if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+        throw new Error('XML inválido');
+      }
+      
+      const livros = xmlDoc.getElementsByTagName('livro');
+      
+      for (const livro of livros) {
+        const getTextContent = (tagName) => {
+          const elements = livro.getElementsByTagName(tagName);
+          return elements.length > 0 ? elements[0].textContent.trim() : '';
+        };
+        
+        const titulo = getTextContent('titulo') || getTextContent('title') || getTextContent('nome');
+        const autor = getTextContent('autor') || getTextContent('author') || getTextContent('autores');
+        
+        if (titulo && autor) {
+          const book = {
+            titulo,
+            autor,
+            isbn: getTextContent('isbn'),
+            editora: getTextContent('editora') || getTextContent('publisher'),
+            ano: parseInt(getTextContent('ano') || getTextContent('year')) || new Date().getFullYear(),
+            genero: getTextContent('genero') || getTextContent('genre') || 'Outros',
+            quantidade: parseInt(getTextContent('quantidade') || getTextContent('quantity')) || 1,
+            valid: true
+          };
+          data.push(book);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao parsear XML:', error);
+      showAlert('danger', 'Erro ao processar arquivo XML: ' + error.message);
+    }
+    
+    return data;
+  }
+
+  // Função para processar arquivo de importação
+  async function processImportFile() {
+    const fileInput = document.getElementById('importFile');
+    const formatSelect = document.getElementById('importFormat');
+    
+    if (!fileInput.files[0]) {
+      showAlert('warning', 'Selecione um arquivo para importar');
+      return;
+    }
+    
+    const file = fileInput.files[0];
+    const content = await file.text();
+    
+    let format = formatSelect.value;
+    if (format === 'auto') {
+      format = detectFileFormat(file.name, content);
+    }
+    
+    // Processar baseado no formato
+    switch (format) {
+      case 'csv':
+        const separator = document.getElementById('csvSeparator').value;
+        const hasHeader = document.getElementById('csvHasHeader').checked;
+        parsedImportData = parseCSV(content, separator, hasHeader);
+        break;
+      case 'txt':
+        parsedImportData = parseTXT(content);
+        break;
+      case 'xml':
+        parsedImportData = parseXML(content);
+        break;
+      default:
+        showAlert('danger', 'Formato de arquivo não suportado');
+        return;
+    }
+    
+    // Mostrar prévia
+    displayImportPreview();
+  }
+
+  // Função para exibir prévia dos dados
+  function displayImportPreview() {
+    const previewDiv = document.getElementById('importPreview');
+    const tableBody = document.getElementById('previewTableBody');
+    const startImportBtn = document.getElementById('startImportBtn');
+    
+    tableBody.innerHTML = '';
+    
+    if (parsedImportData.length === 0) {
+      showAlert('warning', 'Nenhum dado válido encontrado no arquivo');
+      startImportBtn.disabled = true;
+      return;
+    }
+    
+    // Mostrar primeiros 10 registros na prévia
+    const previewData = parsedImportData.slice(0, 10);
+    
+    previewData.forEach(book => {
+      const row = document.createElement('tr');
+      row.className = book.valid ? 'table-success' : 'table-danger';
+      
+      row.innerHTML = `
+        <td>${book.titulo}</td>
+        <td>${book.autor}</td>
+        <td>${book.isbn}</td>
+        <td>${book.editora}</td>
+        <td>${book.ano}</td>
+        <td>${book.genero}</td>
+        <td>${book.quantidade}</td>
+        <td>${book.valid ? '<i class="bx bx-check text-success"></i> Válido' : '<i class="bx bx-x text-danger"></i> Inválido'}</td>
+      `;
+      
+      tableBody.appendChild(row);
+    });
+    
+    previewDiv.style.display = 'block';
+    startImportBtn.disabled = false;
+    
+    const validCount = parsedImportData.filter(book => book.valid).length;
+    const totalCount = parsedImportData.length;
+    
+    showAlert('info', `Prévia carregada: ${validCount} de ${totalCount} registros são válidos`);
+  }
+
+  // Função para importar os livros
+  async function importBooks() {
+    const validBooks = parsedImportData.filter(book => book.valid);
+    
+    if (validBooks.length === 0) {
+      showAlert('warning', 'Nenhum livro válido para importar');
+      return;
+    }
+    
+    const progressDiv = document.getElementById('importProgress');
+    const progressBar = document.getElementById('importProgressBar');
+    const statusDiv = document.getElementById('importStatus');
+    const startBtn = document.getElementById('startImportBtn');
+    
+    progressDiv.style.display = 'block';
+    startBtn.disabled = true;
+    
+    let imported = 0;
+    let errors = 0;
+    
+    for (let i = 0; i < validBooks.length; i++) {
+      const book = validBooks[i];
+      
+      try {
+        const bookData = {
+          titulo: book.titulo,
+          autores: book.autor.split(',').map(a => a.trim()),
+          isbn: book.isbn,
+          editora: book.editora,
+          ano: book.ano,
+          genero: book.genero,
+          quantidade: book.quantidade,
+          quantidadeDisponivel: book.quantidade,
+          emprestados: 0,
+          createdAt: serverTimestamp(),
+          importedAt: serverTimestamp()
+        };
+        
+        await addDoc(collection(db, 'livros'), bookData);
+        imported++;
+        
+      } catch (error) {
+        console.error('Erro ao importar livro:', book.titulo, error);
+        errors++;
+      }
+      
+      // Atualizar progresso
+      const progress = ((i + 1) / validBooks.length) * 100;
+      progressBar.style.width = progress + '%';
+      statusDiv.innerHTML = `Importando... ${i + 1}/${validBooks.length} (${imported} sucessos, ${errors} erros)`;
+    }
+    
+    // Finalizar importação
+    setTimeout(() => {
+      progressDiv.style.display = 'none';
+      startBtn.disabled = false;
+      
+      if (imported > 0) {
+        showAlert('success', `Importação concluída! ${imported} livros importados com sucesso${errors > 0 ? `, ${errors} erros` : ''}`);
+        bootstrap.Modal.getInstance(document.getElementById('importBooksModal')).hide();
+        loadBooks(); // Recarregar lista de livros
+      } else {
+        showAlert('danger', 'Nenhum livro foi importado. Verifique o formato dos dados.');
+      }
+      
+      // Limpar dados da importação
+      parsedImportData = [];
+      document.getElementById('importFile').value = '';
+      document.getElementById('importPreview').style.display = 'none';
+      
+    }, 1000);
   }
 
   // Função para lidar com a submissão do formulário de adicionar livro
@@ -831,7 +1252,6 @@
       alert('Erro ao adicionar livro.');
     }
   }
-
   // Adicione o event listener corretamente:
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('addBookForm');
@@ -841,6 +1261,61 @@
     const editForm = document.getElementById('editBookForm');
     if (editForm) {
       editForm.addEventListener('submit', handleEditSubmission);
+    }
+
+    // EVENT LISTENERS PARA IMPORTAÇÃO
+    const importFormatSelect = document.getElementById('importFormat');
+    const csvOptionsDiv = document.getElementById('csvOptions');
+    const previewBtn = document.getElementById('previewImportBtn');
+    const startImportBtn = document.getElementById('startImportBtn');
+    const importFileInput = document.getElementById('importFile');
+
+    // Mostrar/ocultar opções CSV
+    if (importFormatSelect && csvOptionsDiv) {
+      importFormatSelect.addEventListener('change', function() {
+        if (this.value === 'csv' || (this.value === 'auto' && importFileInput.files[0]?.name.toLowerCase().endsWith('.csv'))) {
+          csvOptionsDiv.style.display = 'block';
+        } else {
+          csvOptionsDiv.style.display = 'none';
+        }
+      });
+    }
+
+    // Event listener para mudança no arquivo
+    if (importFileInput) {
+      importFileInput.addEventListener('change', function() {
+        document.getElementById('importPreview').style.display = 'none';
+        document.getElementById('startImportBtn').disabled = true;
+        parsedImportData = [];
+        
+        // Auto-detectar formato e mostrar opções CSV se necessário
+        if (this.files[0]) {
+          const filename = this.files[0].name.toLowerCase();
+          const formatSelect = document.getElementById('importFormat');
+          
+          if (formatSelect.value === 'auto') {
+            if (filename.endsWith('.csv')) {
+              csvOptionsDiv.style.display = 'block';
+            } else {
+              csvOptionsDiv.style.display = 'none';
+            }
+          }
+        }
+      });
+    }
+
+    // Event listener para prévia
+    if (previewBtn) {
+      previewBtn.addEventListener('click', processImportFile);
+    }
+
+    // Event listener para iniciar importação
+    if (startImportBtn) {
+      startImportBtn.addEventListener('click', function() {
+        if (confirm(`Deseja importar ${parsedImportData.filter(book => book.valid).length} livros válidos?`)) {
+          importBooks();
+        }
+      });
     }
 
     // Ativar filtro por título, autor, editora e gênero
@@ -909,4 +1384,5 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 
