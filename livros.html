@@ -970,8 +970,7 @@
           resolve(null);
         }
       });
-    });
-  }
+    });  }
 
   // Função para carregar livros
   async function loadBooks(filterTitulo = '', filterAutor = '', filterEditora = '', selectedGenre = '') {
@@ -979,14 +978,23 @@
     try {
       bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
 
-      let q = query(collection(db, 'livros'), orderBy('titulo'));
-      if (selectedGenre) {
-        q = query(q, where('genero', '==', selectedGenre));
-      }
+      // Debug: mostrar os filtros aplicados
+      console.log('Filtros aplicados:', { filterTitulo, filterAutor, filterEditora, selectedGenre });
 
+      // Buscar todos os livros primeiro, depois aplicar filtros localmente
+      let q = query(collection(db, 'livros'), orderBy('titulo'));
+      
       const snapshot = await getDocs(q);
       let booksToDisplay = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+      // Aplicar filtro de gênero
+      if (selectedGenre && selectedGenre.trim()) {
+        booksToDisplay = booksToDisplay.filter(book => {
+          return book.genero && book.genero === selectedGenre;
+        });
+      }
+
+      // Aplicar filtro de título
       if (filterTitulo.trim()) {
         const lowerTitulo = filterTitulo.toLowerCase().trim();
         booksToDisplay = booksToDisplay.filter(book => {
@@ -996,6 +1004,8 @@
           return false;
         });
       }
+      
+      // Aplicar filtro de autor
       if (filterAutor.trim()) {
         const lowerAutor = filterAutor.toLowerCase().trim();
         booksToDisplay = booksToDisplay.filter(book => {
@@ -1007,6 +1017,8 @@
           return false;
         });
       }
+      
+      // Aplicar filtro de editora
       if (filterEditora.trim()) {
         const lowerEditora = filterEditora.toLowerCase().trim();
         booksToDisplay = booksToDisplay.filter(book => {
@@ -1016,6 +1028,8 @@
           return false;
         });
       }
+
+      console.log(`Livros encontrados: ${booksToDisplay.length}`);
 
       bookGrid.innerHTML = '';
       if (booksToDisplay.length === 0) {
@@ -1749,13 +1763,13 @@
     const filterTituloInput = document.getElementById('filterTitulo');
     const filterAutorInput = document.getElementById('filterAutor');
     const filterEditoraInput = document.getElementById('filterEditora');
-    const genreFilterSelect = document.getElementById('genreFilter');
-
-    function applyFilters() {
+    const genreFilterSelect = document.getElementById('genreFilter');    function applyFilters() {
       const titulo = filterTituloInput ? filterTituloInput.value : '';
       const autor = filterAutorInput ? filterAutorInput.value : '';
       const editora = filterEditoraInput ? filterEditoraInput.value : '';
       const genero = genreFilterSelect ? genreFilterSelect.value : '';
+      
+      console.log('Aplicando filtros:', { titulo, autor, editora, genero });
       loadBooks(titulo, autor, editora, genero);
     }
 
@@ -1770,11 +1784,30 @@
     }
     if (genreFilterSelect) {
       genreFilterSelect.addEventListener('change', applyFilters);
-    }
-
-    // Carregar livros ao iniciar
+    }    // Carregar livros ao iniciar
     loadBooks();
     document.querySelectorAll('.add-button').forEach(btn => btn.disabled = false);
+
+    // Event listeners para os botões de pesquisa
+    const searchButton = document.getElementById('searchButton');
+    const showAllBooksButton = document.getElementById('showAllBooksButton');
+
+    if (searchButton) {
+      searchButton.addEventListener('click', applyFilters);
+    }
+
+    if (showAllBooksButton) {
+      showAllBooksButton.addEventListener('click', function() {
+        // Limpar todos os filtros
+        if (filterTituloInput) filterTituloInput.value = '';
+        if (filterAutorInput) filterAutorInput.value = '';
+        if (filterEditoraInput) filterEditoraInput.value = '';
+        if (genreFilterSelect) genreFilterSelect.value = '';
+        
+        // Carregar todos os livros
+        loadBooks();
+      });
+    }
 
     // Busca automática de dados pelo ISBN
     const isbnInput = document.getElementById('isbn');
@@ -1811,5 +1844,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
 
