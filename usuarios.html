@@ -350,10 +350,10 @@
               <td><span class="user-status status-ativo">Ativo</span></td>
               <td>
                 <div class="action-buttons">
-                  <button class="action-button edit-button">
+                  <button class="action-button edit-button" onclick="handleEditUser('static-user-1')">
                     <i class='bx bx-edit-alt'></i>
                   </button>
-                  <button class="action-button delete-button">
+                  <button class="action-button delete-button" onclick="handleDeleteUser('static-user-1')">
                     <i class='bx bx-trash'></i>
                   </button>
                 </div>
@@ -369,10 +369,10 @@
               <td><span class="user-status status-ativo">Ativo</span></td>
               <td>
                 <div class="action-buttons">
-                  <button class="action-button edit-button">
+                  <button class="action-button edit-button" onclick="handleEditUser('static-user-2')">
                     <i class='bx bx-edit-alt'></i>
                   </button>
-                  <button class="action-button delete-button">
+                  <button class="action-button delete-button" onclick="handleDeleteUser('static-user-2')">
                     <i class='bx bx-trash'></i>
                   </button>
                 </div>
@@ -388,10 +388,10 @@
               <td><span class="user-status status-inativo">Inativo</span></td>
               <td>
                 <div class="action-buttons">
-                  <button class="action-button edit-button">
+                  <button class="action-button edit-button" onclick="handleEditUser('static-user-3')">
                     <i class='bx bx-edit-alt'></i>
                   </button>
-                  <button class="action-button delete-button">
+                  <button class="action-button delete-button" onclick="handleDeleteUser('static-user-3')">
                     <i class='bx bx-trash'></i>
                   </button>
                 </div>
@@ -1043,14 +1043,18 @@
 
       // Função para editar usuário
       async function editUser(id) {
+        console.log('editUser chamada com id:', id);
         try {
+          console.log('Buscando usuário no Firestore...');
           const doc = await db.collection('usuarios').doc(id).get();
           if (!doc.exists) {
+            console.log('Usuário não encontrado no Firestore');
             showAlert('danger', 'Usuário não encontrado.');
             return;
           }
           
           const user = doc.data();
+          console.log('Dados do usuário encontrados:', user);
 
           // Preenche o formulário com os dados do usuário
           document.getElementById('usuarioId').value = id;
@@ -1089,6 +1093,7 @@
           document.getElementById('btnImprimirFicha').style.display = 'none';
           document.getElementById('btnSalvarUsuario').style.display = 'inline-block';
 
+          console.log('Abrindo modal para edição...');
           // Abre o modal
           const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
           modal.show();
@@ -1166,22 +1171,7 @@
         }
       }
 
-      // Função para solicitar credenciais antes de editar/excluir
-      async function solicitarCredenciais() {
-        const username = prompt('Usuário (colaborador):');
-        const senha = prompt('Senha:');
-        if (!username || !senha) {
-          alert('Usuário e senha são obrigatórios.');
-          return null;
-        }
-        const user = await autenticarColaborador(username, senha);
-        if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-          return user;
-        } else {
-          alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
-          return null;
-        }
-      }      // Função para deletar usuário
+      // Função para deletar usuário
       async function deleteUser(id) {
         try {
           const confirmDelete = confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.');
@@ -1193,29 +1183,6 @@
         } catch (error) {
           console.error('Erro ao deletar usuário:', error);
           showAlert('danger', 'Erro ao excluir usuário.');
-        }
-      }
-
-      // Função para solicitar credenciais antes de editar/excluir
-      async function solicitarCredenciais() {
-        const username = prompt('Usuário (colaborador):');
-        if (!username) return null;
-        
-        const senha = prompt('Senha:');
-        if (!senha) return null;
-        
-        try {
-          const user = await autenticarColaborador(username, senha);
-          if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
-            return user;
-          } else {
-            alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
-            return null;
-          }
-        } catch (error) {
-          console.error('Erro na autenticação:', error);
-          alert('Erro ao verificar credenciais.');
-          return null;
         }
       }
 
@@ -1272,6 +1239,8 @@
 
       // Função para adicionar event listeners aos botões de ação
       function addActionButtonListeners() {
+        console.log('Adicionando event listeners aos botões...');
+        
         // Remove listeners antigos para evitar duplicação
         document.querySelectorAll('.edit-button').forEach(btn => {
           btn.removeEventListener('click', handleEditClick);
@@ -1286,11 +1255,14 @@
         // Para botões estáticos, adiciona data-id se não existir
         document.querySelectorAll('.edit-button:not([data-id])').forEach((btn, index) => {
           btn.setAttribute('data-id', `static-user-${index + 1}`);
+          console.log('Adicionado data-id para botão estático:', `static-user-${index + 1}`);
         });
         
         document.querySelectorAll('.delete-button:not([data-id])').forEach((btn, index) => {
           btn.setAttribute('data-id', `static-user-${index + 1}`);
         });
+        
+        console.log('Event listeners adicionados. Total de botões editar:', document.querySelectorAll('.edit-button').length);
       }
 
       // Handlers para os cliques dos botões
@@ -1312,13 +1284,16 @@
 
       // Funções globais para serem chamadas pelo onclick
       window.handleEditUser = async function(userId) {
+        console.log('handleEditUser chamada com userId:', userId);
         try {
           // Verifica se é um usuário estático (de exemplo)
           if (userId.startsWith('static-user-')) {
+            console.log('Usuário estático detectado');
             showAlert('info', 'Este é um usuário de exemplo. Para editar usuários reais, cadastre-os primeiro através do botão "Cadastro de Usuários".');
             return;
           }
           
+          console.log('Chamando editUser para userId:', userId);
           // Chama diretamente a função de editar sem solicitar credenciais
           await editUser(userId);
         } catch (error) {
@@ -1854,15 +1829,7 @@
       });
     });
 
-    // Garante que os campos de aluno estejam corretos ao abrir o modal para editar
-    function editUser(id) {
-      // ...código já existente para preencher campos...
-      // Após preencher os campos:
-      const funcao = document.getElementById('funcao').value;
-      document.getElementById('camposAluno').style.display = funcao === 'ALUNO' ? '' : 'none';
-      ['matricula','serie','periodo','turma','turno'].forEach(id => {
-        document.getElementById(id).required = funcao === 'ALUNO';
-      });    }    // SISTEMA DE CARTÃO DE LEITOR    // Função para gerar cartão de um usuário individual (após cadastro)
+    // SISTEMA DE CARTÃO DE LEITOR    // Função para gerar cartão de um usuário individual (após cadastro)
     async function gerarCartaoUsuarioIndividual(userData) {
       try {
         const { jsPDF } = window.jspdf;
@@ -2120,4 +2087,5 @@
   </script>
 </body>
 </html>
+
 
