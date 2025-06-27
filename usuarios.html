@@ -1187,10 +1187,6 @@
           const confirmDelete = confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.');
           if (!confirmDelete) return;
 
-          // Solicitar credenciais de colaborador
-          const colaborador = await solicitarCredenciais();
-          if (!colaborador) return;
-
           await db.collection('usuarios').doc(id).delete();
           showAlert('success', 'Usuário excluído com sucesso!');
           loadUsers(); // Recarrega a lista
@@ -1323,10 +1319,7 @@
             return;
           }
           
-          // Solicitar credenciais de colaborador antes de editar
-          const colaborador = await solicitarCredenciais();
-          if (!colaborador) return;
-
+          // Chama diretamente a função de editar sem solicitar credenciais
           await editUser(userId);
         } catch (error) {
           console.error('Erro ao editar usuário:', error);
@@ -1342,6 +1335,7 @@
             return;
           }
           
+          // Chama diretamente a função de deletar sem solicitar credenciais
           await deleteUser(userId);
         } catch (error) {
           console.error('Erro ao excluir usuário:', error);
@@ -2126,5 +2120,4 @@
   </script>
 </body>
 </html>
-
 
