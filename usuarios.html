@@ -692,8 +692,7 @@
       // Variável global para armazenar dados do último usuário cadastrado
       let ultimoUsuarioCadastrado = null;
 
-      // Função para gerar ficha cadastral em PDF
-      function gerarFichaCadastral(dadosUsuario) {
+      // Função para gerar ficha cadastral em PDF      function gerarFichaCadastral(dadosUsuario) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
@@ -702,6 +701,38 @@
         const pageWidth = doc.internal.pageSize.getWidth();
         const contentWidth = pageWidth - (margin * 2);
         let yPosition = margin;
+        
+        // Função para criar logo SIGEB
+        const criarLogoSIGEB = (x, y, tamanho = 1) => {
+          // Salva estado atual
+          const currentLineWidth = doc.getLineWidth();
+          
+          // Logo - Círculo com "S" estilizado
+          doc.setFillColor(79, 172, 254); // Azul do SIGEB
+          doc.circle(x + 10 * tamanho, y + 10 * tamanho, 8 * tamanho, 'F');
+          
+          // Letra "S" no centro do círculo
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(12 * tamanho);
+          doc.setFont('helvetica', 'bold');
+          doc.text('S', x + 7 * tamanho, y + 13 * tamanho);
+          
+          // Texto "SIGEB" ao lado
+          doc.setTextColor(26, 26, 46);
+          doc.setFontSize(16 * tamanho);
+          doc.setFont('helvetica', 'bold');
+          doc.text('SIGEB', x + 22 * tamanho, y + 13 * tamanho);
+          
+          // Texto "Sistema de Gerenciamento de Biblioteca" abaixo
+          doc.setTextColor(100, 100, 100);
+          doc.setFontSize(8 * tamanho);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Sistema de Gerenciamento de Biblioteca', x + 22 * tamanho, y + 18 * tamanho);
+          
+          // Restaura cor do texto
+          doc.setTextColor(0, 0, 0);
+          doc.setLineWidth(currentLineWidth);
+        };
         
         // Função auxiliar para adicionar texto
         const addText = (text, x, y, options = {}) => {
@@ -719,22 +750,22 @@
           doc.line(x1, y1, x2, y2);
         };
         
-        // Cabeçalho
-        doc.setFillColor(26, 26, 46);
-        doc.rect(margin, yPosition, contentWidth, 25, 'F');
+        // Adiciona logo no cabeçalho
+        criarLogoSIGEB(margin, yPosition);
+        yPosition += 30;
         
-        addText('SISTEMA DE GERENCIAMENTO DE BIBLIOTECA ESCOLAR - SIGEB', margin + 5, yPosition + 10, {
-          fontSize: 14,
-          fontStyle: 'bold'
-        });
+        // Cabeçalho principal
+        doc.setFillColor(26, 26, 46);
+        doc.rect(margin, yPosition, contentWidth, 20, 'F');
+        
         doc.setTextColor(255, 255, 255);
-        addText('FICHA CADASTRAL DE USUÁRIO', margin + 5, yPosition + 20, {
-          fontSize: 12,
+        addText('FICHA CADASTRAL DE USUÁRIO', margin + 5, yPosition + 13, {
+          fontSize: 14,
           fontStyle: 'bold'
         });
         doc.setTextColor(0, 0, 0);
         
-        yPosition += 35;
+        yPosition += 30;
         
         // Informações pessoais
         addText('DADOS PESSOAIS', margin, yPosition, {
@@ -861,8 +892,7 @@
         // Linha para assinatura do usuário
         addLine(margin, yPosition, margin + 80, yPosition);
         addText('Usuário', margin + 30, yPosition + 10, { fontSize: 10 });
-        
-        // Linha para assinatura do responsável
+          // Linha para assinatura do responsável
         addLine(margin + 100, yPosition, margin + 180, yPosition);
         addText('Bibliotecário(a)', margin + 120, yPosition + 10, { fontSize: 10 });
         
@@ -870,7 +900,7 @@
         
         // Data de emissão
         const dataAtual = new Date().toLocaleDateString('pt-BR');
-        addText(`Emitido em: ${dataAtual}`, margin, yPosition, {
+        addText('Emitido em: ' + dataAtual, margin, yPosition, {
           fontSize: 10,
           fontStyle: 'italic'
         });
@@ -1573,11 +1603,18 @@
           // Mostrar botão de impressão
           document.getElementById('btnImprimirFicha').style.display = 'inline-block';
           document.getElementById('btnSalvarUsuario').style.display = 'none';
-          
-          // Mudar título do modal
+            // Mudar título do modal
           document.getElementById('addUserModalLabel').textContent = 'Usuário Cadastrado com Sucesso!';
           
           showAlert('info', 'Clique em "Imprimir Ficha" para gerar a ficha cadastral do usuário.');
+          
+          // Perguntar se quer imprimir o cartão do leitor
+          setTimeout(() => {
+            const imprimirCartao = confirm('Usuário cadastrado com sucesso!\n\nDeseja imprimir o Cartão de Leitor agora?');
+            if (imprimirCartao) {
+              gerarCartaoUsuarioIndividual(usuario);
+            }
+          }, 1000); // Aguarda 1 segundo para mostrar o alert de sucesso primeiro
         }
         
         loadUsers();
@@ -1622,10 +1659,31 @@
       document.getElementById('camposAluno').style.display = funcao === 'ALUNO' ? '' : 'none';
       ['matricula','serie','periodo','turma','turno'].forEach(id => {
         document.getElementById(id).required = funcao === 'ALUNO';
-      });    }
+      });    }    // SISTEMA DE CARTÃO DE LEITOR    // Função para gerar cartão de um usuário individual (após cadastro)
+    async function gerarCartaoUsuarioIndividual(userData) {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: [85.6, 53.98] // Tamanho padrão de cartão de crédito
+        });
 
-    // SISTEMA DE CARTÃO DE LEITOR
-    
+        // Criar o cartão usando a função existente
+        criarCartaoUsuario(doc, userData, 0, 0, 85.6, 53.98);
+
+        // Salvar o PDF
+        const nomeArquivo = `cartao_leitor_${userData.nome.replace(/\s+/g, '_')}.pdf`;
+        doc.save(nomeArquivo);
+
+        showAlert('success', `Cartão de leitor gerado com sucesso para ${userData.nome}!`);
+        
+      } catch (error) {
+        console.error('Erro ao gerar cartão:', error);
+        showAlert('danger', 'Erro ao gerar cartão de leitor.');
+      }
+    }
+
     // Função para habilitar/desabilitar botão de cartão baseado na seleção
     function updateCartaoButton() {
       const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
@@ -1859,6 +1917,7 @@
   </script>
 </body>
 </html>
+
 
 
 
