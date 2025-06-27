@@ -1043,30 +1043,60 @@
 
       // Função para editar usuário
       async function editUser(id) {
-        const doc = await db.collection('usuarios').doc(id).get();
-        if (!doc.exists) return;
-        const user = doc.data();
+        try {
+          const doc = await db.collection('usuarios').doc(id).get();
+          if (!doc.exists) {
+            showAlert('danger', 'Usuário não encontrado.');
+            return;
+          }
+          
+          const user = doc.data();
 
-        document.getElementById('usuarioId').value = id;
-        document.getElementById('nome').value = user.nome || '';
-        document.getElementById('funcao').value = user.funcao || '';
-        document.getElementById('endereco').value = user.endereco?.logradouro || '';
-        document.getElementById('numero').value = user.endereco?.numero || '';
-        document.getElementById('cep').value = user.endereco?.cep || '';
-        document.getElementById('bairro').value = user.endereco?.bairro || '';
-        document.getElementById('cidade').value = user.endereco?.cidade || '';
-        document.getElementById('uf').value = user.endereco?.uf || '';
-        document.getElementById('telefone').value = user.telefone || '';
-        document.getElementById('email').value = user.email || '';
-        document.getElementById('status').value = user.status || 'Ativo';
-        document.getElementById('matricula').value = user.matricula || '';
-        document.getElementById('serie').value = user.serie || '';
-        document.getElementById('periodo').value = user.periodo || '';
-        document.getElementById('turma').value = user.turma || '';
-        document.getElementById('turno').value = user.turno || '';
+          // Preenche o formulário com os dados do usuário
+          document.getElementById('usuarioId').value = id;
+          document.getElementById('nome').value = user.nome || '';
+          document.getElementById('funcao').value = user.funcao || '';
+          document.getElementById('endereco').value = user.endereco?.logradouro || '';
+          document.getElementById('numero').value = user.endereco?.numero || '';
+          document.getElementById('cep').value = user.endereco?.cep || '';
+          document.getElementById('bairro').value = user.endereco?.bairro || '';
+          document.getElementById('cidade').value = user.endereco?.cidade || '';
+          document.getElementById('uf').value = user.endereco?.uf || '';
+          document.getElementById('telefone').value = user.telefone || '';
+          document.getElementById('email').value = user.email || '';
+          document.getElementById('status').value = user.status || 'Ativo';
+          
+          // Campos específicos de aluno
+          document.getElementById('matricula').value = user.matricula || '';
+          document.getElementById('serie').value = user.serie || '';
+          document.getElementById('periodo').value = user.periodo || '';
+          document.getElementById('turma').value = user.turma || '';
+          document.getElementById('turno').value = user.turno || '';
 
-        // Abre o modal de edição
-        new bootstrap.Modal(document.getElementById('addUserModal')).show();
+          // Controla a exibição dos campos de aluno baseado na função
+          const isAluno = user.funcao === 'ALUNO';
+          document.getElementById('camposAluno').style.display = isAluno ? '' : 'none';
+          
+          // Torna campos obrigatórios apenas se for aluno
+          ['matricula', 'serie', 'periodo', 'turma', 'turno'].forEach(id => {
+            document.getElementById(id).required = isAluno;
+          });
+
+          // Muda o título do modal para indicar edição
+          document.getElementById('addUserModalLabel').textContent = 'Editar Usuário';
+          
+          // Esconde botão de impressão e mostra botão de salvar
+          document.getElementById('btnImprimirFicha').style.display = 'none';
+          document.getElementById('btnSalvarUsuario').style.display = 'inline-block';
+
+          // Abre o modal
+          const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+          modal.show();
+          
+        } catch (error) {
+          console.error('Erro ao carregar usuário para edição:', error);
+          showAlert('danger', 'Erro ao carregar dados do usuário.');
+        }
       }
 
       // Adicione esta função para filtrar usuários
@@ -1092,8 +1122,9 @@
       document.querySelector('.search-box input').addEventListener('input', filterUsers);
 
       // Carrega os usuários ao iniciar
-      document.addEventListener('DOMContentLoaded', loadUsers);
       document.addEventListener('DOMContentLoaded', function() {
+        loadUsers(); // Carrega usuários do Firestore
+        
         const addUserForm = document.getElementById('addUserForm');
         if (addUserForm) {
           addUserForm.addEventListener('submit', function(event) {
@@ -1101,6 +1132,9 @@
             handleUserSubmission(event);
           });
         }
+        
+        // Adiciona event listeners para botões estáticos também
+        addActionButtonListeners();
       });      // Limpa o formulário e o campo usuarioId ao fechar o modal
       document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
         document.getElementById('addUserForm').reset();
@@ -1147,7 +1181,49 @@
           alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
           return null;
         }
-      }      // Atualize o loadUsers para adicionar eventos nos botões
+      }      // Função para deletar usuário
+      async function deleteUser(id) {
+        try {
+          const confirmDelete = confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.');
+          if (!confirmDelete) return;
+
+          // Solicitar credenciais de colaborador
+          const colaborador = await solicitarCredenciais();
+          if (!colaborador) return;
+
+          await db.collection('usuarios').doc(id).delete();
+          showAlert('success', 'Usuário excluído com sucesso!');
+          loadUsers(); // Recarrega a lista
+        } catch (error) {
+          console.error('Erro ao deletar usuário:', error);
+          showAlert('danger', 'Erro ao excluir usuário.');
+        }
+      }
+
+      // Função para solicitar credenciais antes de editar/excluir
+      async function solicitarCredenciais() {
+        const username = prompt('Usuário (colaborador):');
+        if (!username) return null;
+        
+        const senha = prompt('Senha:');
+        if (!senha) return null;
+        
+        try {
+          const user = await autenticarColaborador(username, senha);
+          if (user && ['PROFESSOR', 'SUPERVISOR', 'DIRETOR', 'BIBLIOTECARIO'].includes(user.funcao)) {
+            return user;
+          } else {
+            alert('Acesso negado! Apenas colaboradores cadastrados podem editar ou excluir usuários.');
+            return null;
+          }
+        } catch (error) {
+          console.error('Erro na autenticação:', error);
+          alert('Erro ao verificar credenciais.');
+          return null;
+        }
+      }
+
+      // Atualizar loadUsers para adicionar eventos nos botões
       async function loadUsers() {
         const tbody = document.querySelector('#usuariosTableBody');
         
@@ -1174,10 +1250,10 @@
                 <td><span class="user-status ${user.status === 'Inativo' ? 'status-inativo' : 'status-ativo'}">${user.status}</span></td>
                 <td>
                   <div class="action-buttons">
-                    <button class="action-button edit-button" data-id="${doc.id}">
+                    <button class="action-button edit-button" data-id="${doc.id}" onclick="handleEditUser('${doc.id}')">
                       <i class='bx bx-edit-alt'></i>
                     </button>
-                    <button class="action-button delete-button" data-id="${doc.id}">
+                    <button class="action-button delete-button" data-id="${doc.id}" onclick="handleDeleteUser('${doc.id}')">
                       <i class='bx bx-trash'></i>
                     </button>
                   </div>
@@ -1187,6 +1263,9 @@
             });
           }
           
+          // Adicionar event listeners para os botões de ação (fallback)
+          addActionButtonListeners();
+          
           // Atualiza estado do botão após carregar dados
           updateCartaoButton();
           
@@ -1194,6 +1273,81 @@
           console.error('Erro ao buscar usuários do Firestore:', e);
         }
       }
+
+      // Função para adicionar event listeners aos botões de ação
+      function addActionButtonListeners() {
+        // Remove listeners antigos para evitar duplicação
+        document.querySelectorAll('.edit-button').forEach(btn => {
+          btn.removeEventListener('click', handleEditClick);
+          btn.addEventListener('click', handleEditClick);
+        });
+        
+        document.querySelectorAll('.delete-button').forEach(btn => {
+          btn.removeEventListener('click', handleDeleteClick);
+          btn.addEventListener('click', handleDeleteClick);
+        });
+        
+        // Para botões estáticos, adiciona data-id se não existir
+        document.querySelectorAll('.edit-button:not([data-id])').forEach((btn, index) => {
+          btn.setAttribute('data-id', `static-user-${index + 1}`);
+        });
+        
+        document.querySelectorAll('.delete-button:not([data-id])').forEach((btn, index) => {
+          btn.setAttribute('data-id', `static-user-${index + 1}`);
+        });
+      }
+
+      // Handlers para os cliques dos botões
+      function handleEditClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const userId = e.currentTarget.getAttribute('data-id');
+        console.log('Botão editar clicado para usuário:', userId);
+        handleEditUser(userId);
+      }
+
+      function handleDeleteClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const userId = e.currentTarget.getAttribute('data-id');
+        console.log('Botão excluir clicado para usuário:', userId);
+        handleDeleteUser(userId);
+      }
+
+      // Funções globais para serem chamadas pelo onclick
+      window.handleEditUser = async function(userId) {
+        try {
+          // Verifica se é um usuário estático (de exemplo)
+          if (userId.startsWith('static-user-')) {
+            showAlert('info', 'Este é um usuário de exemplo. Para editar usuários reais, cadastre-os primeiro através do botão "Cadastro de Usuários".');
+            return;
+          }
+          
+          // Solicitar credenciais de colaborador antes de editar
+          const colaborador = await solicitarCredenciais();
+          if (!colaborador) return;
+
+          await editUser(userId);
+        } catch (error) {
+          console.error('Erro ao editar usuário:', error);
+          showAlert('danger', 'Erro ao carregar dados do usuário.');
+        }
+      };
+
+      window.handleDeleteUser = async function(userId) {
+        try {
+          // Verifica se é um usuário estático (de exemplo)
+          if (userId.startsWith('static-user-')) {
+            showAlert('info', 'Este é um usuário de exemplo. Para excluir usuários reais, cadastre-os primeiro através do botão "Cadastro de Usuários".');
+            return;
+          }
+          
+          await deleteUser(userId);
+        } catch (error) {
+          console.error('Erro ao excluir usuário:', error);
+          showAlert('danger', 'Erro ao excluir usuário.');
+        }
+      };
 
       // Função para autenticar colaborador pelo username e senha
       async function autenticarColaborador(username, senha) {
@@ -1972,4 +2126,5 @@
   </script>
 </body>
 </html>
+
 
