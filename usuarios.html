@@ -202,10 +202,64 @@
       }
       .sidebar.active {
         transform: translateX(0);
-      }
-      .table-responsive {
+      }      .table-responsive {
         margin-bottom: 0;
       }
+    }
+    
+    /* Garantir visibilidade e estilo do botão de fechar nos modais */
+    .modal-header .btn-close {
+      filter: none !important;
+      opacity: 1 !important;
+      z-index: 1000 !important;
+      position: relative !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      border-radius: 50% !important;
+      font-size: 1.25rem !important;
+      width: 2em !important;
+      height: 2em !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      visibility: visible !important;
+      color: white !important;
+    }
+    
+    .modal-header .btn-close::before {
+      content: '×' !important;
+      display: inline-block !important;
+      color: white !important;
+      font-weight: bold !important;
+      font-size: 1.5rem !important;
+      line-height: 1 !important;
+    }
+    
+    .modal-header .btn-close:hover,
+    .modal-header .btn-close:focus {
+      opacity: 0.8 !important;
+      transform: scale(1.1) !important;
+      background: rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    .modal-header .btn-close:hover::before {
+      color: #ff6b6b !important;
+    }
+    
+    /* Adicionar texto "Sair" visível no botão */
+    .modal-header .btn-close .visually-hidden {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      padding: 0 !important;
+      margin: 0 0 0 5px !important;
+      overflow: visible !important;
+      clip: auto !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+      color: white !important;
+      font-size: 0.8rem !important;
+      font-weight: normal !important;
     }
   </style>
 </head>
@@ -354,7 +408,9 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="addUserModalLabel">Adicionar Novo Usuário</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+              <span class="visually-hidden">Sair</span>
+            </button>
           </div>
           <div class="modal-body">
             <form id="addUserForm" class="needs-validation" novalidate>
@@ -687,12 +743,11 @@
         `;
         document.querySelector('.main-content').prepend(alertDiv);
         setTimeout(() => alertDiv.remove(), 5000);
-      }
-
-      // Variável global para armazenar dados do último usuário cadastrado
+      }      // Variável global para armazenar dados do último usuário cadastrado
       let ultimoUsuarioCadastrado = null;
 
-      // Função para gerar ficha cadastral em PDF      function gerarFichaCadastral(dadosUsuario) {
+      // Função para gerar ficha cadastral em PDF
+      function gerarFichaCadastral(dadosUsuario) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
@@ -1917,7 +1972,5 @@
   </script>
 </body>
 </html>
-
-
 
 
