@@ -673,11 +673,13 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="loanDate" class="form-label">Data do Empréstimo*</label>
-                <input type="text" class="form-control" id="loanDate" required autocomplete="off">
+                <input type="text" class="form-control" id="loanDate" required autocomplete="off" placeholder="dd/mm/aaaa">
+                <div class="form-text">Formato: DD/MM/AAAA (ex: 27/06/2025)</div>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="returnDate" class="form-label">Data de Devolução*</label>
-                <input type="text" class="form-control" id="returnDate" required autocomplete="off">
+                <input type="text" class="form-control" id="returnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
+                <div class="form-text">Automaticamente definida para 7 dias após o empréstimo</div>
               </div>
             </div>
           </div>
@@ -956,6 +958,62 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Flatpickr já inicializado acima
 
+      // Adiciona máscaras para os campos de data
+      const loanDateInput = document.getElementById('loanDate');
+      const returnDateInput = document.getElementById('returnDate');
+      
+      // Função para aplicar máscara de data
+      function applyDateMask(input) {
+        input.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+          
+          if (value.length >= 2) {
+            value = value.substring(0, 2) + '/' + value.substring(2);
+          }
+          if (value.length >= 5) {
+            value = value.substring(0, 5) + '/' + value.substring(5, 9);
+          }
+          
+          e.target.value = value;
+        });
+        
+        // Valida a data quando o usuário sai do campo
+        input.addEventListener('blur', function(e) {
+          const dateValue = e.target.value;
+          if (dateValue && !isValidDateFormat(dateValue)) {
+            e.target.classList.add('is-invalid');
+          } else {
+            e.target.classList.remove('is-invalid');
+          }
+        });
+      }
+      
+      // Função para validar formato de data brasileira
+      function isValidDateFormat(dateString) {
+        const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        const match = dateString.match(regex);
+        
+        if (!match) return false;
+        
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+        
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        if (year < 1900 || year > 2100) return false;
+        
+        // Verifica se a data é válida
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() === year && 
+               date.getMonth() === month - 1 && 
+               date.getDate() === day;
+      }
+      
+      // Aplica máscaras aos campos de data
+      if (loanDateInput) applyDateMask(loanDateInput);
+      if (returnDateInput) applyDateMask(returnDateInput);
+
       // Listener para busca de usuários
       const userSearch = document.getElementById('userSearch');
       if (userSearch) {
@@ -996,6 +1054,44 @@
             if (last && !isNaN(Number(last))) nextNumber = Number(last) + 1;
           }
           document.getElementById('registroNumero').value = String(nextNumber).padStart(6, '0');
+          
+          // Define automaticamente as datas no formato brasileiro
+          const hoje = new Date();
+          const dataEmprestimo = hoje.toLocaleDateString('pt-BR');
+          
+          // Adiciona 7 dias para a data de devolução
+          const dataDevolucao = new Date(hoje);
+          dataDevolucao.setDate(dataDevolucao.getDate() + 7);
+          const dataRetorno = dataDevolucao.toLocaleDateString('pt-BR');
+          
+          // Define os valores nos campos
+          document.getElementById('loanDate').value = dataEmprestimo;
+          document.getElementById('returnDate').value = dataRetorno;
+          
+          console.log('Datas definidas automaticamente:', {
+            emprestimo: dataEmprestimo,
+            devolucao: dataRetorno
+          });
+        });
+
+        // Limpa o formulário quando o modal é fechado
+        addLoanModal.addEventListener('hidden.bs.modal', function () {
+          // Reset do formulário
+          document.getElementById('addLoanForm').reset();
+          
+          // Limpa campos específicos
+          document.getElementById('selectedUserId').value = '';
+          document.getElementById('userSearchResults').innerHTML = '';
+          
+          // Limpa resultados de busca de livros
+          document.querySelectorAll('.selectedBookId').forEach(input => input.value = '');
+          document.querySelectorAll('.bookSearchResults').forEach(div => div.innerHTML = '');
+          document.querySelectorAll('.availableQuantity').forEach(span => span.textContent = '-');
+          
+          // Remove validação visual
+          document.getElementById('addLoanForm').classList.remove('was-validated');
+          
+          console.log('Formulário de empréstimo limpo');
         });
       }
     }); // <-- Adiciona o fechamento do event listener aqui
