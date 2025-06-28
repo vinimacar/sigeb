@@ -1130,19 +1130,41 @@
           } catch {
             userName = 'Usuário não encontrado';
           }
-          // Status visual
+          
+          // Verifica se o empréstimo está realmente atrasado baseado na data
+          let statusAtual = data.status;
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+          
+          // Se o status for EMPRESTADO, verifica se está atrasado
+          if (data.status === 'EMPRESTADO' && data.returnDate) {
+            const dateParts = data.returnDate.split('/');
+            if (dateParts.length === 3) {
+              const returnDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+              returnDate.setHours(0, 0, 0, 0);
+              
+              // Se a data de devolução já passou, status é ATRASADO
+              if (returnDate < hoje) {
+                statusAtual = 'ATRASADO';
+                // Atualiza o status no banco de dados
+                await db.collection('emprestimos').doc(doc.id).update({ status: 'ATRASADO' });
+              }
+            }
+          }
+          
+          // Status visual baseado no status atual calculado
           let statusClass = '';
-          if (data.status === 'EMPRESTADO') statusClass = 'status-emprestado';
-          else if (data.status === 'ATRASADO') statusClass = 'status-atrasado';
-          else if (data.status === 'DEVOLVIDO') statusClass = 'status-devolvido';
+          if (statusAtual === 'EMPRESTADO') statusClass = 'status-emprestado';
+          else if (statusAtual === 'ATRASADO') statusClass = 'status-atrasado';
+          else if (statusAtual === 'DEVOLVIDO') statusClass = 'status-devolvido';
 
-          // Botões de ação
+          // Botões de ação baseados no status atual
           let actionBtns = `
             <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
               <i class="bx bx-edit"></i>
             </button>
           `;
-          if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
+          if (statusAtual === 'EMPRESTADO' || statusAtual === 'ATRASADO') {
             actionBtns += `
               <button class="btn btn-sm btn-outline-info return-button" title="Devolver" onclick="returnLoan('${doc.id}')">
                 <i class="bx bx-check-circle"></i>
@@ -2258,3 +2280,4 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
