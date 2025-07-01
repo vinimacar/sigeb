@@ -451,10 +451,16 @@
         <h2>Gerenciamento de Empréstimos</h2>
         <p>Controle os empréstimos da biblioteca</p>
       </div>
-      <button class="add-button" data-bs-toggle="modal" data-bs-target="#addLoanModal">
-        <i class='bx bx-plus'></i>
-        Novo Empréstimo
-      </button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#warningsListModal">
+          <i class='bx bx-error-circle'></i>
+          Consultar Advertências
+        </button>
+        <button class="add-button" data-bs-toggle="modal" data-bs-target="#addLoanModal">
+          <i class='bx bx-plus'></i>
+          Novo Empréstimo
+        </button>
+      </div>
     </div>
 
     <!-- Barra piscante de atrasos -->
@@ -871,6 +877,78 @@
     </div>
   </div>
 
+  <!-- Modal de Lista de Advertências -->
+  <div class="modal fade" id="warningsListModal" tabindex="-1" aria-labelledby="warningsListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title" id="warningsListModalLabel">
+            <i class="bx bx-error-circle me-2"></i>Consulta de Advertências Emitidas
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                <input type="text" class="form-control" id="warningsSearch" placeholder="Buscar por nome do usuário...">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="warningsDateFilter">
+                <option value="">Todas as datas</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-primary w-100" onclick="loadWarnings()">
+                <i class="bx bx-refresh me-1"></i>Atualizar
+              </button>
+            </div>
+          </div>
+          
+          <div class="alert alert-info">
+            <i class="bx bx-info-circle me-2"></i>
+            Total de advertências encontradas: <span id="warningsCount" class="fw-bold">0</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-warning">
+                <tr>
+                  <th>Data da Advertência</th>
+                  <th>Usuário</th>
+                  <th>Livro(s)</th>
+                  <th>Data do Empréstimo</th>
+                  <th>Data de Devolução</th>
+                  <th>Dias de Atraso</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="warningsTableBody">
+                <tr>
+                  <td colspan="8" class="text-center">Carregando advertências...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" onclick="exportWarningsReport()">
+            <i class="bx bx-download me-2"></i>Exportar Relatório
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bx bx-x me-2"></i>Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Configurações do sistema
@@ -1033,7 +1111,12 @@
           `Livros:${booksList}\n` +
           `Data do Empréstimo: ${loanDate}\n` +
           `Data de Devolução: ${returnDate}\n` +
-          `Por favor, devolva os livros na data correta.`;
+          `Por favor, devolva os livros na data correta.`+
+          `Agradecemos a sua colaboração.`+
+          `Atenciosamente, ${SYSTEM_CONFIG.schoolName}`+
+          `SIGEB - Sistema de Gerenciamento de Biblioteca`;
+
+
 
         // Formata o telefone para padrão internacional (ex: 5511999999999)
         let phone = userData.telefone.replace(/\D/g, '');
@@ -2874,6 +2957,321 @@ if (snapshot.docs.length === 0) {
       }
     }
 
+    // Funções para consulta de advertências
+    async function loadWarnings() {
+      try {
+        const searchTerm = document.getElementById('warningsSearch').value.toLowerCase();
+        const dateFilter = document.getElementById('warningsDateFilter').value;
+        
+        let query = db.collection('warnings');
+        
+        // Filtro por data se selecionado
+        if (dateFilter) {
+          const daysAgo = new Date();
+          daysAgo.setDate(daysAgo.getDate() - parseInt(dateFilter));
+          query = query.where('issueDate', '>=', daysAgo);
+        }
+        
+        const snapshot = await query.orderBy('issueDate', 'desc').get();
+        const tbody = document.getElementById('warningsTableBody');
+        tbody.innerHTML = '';
+        
+        let count = 0;
+        
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          
+          // Buscar dados do usuário
+          let userName = 'N/A';
+          try {
+            const userDoc = await db.collection('usuarios').doc(data.userId).get();
+            if (userDoc.exists) userName = userDoc.data().nome;
+          } catch {}
+          
+          // Filtro por nome do usuário
+          if (searchTerm && !userName.toLowerCase().includes(searchTerm)) {
+            continue;
+          }
+          
+          // Buscar dados dos livros
+          let bookTitles = [];
+          if (Array.isArray(data.books)) {
+            for (const book of data.books) {
+              try {
+                const bookDoc = await db.collection('livros').doc(book.bookId).get();
+                if (bookDoc.exists) {
+                  bookTitles.push(`${bookDoc.data().titulo} (Qtd: ${book.quantity})`);
+                } else {
+                  bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
+                }
+              } catch {
+                bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
+              }
+            }
+          }
+          
+          // Calcular status atual
+          const returnDate = data.returnDate;
+          const now = new Date();
+          let currentStatus = 'DEVOLVIDO';
+          
+          if (returnDate && returnDate !== 'N/A') {
+            const [datePart] = returnDate.split(' ');
+            const [day, month, year] = datePart.split('/');
+            const returnDateTime = new Date(year, month - 1, day);
+            
+            if (returnDateTime < now) {
+              const diffTime = Math.abs(now - returnDateTime);
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              currentStatus = `ATRASADO (${diffDays} dias)`;
+            } else {
+              currentStatus = 'EMPRESTADO';
+            }
+          }
+          
+          // Formatar data da advertência
+          let issueDateFormatted = 'N/A';
+          if (data.issueDate && data.issueDate.toDate) {
+            const date = data.issueDate.toDate();
+            issueDateFormatted = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+          }
+          
+          count++;
+          
+          tbody.innerHTML += `
+            <tr>
+              <td>${issueDateFormatted}</td>
+              <td>${userName}</td>
+              <td>${bookTitles.join('; ')}</td>
+              <td>${data.loanDate || 'N/A'}</td>
+              <td>${data.returnDate || 'N/A'}</td>
+              <td>${data.daysLate || 0}</td>
+              <td>
+                <span class="badge ${currentStatus.includes('ATRASADO') ? 'bg-danger' : currentStatus === 'EMPRESTADO' ? 'bg-warning' : 'bg-success'}">
+                  ${currentStatus}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" onclick="viewWarningDetails('${doc.id}')" title="Visualizar">
+                    <i class="bx bx-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-secondary" onclick="reprintWarning('${doc.id}')" title="Reimprimir">
+                    <i class="bx bx-printer"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="deleteWarning('${doc.id}')" title="Excluir">
+                    <i class="bx bx-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+        
+        if (count === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhuma advertência encontrada</td></tr>';
+        }
+        
+        document.getElementById('warningsCount').textContent = count;
+        
+      } catch (error) {
+        console.error('Erro ao carregar advertências:', error);
+        document.getElementById('warningsTableBody').innerHTML = 
+          '<tr><td colspan="8" class="text-center text-danger">Erro ao carregar advertências</td></tr>';
+      }
+    }
+    
+    async function viewWarningDetails(warningId) {
+      try {
+        const doc = await db.collection('warnings').doc(warningId).get();
+        if (!doc.exists) {
+          showAlert('danger', 'Advertência não encontrada');
+          return;
+        }
+        
+        const data = doc.data();
+        
+        // Buscar dados do usuário
+        let userName = 'N/A';
+        try {
+          const userDoc = await db.collection('usuarios').doc(data.userId).get();
+          if (userDoc.exists) userName = userDoc.data().nome;
+        } catch {}
+        
+        // Criar modal para visualizar detalhes
+        const modalId = 'warningDetailsModal';
+        let modal = document.getElementById(modalId);
+        
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.className = 'modal fade';
+          modal.id = modalId;
+          modal.setAttribute('tabindex', '-1');
+          modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                  <h5 class="modal-title">
+                    <i class="bx bx-error-circle me-2"></i>Detalhes da Advertência
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="warningDetailsBody">
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" onclick="reprintWarning('${warningId}')">
+                    <i class="bx bx-printer me-2"></i>Reimprimir
+                  </button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+        }
+        
+        // Preencher conteúdo do modal
+        document.getElementById('warningDetailsBody').innerHTML = data.content || 'Conteúdo não disponível';
+        
+        // Mostrar modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        
+      } catch (error) {
+        console.error('Erro ao visualizar advertência:', error);
+        showAlert('danger', 'Erro ao carregar detalhes da advertência');
+      }
+    }
+    
+    async function reprintWarning(warningId) {
+      try {
+        const doc = await db.collection('warnings').doc(warningId).get();
+        if (!doc.exists) {
+          showAlert('danger', 'Advertência não encontrada');
+          return;
+        }
+        
+        const data = doc.data();
+        
+        // Criar janela de impressão
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(data.content || 'Conteúdo não disponível');
+        printWindow.document.close();
+        printWindow.print();
+        
+        showAlert('success', 'Advertência enviada para impressão');
+        
+      } catch (error) {
+        console.error('Erro ao reimprimir advertência:', error);
+        showAlert('danger', 'Erro ao reimprimir advertência');
+      }
+    }
+    
+    async function deleteWarning(warningId) {
+      if (!confirm('Tem certeza que deseja excluir esta advertência? Esta ação é irreversível.')) {
+        return;
+      }
+      
+      try {
+        await db.collection('warnings').doc(warningId).delete();
+        showAlert('success', 'Advertência excluída com sucesso');
+        loadWarnings(); // Recarregar lista
+        
+      } catch (error) {
+        console.error('Erro ao excluir advertência:', error);
+        showAlert('danger', 'Erro ao excluir advertência');
+      }
+    }
+    
+    async function exportWarningsReport() {
+      try {
+        const snapshot = await db.collection('warnings').orderBy('issueDate', 'desc').get();
+        const warnings = [];
+        
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          
+          // Buscar dados do usuário
+          let userName = 'N/A';
+          try {
+            const userDoc = await db.collection('usuarios').doc(data.userId).get();
+            if (userDoc.exists) userName = userDoc.data().nome;
+          } catch {}
+          
+          // Buscar dados dos livros
+          let bookTitles = [];
+          if (Array.isArray(data.books)) {
+            for (const book of data.books) {
+              try {
+                const bookDoc = await db.collection('livros').doc(book.bookId).get();
+                if (bookDoc.exists) {
+                  bookTitles.push(`${bookDoc.data().titulo} (Qtd: ${book.quantity})`);
+                } else {
+                  bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
+                }
+              } catch {
+                bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
+              }
+            }
+          }
+          
+          // Formatar data da advertência
+          let issueDateFormatted = 'N/A';
+          if (data.issueDate && data.issueDate.toDate) {
+            const date = data.issueDate.toDate();
+            issueDateFormatted = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+          }
+          
+          warnings.push({
+            'Data da Advertência': issueDateFormatted,
+            'Usuário': userName,
+            'Livros': bookTitles.join('; '),
+            'Data do Empréstimo': data.loanDate || 'N/A',
+            'Data de Devolução': data.returnDate || 'N/A',
+            'Dias de Atraso': data.daysLate || 0,
+            'Consequências': data.consequences || 'N/A'
+          });
+        }
+        
+        if (warnings.length === 0) {
+          showAlert('warning', 'Nenhuma advertência encontrada para exportar');
+          return;
+        }
+        
+        const ws = XLSX.utils.json_to_sheet(warnings);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Advertências");
+        
+        const now = new Date();
+        const fileName = `advertencias_${now.getFullYear()}_${(now.getMonth() + 1).toString().padStart(2, '0')}_${now.getDate().toString().padStart(2, '0')}.xlsx`;
+        
+        XLSX.writeFile(wb, fileName);
+        showAlert('success', 'Relatório de advertências exportado com sucesso!');
+        
+      } catch (error) {
+        console.error('Erro ao exportar relatório:', error);
+        showAlert('danger', 'Erro ao exportar relatório de advertências');
+      }
+    }
+    
+    // Carregar advertências quando o modal for aberto
+    document.getElementById('warningsListModal').addEventListener('shown.bs.modal', function () {
+      loadWarnings();
+    });
+    
+    // Configurar busca em tempo real
+    document.getElementById('warningsSearch').addEventListener('input', function() {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        loadWarnings();
+      }, 500);
+    });
+    
+    // Configurar filtro de data
+    document.getElementById('warningsDateFilter').addEventListener('change', function() {
+      loadWarnings();
+    });
+
     // Atualize todos os usuários para ter o campo nomeSearch
 db.collection('usuarios').get().then(snapshot => {
   snapshot.forEach(doc => {
@@ -2938,3 +3336,4 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
