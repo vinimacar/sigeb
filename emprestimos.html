@@ -1908,6 +1908,17 @@
       }
 
       try {
+        // Determina o status inicial baseado na data de devolução
+        const [day, month, year] = returnDate.split('/');
+        const loanReturnDate = new Date(year, month - 1, day);
+        loanReturnDate.setHours(0, 0, 0, 0);
+        
+        const todayForStatus = new Date();
+        todayForStatus.setHours(0, 0, 0, 0);
+        
+        // Para novos empréstimos, geralmente será EMPRESTADO, mas por segurança verificamos
+        const initialStatus = loanReturnDate < todayForStatus ? 'ATRASADO' : 'EMPRESTADO';
+
         // Adiciona o empréstimo ao Firestore
         const loanRef = await db.collection('emprestimos').add({
           registroNumero: registroNumero,
@@ -1915,7 +1926,7 @@
           books: books,
           loanDate: loanDate,
           returnDate: returnDate,
-          status: 'EMPRESTADO',
+          status: initialStatus,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });        // Atualiza a quantidade de livros no estoque usando operações atômicas
         const updatePromises = [];
@@ -2029,9 +2040,20 @@
       }
 
       try {
+        // Determina o status correto baseado na nova data de devolução
+        const [day, month, year] = returnDate.split('/');
+        const renewReturnDate = new Date(year, month - 1, day);
+        renewReturnDate.setHours(0, 0, 0, 0);
+        
+        const todayForStatus = new Date();
+        todayForStatus.setHours(0, 0, 0, 0);
+        
+        // Define o status baseado na comparação de datas
+        const newStatus = renewReturnDate < todayForStatus ? 'ATRASADO' : 'EMPRESTADO';
+
         await db.collection('emprestimos').doc(loanId).update({
           returnDate: returnDate,
-          status: 'EMPRESTADO', // Garantir que volte para status EMPRESTADO
+          status: newStatus, // Status determinado dinamicamente baseado na data
           renewedAt: firebase.firestore.FieldValue.serverTimestamp(),
           renewedDate: new Date().toLocaleDateString('pt-BR')
         });
@@ -2310,7 +2332,9 @@
         let devolvidoCount = 0;
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0);        for (const doc of snapshot.docs) {
+        today.setHours(0, 0, 0, 0);
+
+        for (const doc of snapshot.docs) {
           const data = doc.data();
           if (data.status === 'EMPRESTADO') {
             // Converte a data de devolução do formato DD/MM/AAAA para Date
@@ -2349,6 +2373,36 @@
       }
     }
 
+    // Função de teste para verificar parsing de datas (pode ser executada no console)
+    function testDateParsing() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      console.log('=== TESTE DE PARSING DE DATAS ===');
+      console.log('Data de hoje:', today.toLocaleDateString('pt-BR'));
+      
+      // Teste com diferentes datas
+      const testDates = [
+        '28/06/2025', // 3 dias atrás
+        '29/06/2025', // 2 dias atrás
+        '30/06/2025', // 1 dia atrás
+        '01/07/2025', // hoje
+        '02/07/2025', // amanhã
+        '08/07/2025'  // 7 dias à frente
+      ];
+      
+      testDates.forEach(dateStr => {
+        const dateParts = dateStr.split('/');
+        const parsedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+        parsedDate.setHours(0, 0, 0, 0);
+        
+        const isLate = parsedDate < today;
+        const daysDiff = Math.ceil(Math.abs(today - parsedDate) / (1000 * 60 * 60 * 24));
+        
+        console.log(`Data: ${dateStr} | Parsed: ${parsedDate.toLocaleDateString('pt-BR')} | Atrasado: ${isLate} | Diferença: ${daysDiff} dias`);
+      });
+    }
+
     function updatePieChart(status, count, total) {
       const circumference = 2 * Math.PI * 38; // 2 * PI * raio
       const percentage = total > 0 ? (count / total) : 0;
@@ -2377,10 +2431,11 @@
               // Converte a data de devolução para Date
               let returnDate;
               if (data.returnDate) {
-                // Assume formato DD/MM/AAAA
+                // Assume formato DD/MM/AAAA - usando o mesmo método da função loadLoans
                 const dateParts = data.returnDate.split('/');
                 if (dateParts.length === 3) {
                   returnDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                  returnDate.setHours(0, 0, 0, 0);
                 }
               }
               
@@ -2417,10 +2472,12 @@
                 userName = 'Usuário não encontrado';
               }
               
-              // Calcula dias de atraso
-              const returnDate = new Date(data.returnDate.split('/').reverse().join('-'));
-              const diffTime = Math.abs(today - returnDate);
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              // Calcula dias de atraso usando o mesmo método da função loadLoans
+              let diffDays = 0;
+              if (returnDate) {
+                const diffTime = Math.abs(today - returnDate);
+                diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              }
               
               let actionBtns = `
                 <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="openEditLoanModal('${doc.id}')">
