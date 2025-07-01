@@ -98,6 +98,54 @@
             border-color: #4facfe;
             box-shadow: 0 0 0 0.25rem rgba(79, 172, 254, 0.25);
         }
+        
+        /* Estilos para indicadores de estoque */
+        .stock-indicator {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .stock-low {
+            color: #fd7e14;
+        }
+        
+        .stock-out {
+            color: #dc3545;
+        }
+        
+        .stock-good {
+            color: #198754;
+        }
+        
+        /* Animação para botão de atualização */
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Melhorias na tabela */
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-top: none;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .btn-group-sm .btn {
+            margin: 0 1px;
+        }
+        
+        /* Indicadores visuais de status */
+        .badge {
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
@@ -125,6 +173,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Gerenciar Livros</h2>
                 <div>
+                    <button class="btn btn-success me-2" onclick="updateAllStock()" title="Atualizar estoque de todos os livros">
+                        <i class="bi bi-arrow-clockwise"></i> Atualizar Estoque
+                    </button>
                     <button class="btn btn-info me-2" onclick="testConnection()">
                         <i class="bi bi-lightning"></i> Testar Conexão
                     </button>
@@ -144,6 +195,7 @@
                                     <th>Autor</th>
                                     <th>ISBN</th>
                                     <th>Categoria</th>
+                                    <th>Estoque (Disp./Total)</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
@@ -297,28 +349,136 @@
                 const q = query(livrosRef, orderBy('titulo'));
                 const querySnapshot = await getDocs(q);
 
+                // Carregar todos os empréstimos ativos para calcular disponibilidade
+                const emprestimosRef = collection(db, 'emprestimos');
+                const emprestimosQuery = query(emprestimosRef);
+                const emprestimosSnapshot = await getDocs(emprestimosQuery);
+
+                // Criar mapa de livros emprestados
+                const livrosEmprestados = new Map();
+                
+                emprestimosSnapshot.forEach((doc) => {
+                    const emprestimo = doc.data();
+                    // Só contar empréstimos não devolvidos
+                    if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+                        emprestimo.books.forEach(book => {
+                            const bookId = book.bookId;
+                            const quantity = book.quantity || 1;
+                            const currentEmprestado = livrosEmprestados.get(bookId) || 0;
+                            livrosEmprestados.set(bookId, currentEmprestado + quantity);
+                        });
+                    }
+                });
+
                 const booksTableBody = document.getElementById('booksTableBody');
                 booksTableBody.innerHTML = '';
 
                 querySnapshot.forEach((docSnap) => {
                     const book = docSnap.data();
+                    const bookId = docSnap.id;
+                    
+                    // Calcular quantidade disponível
+                    const quantidadeTotal = book.quantidade || 0;
+                    const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
+                    const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+                    
+                    // Aplicar filtros se especificados
+                    const titulo = (book.titulo || '').toLowerCase();
+                    const autor = (book.autores || '').toLowerCase();
+                    const editora = (book.editora || '').toLowerCase();
+                    const genero = book.genero || '';
+
+                    if (filterTitulo && !titulo.includes(filterTitulo.toLowerCase())) return;
+                    if (filterAutor && !autor.includes(filterAutor.toLowerCase())) return;
+                    if (filterEditora && !editora.includes(filterEditora.toLowerCase())) return;
+                    if (selectedGenre && genero !== selectedGenre) return;
+
+                    // Determinar status visual
+                    let statusClass = '';
+                    let statusText = '';
+                    if (quantidadeDisponivel === 0) {
+                        statusClass = 'badge bg-danger';
+                        statusText = 'Indisponível';
+                    } else if (quantidadeDisponivel <= 2) {
+                        statusClass = 'badge bg-warning';
+                        statusText = 'Estoque Baixo';
+                    } else {
+                        statusClass = 'badge bg-success';
+                        statusText = 'Disponível';
+                    }
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${book.titulo || ''}</td>
                         <td>${book.autores || ''}</td>
                         <td>${book.isbn || ''}</td>
                         <td>${book.genero || ''}</td>
-                        <td>${book.quantidade > 0 ? 'Disponível' : 'Indisponível'}</td>
+                        <td>
+                            <span class="fw-bold ${quantidadeDisponivel === 0 ? 'text-danger' : quantidadeDisponivel <= 2 ? 'text-warning' : 'text-success'}">
+                                ${quantidadeDisponivel}/${quantidadeTotal}
+                            </span>
+                            ${quantidadeEmprestada > 0 ? `<br><small class="text-muted">${quantidadeEmprestada} emprestado(s)</small>` : ''}
+                        </td>
+                        <td><span class="${statusClass}">${statusText}</span></td>
                         <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning" onclick="editBook('${docSnap.id}')"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteBook('${docSnap.id}')"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-info" onclick="viewBookDetails('${bookId}')" title="Ver Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editBook('${bookId}')" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteBook('${bookId}')" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     `;
                     booksTableBody.appendChild(tr);
                 });
+
+                // Atualizar contadores no banco de dados se necessário
+                await updateBookCounters(livrosEmprestados);
+
             } catch (error) {
                 console.error('Erro ao carregar livros:', error);
                 alert('Erro ao carregar livros');
+            }
+        }
+
+        // Função para atualizar contadores dos livros no banco de dados
+        async function updateBookCounters(livrosEmprestados) {
+            try {
+                const livrosRef = collection(db, 'livros');
+                const querySnapshot = await getDocs(livrosRef);
+
+                const batch = db.batch();
+                let updates = 0;
+
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const bookId = docSnap.id;
+                    const quantidadeTotal = book.quantidade || 0;
+                    const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
+                    const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+
+                    // Atualizar apenas se houver diferença
+                    if (book.quantidadeDisponivel !== quantidadeDisponivel || book.emprestados !== quantidadeEmprestada) {
+                        const docRef = doc(db, 'livros', bookId);
+                        batch.update(docRef, {
+                            quantidadeDisponivel: quantidadeDisponivel,
+                            emprestados: quantidadeEmprestada,
+                            disponivel: quantidadeDisponivel > 0,
+                            ultimaAtualizacao: serverTimestamp()
+                        });
+                        updates++;
+                    }
+                });
+
+                if (updates > 0) {
+                    await batch.commit();
+                    console.log(`${updates} livros atualizados com contadores de estoque`);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar contadores:', error);
             }
         }
 
@@ -342,19 +502,20 @@
                 return;
             }
 
-            db.collection('livros').add({
+            addDoc(collection(db, 'livros'), {
                 titulo: title,
                 autores: author,
                 isbn: isbn,
                 genero: category,
                 quantidade: quantity,
+                quantidadeDisponivel: quantity,
+                emprestados: 0,
                 disponivel: quantity > 0,
-                emprestimos: 0,
                 editora: '',
                 ano: new Date().getFullYear(),
                 edicao: '1',
                 descricao: '',
-                dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+                dataCadastro: serverTimestamp()
             }).then(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
                 modal.hide();
@@ -367,88 +528,313 @@
             });
         }
 
-        function deleteBook(bookId) {
-            if (confirm('Tem certeza que deseja excluir este livro?')) {
-                db.collection('livros').doc(bookId).delete()
-                    .then(() => {
-                        console.log("Livro excluído com sucesso!");
-                        alert('Livro excluído com sucesso!');
-                    })
-                    .catch((error) => {
-                        console.error("Erro ao excluir livro:", error);
-                        alert('Erro ao excluir livro: ' + error.message);
+        // Função para visualizar detalhes do livro com informações de empréstimo
+        async function viewBookDetails(bookId) {
+            try {
+                const bookDoc = await getDoc(doc(db, 'livros', bookId));
+                if (!bookDoc.exists()) {
+                    alert('Livro não encontrado!');
+                    return;
+                }
+
+                const book = bookDoc.data();
+
+                // Buscar empréstimos ativos deste livro
+                const emprestimosRef = collection(db, 'emprestimos');
+                const emprestimosSnapshot = await getDocs(emprestimosRef);
+
+                const emprestimosAtivos = [];
+                let totalEmprestado = 0;
+
+                emprestimosSnapshot.forEach((empDoc) => {
+                    const emprestimo = empDoc.data();
+                    if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+                        emprestimo.books.forEach(empBook => {
+                            if (empBook.bookId === bookId) {
+                                emprestimosAtivos.push({
+                                    id: empDoc.id,
+                                    ...emprestimo,
+                                    quantidade: empBook.quantity || 1
+                                });
+                                totalEmprestado += empBook.quantity || 1;
+                            }
+                        });
+                    }
+                });
+
+                // Buscar nomes dos usuários
+                for (let emprestimo of emprestimosAtivos) {
+                    try {
+                        const userDoc = await getDoc(doc(db, 'usuarios', emprestimo.userId));
+                        if (userDoc.exists()) {
+                            emprestimo.nomeUsuario = userDoc.data().nome || 'Usuário não encontrado';
+                        }
+                    } catch (error) {
+                        emprestimo.nomeUsuario = 'Erro ao carregar nome';
+                    }
+                }
+
+                const quantidadeDisponivel = Math.max(0, (book.quantidade || 0) - totalEmprestado);
+
+                // Criar modal para mostrar detalhes
+                const modalId = 'bookDetailsModal';
+                let modal = document.getElementById(modalId);
+                
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.className = 'modal fade';
+                    modal.id = modalId;
+                    modal.setAttribute('tabindex', '-1');
+                    modal.innerHTML = `
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="bi bi-book me-2"></i>Detalhes do Livro
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body" id="bookDetailsBody">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" onclick="loadBooks()">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>Atualizar Estoque
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+
+                // Preencher conteúdo do modal
+                let emprestimosHtml = '';
+                if (emprestimosAtivos.length > 0) {
+                    emprestimosHtml = `
+                        <h6 class="mt-4">Empréstimos Ativos:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>Quantidade</th>
+                                        <th>Data Empréstimo</th>
+                                        <th>Data Devolução</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    emprestimosAtivos.forEach(emp => {
+                        const statusClass = emp.status === 'ATRASADO' ? 'text-danger' : 'text-warning';
+                        emprestimosHtml += `
+                            <tr>
+                                <td>${emp.nomeUsuario}</td>
+                                <td>${emp.quantidade}</td>
+                                <td>${emp.loanDate || 'N/A'}</td>
+                                <td>${emp.returnDate || 'N/A'}</td>
+                                <td><span class="${statusClass}">${emp.status}</span></td>
+                            </tr>
+                        `;
                     });
+                    
+                    emprestimosHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    emprestimosHtml = '<p class="text-muted mt-3">Nenhum empréstimo ativo para este livro.</p>';
+                }
+
+                document.getElementById('bookDetailsBody').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Informações Básicas</h6>
+                            <p><strong>Título:</strong> ${book.titulo || 'N/A'}</p>
+                            <p><strong>Autor(es):</strong> ${book.autores || 'N/A'}</p>
+                            <p><strong>ISBN:</strong> ${book.isbn || 'N/A'}</p>
+                            <p><strong>Gênero:</strong> ${book.genero || 'N/A'}</p>
+                            <p><strong>Editora:</strong> ${book.editora || 'N/A'}</p>
+                            <p><strong>Ano:</strong> ${book.ano || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Controle de Estoque</h6>
+                            <div class="alert ${quantidadeDisponivel === 0 ? 'alert-danger' : quantidadeDisponivel <= 2 ? 'alert-warning' : 'alert-success'}">
+                                <h5 class="mb-2">
+                                    <i class="bi ${quantidadeDisponivel === 0 ? 'bi-exclamation-triangle' : quantidadeDisponivel <= 2 ? 'bi-exclamation-circle' : 'bi-check-circle'}"></i>
+                                    ${quantidadeDisponivel === 0 ? 'Indisponível' : quantidadeDisponivel <= 2 ? 'Estoque Baixo' : 'Disponível'}
+                                </h5>
+                                <p class="mb-1"><strong>Total:</strong> ${book.quantidade || 0} exemplares</p>
+                                <p class="mb-1"><strong>Disponível:</strong> ${quantidadeDisponivel} exemplares</p>
+                                <p class="mb-0"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
+                            </div>
+                        </div>
+                    </div>
+                    ${book.descricao ? `<div class="mt-3"><h6>Descrição</h6><p>${book.descricao}</p></div>` : ''}
+                    ${emprestimosHtml}
+                `;
+                
+                // Mostrar modal
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+
+            } catch (error) {
+                console.error('Erro ao carregar detalhes do livro:', error);
+                alert('Erro ao carregar detalhes do livro');
             }
         }
 
-        function editBook(bookId) {
-            db.collection('livros').doc(bookId).get()
-                .then((doc) => {
-                    if (doc.exists) {
-                        const book = doc.data();
-                        // Populate the edit form with book data
-                        document.getElementById('editBookId').value = bookId;
-                        document.getElementById('editTitulo').value = book.titulo || '';
-                        document.getElementById('editAutores').value = book.autores || '';
-                        document.getElementById('editISBN').value = book.isbn || '';
-                        document.getElementById('editEditora').value = book.editora || '';
-                        document.getElementById('editAno').value = book.ano || '';
-                        document.getElementById('editEdicao').value = book.edicao || '';
-                        document.getElementById('editGenero').value = book.genero || '';
-                        document.getElementById('editQuantidade').value = book.quantidade || 0;
-                        document.getElementById('editDescricao').value = book.descricao || '';
-                        
-                        // Show the edit modal
-                        const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
-                        editModal.show();
-                    } else {
-                        console.error("Livro não encontrado!");
-                        alert('Erro: Livro não encontrado!');
+        async function deleteBook(bookId) {
+            try {
+                // Verificar se há empréstimos ativos para este livro
+                const emprestimosRef = collection(db, 'emprestimos');
+                const emprestimosSnapshot = await getDocs(emprestimosRef);
+
+                let hasActiveLoans = false;
+                emprestimosSnapshot.forEach((empDoc) => {
+                    const emprestimo = empDoc.data();
+                    if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+                        emprestimo.books.forEach(empBook => {
+                            if (empBook.bookId === bookId) {
+                                hasActiveLoans = true;
+                            }
+                        });
                     }
-                })
-                .catch((error) => {
-                    console.error("Erro ao carregar dados do livro:", error);
-                    alert('Erro ao carregar dados do livro: ' + error.message);
                 });
+
+                if (hasActiveLoans) {
+                    alert('Não é possível excluir este livro porque há empréstimos ativos. Aguarde a devolução de todos os exemplares emprestados.');
+                    return;
+                }
+
+                if (confirm('Tem certeza que deseja excluir este livro? Esta ação é irreversível.')) {
+                    await deleteDoc(doc(db, 'livros', bookId));
+                    console.log("Livro excluído com sucesso!");
+                    alert('Livro excluído com sucesso!');
+                    loadBooks(); // Recarregar lista
+                }
+            } catch (error) {
+                console.error("Erro ao excluir livro:", error);
+                alert('Erro ao excluir livro: ' + error.message);
+            }
+        }
+
+        async function editBook(bookId) {
+            try {
+                const bookDoc = await getDoc(doc(db, 'livros', bookId));
+                if (bookDoc.exists()) {
+                    const book = bookDoc.data();
+                    // Populate the edit form with book data
+                    document.getElementById('editBookId').value = bookId;
+                    document.getElementById('editTitulo').value = book.titulo || '';
+                    document.getElementById('editAutores').value = book.autores || '';
+                    document.getElementById('editISBN').value = book.isbn || '';
+                    document.getElementById('editEditora').value = book.editora || '';
+                    document.getElementById('editAno').value = book.ano || '';
+                    document.getElementById('editEdicao').value = book.edicao || '';
+                    document.getElementById('editGenero').value = book.genero || '';
+                    document.getElementById('editQuantidade').value = book.quantidade || 0;
+                    document.getElementById('editDescricao').value = book.descricao || '';
+                    
+                    // Show the edit modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
+                    editModal.show();
+                } else {
+                    console.error("Livro não encontrado!");
+                    alert('Erro: Livro não encontrado!');
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados do livro:", error);
+                alert('Erro ao carregar dados do livro: ' + error.message);
+            }
         }
 
         // Handle edit form submission
-        document.getElementById('editBookForm').addEventListener('submit', function(e) {
+        document.getElementById('editBookForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const bookId = document.getElementById('editBookId').value;
-            const bookData = {
-                titulo: document.getElementById('editTitulo').value.trim(),
-                autores: document.getElementById('editAutores').value.trim(),
-                isbn: document.getElementById('editISBN').value.trim(),
-                editora: document.getElementById('editEditora').value.trim(),
-                ano: parseInt(document.getElementById('editAno').value),
-                edicao: document.getElementById('editEdicao').value.trim(),
-                genero: document.getElementById('editGenero').value,
-                quantidade: parseInt(document.getElementById('editQuantidade').value),
-                descricao: document.getElementById('editDescricao').value.trim(),
-                disponivel: parseInt(document.getElementById('editQuantidade').value) > 0,
-                dataAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
-            };
+            try {
+                const bookId = document.getElementById('editBookId').value;
+                const newQuantidade = parseInt(document.getElementById('editQuantidade').value);
+                
+                // Verificar se a nova quantidade não é menor que os empréstimos ativos
+                const emprestimosRef = collection(db, 'emprestimos');
+                const emprestimosSnapshot = await getDocs(emprestimosRef);
 
-            // Validate required fields
-            if (!bookData.titulo || !bookData.autores || !bookData.isbn || !bookData.genero || isNaN(bookData.quantidade)) {
-                alert('Por favor, preencha todos os campos obrigatórios corretamente.');
-                return;
-            }
-
-            // Update book in Firebase
-            db.collection('livros').doc(bookId).update(bookData)
-                .then(() => {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('editBookModal'));
-                    modal.hide();
-                    alert('Livro atualizado com sucesso!');
-                })
-                .catch((error) => {
-                    console.error("Erro ao atualizar livro:", error);
-                    alert('Erro ao atualizar livro: ' + error.message);
+                let quantidadeEmprestada = 0;
+                emprestimosSnapshot.forEach((empDoc) => {
+                    const emprestimo = empDoc.data();
+                    if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+                        emprestimo.books.forEach(empBook => {
+                            if (empBook.bookId === bookId) {
+                                quantidadeEmprestada += empBook.quantity || 1;
+                            }
+                        });
+                    }
                 });
+
+                if (newQuantidade < quantidadeEmprestada) {
+                    alert(`Não é possível reduzir a quantidade para ${newQuantidade} porque há ${quantidadeEmprestada} exemplares emprestados. A quantidade mínima permitida é ${quantidadeEmprestada}.`);
+                    return;
+                }
+
+                const bookData = {
+                    titulo: document.getElementById('editTitulo').value.trim(),
+                    autores: document.getElementById('editAutores').value.trim(),
+                    isbn: document.getElementById('editISBN').value.trim(),
+                    editora: document.getElementById('editEditora').value.trim(),
+                    ano: parseInt(document.getElementById('editAno').value),
+                    edicao: document.getElementById('editEdicao').value.trim(),
+                    genero: document.getElementById('editGenero').value,
+                    quantidade: newQuantidade,
+                    quantidadeDisponivel: Math.max(0, newQuantidade - quantidadeEmprestada),
+                    emprestados: quantidadeEmprestada,
+                    descricao: document.getElementById('editDescricao').value.trim(),
+                    disponivel: (newQuantidade - quantidadeEmprestada) > 0,
+                    dataAtualizacao: serverTimestamp()
+                };
+
+                // Validate required fields
+                if (!bookData.titulo || !bookData.autores || !bookData.isbn || !bookData.genero || isNaN(bookData.quantidade)) {
+                    alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+                    return;
+                }
+
+                // Update book in Firebase
+                await updateDoc(doc(db, 'livros', bookId), bookData);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editBookModal'));
+                modal.hide();
+                alert('Livro atualizado com sucesso!');
+                loadBooks(); // Recarregar lista
+                
+            } catch (error) {
+                console.error("Erro ao atualizar livro:", error);
+                alert('Erro ao atualizar livro: ' + error.message);
+            }
         });
+
+        // Função para atualizar manualmente todo o estoque
+        async function updateAllStock() {
+            const button = event.target;
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Atualizando...';
+            button.disabled = true;
+
+            try {
+                await loadBooks();
+                alert('Estoque atualizado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao atualizar estoque:', error);
+                alert('Erro ao atualizar estoque');
+            } finally {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        }
 
         // Função para buscar dados do livro pelo ISBN usando Open Library
         async function buscarLivroPorISBNBooks() {
@@ -484,9 +870,43 @@
             if (isbnInput) {
                 isbnInput.addEventListener('blur', buscarLivroPorISBNBooks);
             }
+
+            // Atualizar estoque a cada 30 segundos (opcional)
+            setInterval(async function() {
+                try {
+                    // Atualização silenciosa sem recarregar a interface
+                    const livrosRef = collection(db, 'livros');
+                    const emprestimosRef = collection(db, 'emprestimos');
+                    
+                    const [livrosSnapshot, emprestimosSnapshot] = await Promise.all([
+                        getDocs(livrosRef),
+                        getDocs(emprestimosRef)
+                    ]);
+
+                    const livrosEmprestados = new Map();
+                    emprestimosSnapshot.forEach((doc) => {
+                        const emprestimo = doc.data();
+                        if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+                            emprestimo.books.forEach(book => {
+                                const bookId = book.bookId;
+                                const quantity = book.quantity || 1;
+                                const currentEmprestado = livrosEmprestados.get(bookId) || 0;
+                                livrosEmprestados.set(bookId, currentEmprestado + quantity);
+                            });
+                        }
+                    });
+
+                    await updateBookCounters(livrosEmprestados);
+                    console.log('Estoque atualizado automaticamente');
+                } catch (error) {
+                    console.error('Erro na atualização automática:', error);
+                }
+            }, 30000); // 30 segundos
         });
     </script>
 </body>
 </html>
+
+
 
 
