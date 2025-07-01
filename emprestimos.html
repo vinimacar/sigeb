@@ -1042,6 +1042,50 @@
         addLoanForm.addEventListener('submit', handleLoanSubmission);
       }
 
+      // Adiciona validação em tempo real para campos de quantidade
+      function addQuantityValidation() {
+        document.querySelectorAll('.quantity').forEach(quantityInput => {
+          quantityInput.addEventListener('input', function() {
+            const row = this.closest('.loan-book-row');
+            const availableQuantitySpan = row.querySelector('.availableQuantity');
+            const availableQuantity = parseInt(availableQuantitySpan.textContent);
+            const requestedQuantity = parseInt(this.value);
+            
+            // Remove validações anteriores
+            this.classList.remove('is-invalid', 'is-valid');
+            
+            if (isNaN(requestedQuantity) || requestedQuantity <= 0) {
+              this.classList.add('is-invalid');
+              this.setCustomValidity('Quantidade deve ser um número positivo');
+            } else if (!isNaN(availableQuantity) && requestedQuantity > availableQuantity) {
+              this.classList.add('is-invalid');
+              this.setCustomValidity(`Quantidade máxima disponível: ${availableQuantity}`);
+            } else {
+              this.classList.add('is-valid');
+              this.setCustomValidity('');
+            }
+          });
+
+          quantityInput.addEventListener('blur', function() {
+            const row = this.closest('.loan-book-row');
+            const availableQuantitySpan = row.querySelector('.availableQuantity');
+            const availableQuantity = parseInt(availableQuantitySpan.textContent);
+            const requestedQuantity = parseInt(this.value);
+            
+            if (!isNaN(availableQuantity) && requestedQuantity > availableQuantity) {
+              showAlert('warning', `Quantidade solicitada (${requestedQuantity}) excede a disponível (${availableQuantity}). Ajustando para o máximo disponível.`);
+              this.value = availableQuantity;
+              this.classList.remove('is-invalid');
+              this.classList.add('is-valid');
+              this.setCustomValidity('');
+            }
+          });
+        });
+      }
+
+      // Aplica validação inicial
+      addQuantityValidation();
+
       // Gera número de registro automático ao abrir modal
       const addLoanModal = document.getElementById('addLoanModal');
       if (addLoanModal) {
@@ -1298,21 +1342,46 @@
           if (snapshot.empty) {
             bookSearchResults.innerHTML = '<a class="dropdown-item">Nenhum livro encontrado</a>';
           } else {
-            snapshot.docs.forEach(doc => {
+            for (const doc of snapshot.docs) {
               const bookData = doc.data();
+              
+              // Busca a quantidade atualizada diretamente do banco
+              const currentBookDoc = await db.collection('livros').doc(doc.id).get();
+              const currentBookData = currentBookDoc.data();
+              const currentAvailable = currentBookData?.quantidadeDisponivel || 0;
+              
               const a = document.createElement('a');
               a.className = 'dropdown-item';
               a.href = '#';
-              a.textContent = `${bookData.titulo} (Disponível: ${bookData.quantidadeDisponivel})`;
+              
+              // Mostra quantidade disponível e adiciona indicador visual se não houver estoque
+              if (currentAvailable > 0) {
+                a.innerHTML = `<strong>${bookData.titulo}</strong><br><small class="text-success">Disponível: ${currentAvailable} unidades</small>`;
+              } else {
+                a.innerHTML = `<strong>${bookData.titulo}</strong><br><small class="text-danger">Indisponível (0 unidades)</small>`;
+                a.classList.add('disabled');
+              }
+              
               a.onclick = (e) => {
                 e.preventDefault();
+                if (currentAvailable <= 0) {
+                  showAlert('warning', `O livro "${bookData.titulo}" não possui unidades disponíveis para empréstimo.`);
+                  return;
+                }
+                
                 inputElement.value = bookData.titulo;
                 inputElement.closest('.loan-book-row').querySelector('.selectedBookId').value = doc.id;
-                inputElement.closest('.loan-book-row').querySelector('.availableQuantity').textContent = bookData.quantidadeDisponivel;
+                inputElement.closest('.loan-book-row').querySelector('.availableQuantity').textContent = currentAvailable;
+                
+                // Atualiza o campo de quantidade máxima permitida
+                const quantityInput = inputElement.closest('.loan-book-row').querySelector('.quantity');
+                quantityInput.max = currentAvailable;
+                quantityInput.title = `Máximo disponível: ${currentAvailable}`;
+                
                 bookSearchResults.classList.remove('show');
               };
               bookSearchResults.appendChild(a);
-            });
+            }
           }
           bookSearchResults.classList.add('show');
         } catch (error) {
@@ -1345,6 +1414,43 @@
       bookInput.addEventListener('input', function() { searchBooks(this); });
       bookInput.addEventListener('focus', function() { searchBooks(this); });
 
+      // Adiciona validação de quantidade para a nova linha
+      quantityInput.addEventListener('input', function() {
+        const row = this.closest('.loan-book-row');
+        const availableQuantitySpan = row.querySelector('.availableQuantity');
+        const availableQuantity = parseInt(availableQuantitySpan.textContent);
+        const requestedQuantity = parseInt(this.value);
+        
+        // Remove validações anteriores
+        this.classList.remove('is-invalid', 'is-valid');
+        
+        if (isNaN(requestedQuantity) || requestedQuantity <= 0) {
+          this.classList.add('is-invalid');
+          this.setCustomValidity('Quantidade deve ser um número positivo');
+        } else if (!isNaN(availableQuantity) && requestedQuantity > availableQuantity) {
+          this.classList.add('is-invalid');
+          this.setCustomValidity(`Quantidade máxima disponível: ${availableQuantity}`);
+        } else {
+          this.classList.add('is-valid');
+          this.setCustomValidity('');
+        }
+      });
+
+      quantityInput.addEventListener('blur', function() {
+        const row = this.closest('.loan-book-row');
+        const availableQuantitySpan = row.querySelector('.availableQuantity');
+        const availableQuantity = parseInt(availableQuantitySpan.textContent);
+        const requestedQuantity = parseInt(this.value);
+        
+        if (!isNaN(availableQuantity) && requestedQuantity > availableQuantity) {
+          showAlert('warning', `Quantidade solicitada (${requestedQuantity}) excede a disponível (${availableQuantity}). Ajustando para o máximo disponível.`);
+          this.value = availableQuantity;
+          this.classList.remove('is-invalid');
+          this.classList.add('is-valid');
+          this.setCustomValidity('');
+        }
+      });
+
       multiBookLoans.appendChild(newRow);
     }
 
@@ -1370,10 +1476,10 @@
       const books = [];
       let hasError = false;
 
+      // Consulta atual da quantidade disponível de cada livro no banco de dados
       for (const row of bookRows) {
         const bookId = row.querySelector('.selectedBookId').value;
         const quantity = parseInt(row.querySelector('.quantity').value);
-        const availableQuantity = parseInt(row.querySelector('.availableQuantity').textContent);
 
         if (!bookId) {
           showAlert('danger', 'Por favor, selecione um livro para todas as linhas.');
@@ -1385,12 +1491,46 @@
           hasError = true;
           break;
         }
-        if (quantity > availableQuantity) {
-          showAlert('danger', `Quantidade solicitada para um livro (${quantity}) excede a disponível (${availableQuantity}).`);
+
+        // Consulta a quantidade atual disponível no banco de dados
+        try {
+          const bookDoc = await db.collection('livros').doc(bookId).get();
+          if (!bookDoc.exists) {
+            showAlert('danger', 'Livro não encontrado no banco de dados.');
+            hasError = true;
+            break;
+          }
+          
+          const bookData = bookDoc.data();
+          const currentAvailable = bookData.quantidadeDisponivel || 0;
+          const bookTitle = bookData.titulo || 'Livro sem título';
+          
+          if (quantity > currentAvailable) {
+            showAlert('danger', `Quantidade solicitada para "${bookTitle}" (${quantity}) excede a disponível (${currentAvailable}).`);
+            hasError = true;
+            break;
+          }
+          
+          // Verifica se o livro já foi adicionado na lista (para evitar duplicatas)
+          const existingBook = books.find(b => b.bookId === bookId);
+          if (existingBook) {
+            const totalQuantity = existingBook.quantity + quantity;
+            if (totalQuantity > currentAvailable) {
+              showAlert('danger', `Quantidade total solicitada para "${bookTitle}" (${totalQuantity}) excede a disponível (${currentAvailable}).`);
+              hasError = true;
+              break;
+            }
+            existingBook.quantity = totalQuantity;
+          } else {
+            books.push({ bookId, quantity });
+          }
+          
+        } catch (error) {
+          console.error('Erro ao consultar livro:', error);
+          showAlert('danger', 'Erro ao consultar disponibilidade do livro.');
           hasError = true;
           break;
         }
-        books.push({ bookId, quantity });
       }
 
       if (hasError) return;
@@ -2280,4 +2420,3 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
-
