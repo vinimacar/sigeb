@@ -773,7 +773,7 @@
         <div class="modal-body">
           <div class="alert alert-danger mb-4">
             <h6 class="alert-heading">
-              <i class="bx bx-time me-2"></i>Empréstimo em Atraso Superior a 14 Dias
+              <i class="bx bx-time me-2"></i>Empréstimo em Atraso
             </h6>
             <p class="mb-0">Este documento constitui uma advertência formal devido ao atraso na devolução de material bibliográfico.</p>
           </div>
@@ -812,14 +812,8 @@
             </div>
           </div>
 
-          <div class="alert alert-warning">
-            <h6 class="alert-heading">Consequências do Atraso:</h6>
-            <ul class="mb-0">
-              <li>Suspensão temporária do direito a novos empréstimos</li>
-              <li>Aplicação de multa conforme regulamento interno</li>
-              <li>Em caso de perda ou dano, ressarcimento do valor do material</li>
-              <li>Registro em ficha disciplinar (para estudantes)</li>
-            </ul>
+          <div class="alert alert-warning" id="warningConsequences">
+            <!-- Preenchido dinamicamente via JavaScript baseado nos dias de atraso -->
           </div>
 
           <div class="alert alert-info">
@@ -1349,8 +1343,8 @@
               </button>
             `;
             
-            // Adiciona botão de advertência se atraso > 14 dias
-            if (statusAtual === 'ATRASADO' && diffDays > 14) {
+            // Adiciona botão de advertência para qualquer atraso
+            if (statusAtual === 'ATRASADO' && diffDays > 0) {
               const hasWarning = data.hasWarning ? 'text-warning' : 'text-danger';
               const warningTitle = data.hasWarning ? 
                 `Advertência já emitida em ${data.warningDate || 'data não disponível'}` : 
@@ -1372,13 +1366,19 @@
             </button>
           `;
 
+          // Monta o texto do status com informações de atraso
+          let statusText = statusAtual;
+          if (statusAtual === 'ATRASADO' && diffDays > 0) {
+            statusText = `ATRASADO (${diffDays} ${diffDays === 1 ? 'dia' : 'dias'})`;
+          }
+
           tbody.innerHTML += `
             <tr>
               <td>${livros}</td>
               <td>${userName}</td>
               <td>${data.loanDate}</td>
               <td>${data.returnDate}</td>
-              <td><span class="loan-status ${statusClass}">${data.status}</span></td>
+              <td><span class="loan-status ${statusClass}">${statusText}</span></td>
               <td>
                 <div class="action-buttons">
                   ${actionBtns}
@@ -2213,8 +2213,8 @@
                   </button>
                 `;
                 
-                // Adiciona botão de advertência se atraso > 14 dias
-                if (data.status === 'ATRASADO' && diffDays > 14) {
+                // Adiciona botão de advertência para qualquer atraso
+                if (data.status === 'ATRASADO' && diffDays > 0) {
                   const hasWarning = data.hasWarning ? 'text-warning' : 'text-danger';
                   const warningTitle = data.hasWarning ? 
                     `Advertência já emitida em ${data.warningDate || 'data não disponível'}` : 
@@ -2236,13 +2236,19 @@
                 </button>
               `;
 
+              // Monta o texto do status com informações de atraso
+              let statusText = data.status;
+              if (data.status === 'ATRASADO' && diffDays > 0) {
+                statusText = `ATRASADO (${diffDays} ${diffDays === 1 ? 'dia' : 'dias'})`;
+              }
+
               tbody.innerHTML += `
                 <tr>
                   <td>${livros}</td>
                   <td>${userName}</td>
                   <td>${data.loanDate}</td>
                   <td>${data.returnDate}</td>
-                  <td><span class="loan-status ${statusClass}">${data.status}</span></td>
+                  <td><span class="loan-status ${statusClass}">${statusText}</span></td>
                   <td>
                     <div class="action-buttons">
                       ${actionBtns}
@@ -2375,8 +2381,8 @@
         const diffTime = Math.abs(today - returnDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 14) {
-          showAlert('info', `Este empréstimo está atrasado há apenas ${diffDays} dias. Advertência aplicável apenas para atrasos superiores a 14 dias.`);
+        if (diffDays < 1) {
+          showAlert('info', `Este empréstimo não está em atraso. Advertência aplicável apenas para empréstimos atrasados.`);
           return;
         }
 
@@ -2439,6 +2445,33 @@
         `;
 
         document.getElementById('warningLoanDetails').innerHTML = loanDetailsHtml;
+
+        // Preenche consequências baseadas no tempo de atraso
+        let consequencesHtml = '<h6 class="alert-heading">Consequências do Atraso:</h6><ul class="mb-0">';
+        
+        if (diffDays >= 1) {
+          consequencesHtml += '<li>Orientação sobre a importância da devolução no prazo</li>';
+        }
+        if (diffDays >= 3) {
+          consequencesHtml += '<li>Advertência formal por escrito</li>';
+        }
+        if (diffDays >= 7) {
+          consequencesHtml += '<li>Suspensão temporária do direito a novos empréstimos</li>';
+          consequencesHtml += '<li>Aplicação de multa conforme regulamento interno</li>';
+        }
+        if (diffDays >= 14) {
+          consequencesHtml += '<li>Registro em ficha disciplinar (para estudantes)</li>';
+          consequencesHtml += '<li>Comunicação aos pais/responsáveis (se menor de idade)</li>';
+        }
+        if (diffDays >= 30) {
+          consequencesHtml += '<li>Suspensão prolongada de empréstimos (até 30 dias após devolução)</li>';
+          consequencesHtml += '<li>Avaliação para substituição do material em caso de perda</li>';
+        }
+        
+        consequencesHtml += '<li>Em caso de perda ou dano, ressarcimento do valor do material</li>';
+        consequencesHtml += '</ul>';
+        
+        document.getElementById('warningConsequences').innerHTML = consequencesHtml;
 
         // Define data da advertência
         document.getElementById('warningDate').textContent = new Date().toLocaleDateString('pt-BR');
