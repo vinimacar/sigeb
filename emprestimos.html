@@ -686,8 +686,16 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label for="returnDate" class="form-label">Data de Devolução*</label>
-                <input type="text" class="form-control" id="returnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
-                <div class="form-text">Automaticamente definida para 7 dias após o empréstimo</div>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="returnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
+                  <button class="btn btn-outline-secondary" type="button" id="setDefaultReturnDate" title="Definir 7 dias padrão">
+                    <i class='bx bx-calendar-plus'></i> 7 dias
+                  </button>
+                </div>
+                <div class="form-text">
+                  <span class="text-primary">Padrão: 7 dias.</span> 
+                  <span class="text-muted">Você pode alterar conforme necessário.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -725,7 +733,15 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label for="editReturnDate" class="form-label">Data de Devolução*</label>
-                <input type="text" class="form-control" id="editReturnDate" required>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="editReturnDate" required>
+                  <button class="btn btn-outline-secondary" type="button" id="setDefaultEditReturnDate" title="Definir 7 dias a partir da data do empréstimo">
+                    <i class='bx bx-calendar-plus'></i> +7 dias
+                  </button>
+                </div>
+                <div class="form-text text-muted">
+                  Você pode alterar a data de devolução conforme necessário.
+                </div>
               </div>
             </div>
           </form>
@@ -733,6 +749,58 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" form="editLoanForm" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Renovar Empréstimo -->
+  <div class="modal fade" id="renewLoanModal" tabindex="-1" aria-labelledby="renewLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="renewLoanModalLabel">Renovar Empréstimo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="renewLoanForm" class="needs-validation" novalidate>
+            <input type="hidden" id="renewLoanId">
+            
+            <div class="alert alert-info">
+              <i class="bx bx-info-circle me-2"></i>
+              <strong>Renovação de Empréstimo</strong><br>
+              Defina a nova data de devolução para este empréstimo.
+            </div>
+            
+            <div id="renewLoanInfo" class="mb-3">
+              <!-- Informações do empréstimo serão carregadas aqui -->
+            </div>
+            
+            <div class="mb-3">
+              <label for="renewReturnDate" class="form-label">Nova Data de Devolução*</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="renewReturnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
+                <button class="btn btn-outline-secondary" type="button" id="setDefaultRenewReturnDate" title="Definir 7 dias a partir de hoje">
+                  <i class='bx bx-calendar-plus'></i> +7 dias
+                </button>
+              </div>
+              <div class="form-text">
+                <span class="text-primary">Padrão: 7 dias a partir de hoje.</span> 
+                <span class="text-muted">Você pode alterar conforme necessário.</span>
+              </div>
+            </div>
+            
+            <div class="alert alert-warning">
+              <i class="bx bx-info-circle me-2"></i>
+              <strong>Observação:</strong> A renovação atualizará apenas a data de devolução. O empréstimo continuará ativo com o novo prazo.
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" form="renewLoanForm" class="btn btn-success">
+            <i class="bx bx-refresh me-2"></i>Renovar Empréstimo
+          </button>
         </div>
       </div>
     </div>
@@ -1209,6 +1277,16 @@
       // Aplica máscaras aos campos de data
       if (loanDateInput) applyDateMask(loanDateInput);
       if (returnDateInput) applyDateMask(returnDateInput);
+      
+      // Aplica máscara ao campo de data do modal de edição
+      const editLoanDateInput = document.getElementById('editLoanDate');
+      const editReturnDateInput = document.getElementById('editReturnDate');
+      if (editLoanDateInput) applyDateMask(editLoanDateInput);
+      if (editReturnDateInput) applyDateMask(editReturnDateInput);
+      
+      // Aplica máscara ao campo de data do modal de renovação
+      const renewReturnDateInput = document.getElementById('renewReturnDate');
+      if (renewReturnDateInput) applyDateMask(renewReturnDateInput);
 
       // Listener para busca de usuários
       const userSearch = document.getElementById('userSearch');
@@ -1312,6 +1390,67 @@
             emprestimo: dataEmprestimo,
             devolucao: dataRetorno
           });
+        });
+
+        // Event listener para o botão "7 dias" no modal de novo empréstimo
+        document.getElementById('setDefaultReturnDate').addEventListener('click', function() {
+          const loanDateInput = document.getElementById('loanDate');
+          const returnDateInput = document.getElementById('returnDate');
+          
+          if (loanDateInput.value) {
+            // Parse da data do empréstimo
+            const [day, month, year] = loanDateInput.value.split('/');
+            const loanDate = new Date(year, month - 1, day);
+            
+            // Adiciona 7 dias
+            const returnDate = new Date(loanDate);
+            returnDate.setDate(returnDate.getDate() + 7);
+            
+            // Formata para dd/mm/yyyy
+            const formattedDate = returnDate.toLocaleDateString('pt-BR');
+            returnDateInput.value = formattedDate;
+            
+            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo', 2000);
+          } else {
+            showAlert('warning', 'Primeiro defina a data do empréstimo', 3000);
+          }
+        });
+
+        // Event listener para o botão "+7 dias" no modal de edição
+        document.getElementById('setDefaultEditReturnDate').addEventListener('click', function() {
+          const editLoanDateInput = document.getElementById('editLoanDate');
+          const editReturnDateInput = document.getElementById('editReturnDate');
+          
+          if (editLoanDateInput.value) {
+            // Parse da data do empréstimo
+            const [day, month, year] = editLoanDateInput.value.split('/');
+            const loanDate = new Date(year, month - 1, day);
+            
+            // Adiciona 7 dias
+            const returnDate = new Date(loanDate);
+            returnDate.setDate(returnDate.getDate() + 7);
+            
+            // Formata para dd/mm/yyyy
+            const formattedDate = returnDate.toLocaleDateString('pt-BR');
+            editReturnDateInput.value = formattedDate;
+            
+            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo', 2000);
+          } else {
+            showAlert('warning', 'Primeiro defina a data do empréstimo', 3000);
+          }
+        });
+
+        // Event listener para o botão "+7 dias" no modal de renovação
+        document.getElementById('setDefaultRenewReturnDate').addEventListener('click', function() {
+          const today = new Date();
+          today.setDate(today.getDate() + 7);
+          
+          const day = String(today.getDate()).padStart(2, '0');
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const year = today.getFullYear();
+          
+          document.getElementById('renewReturnDate').value = `${day}/${month}/${year}`;
+          showAlert('info', 'Data de devolução definida para 7 dias a partir de hoje', 2000);
         });
 
         // Limpa o formulário quando o modal é fechado
@@ -1857,7 +1996,56 @@
         console.error('Erro ao atualizar empréstimo:', error);
         showAlert('danger', 'Erro ao atualizar empréstimo.');
       }
-    });    async function returnLoan(loanId) {
+    });
+
+    // Event listener para o formulário de renovação
+    document.getElementById('renewLoanForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const form = event.target;
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      const loanId = document.getElementById('renewLoanId').value;
+      const returnDate = document.getElementById('renewReturnDate').value;
+
+      // Validação de data
+      if (!isValidDateFormat(returnDate)) {
+        showAlert('danger', 'Data de devolução deve estar no formato DD/MM/AAAA');
+        return;
+      }
+
+      // Verificar se a nova data não está no passado
+      const [day, month, year] = returnDate.split('/');
+      const newReturnDate = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      newReturnDate.setHours(0, 0, 0, 0);
+
+      if (newReturnDate < today) {
+        showAlert('warning', 'A nova data de devolução não pode ser anterior à data atual');
+        return;
+      }
+
+      try {
+        await db.collection('emprestimos').doc(loanId).update({
+          returnDate: returnDate,
+          status: 'EMPRESTADO', // Garantir que volte para status EMPRESTADO
+          renewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          renewedDate: new Date().toLocaleDateString('pt-BR')
+        });
+        
+        showAlert('success', 'Empréstimo renovado com sucesso!');
+        bootstrap.Modal.getInstance(document.getElementById('renewLoanModal')).hide();
+        loadLoans();
+      } catch (error) {
+        console.error('Erro ao renovar empréstimo:', error);
+        showAlert('danger', 'Erro ao renovar empréstimo.');
+      }
+    });
+
+    async function returnLoan(loanId) {
       if (!confirm('Tem certeza que deseja registrar a devolução deste empréstimo?')) return;
       try {
         // Busca os dados do empréstimo
@@ -1910,31 +2098,73 @@
     }
 
     async function renewLoan(loanId) {
-      if (!confirm('Tem certeza que deseja renovar este empréstimo?')) return;
       try {
-        // Pega a data e hora atual
-        const now = new Date();
-        // Acrescenta 7 dias
-        now.setDate(now.getDate() + 7);
+        // Busca os dados do empréstimo
+        const doc = await db.collection('emprestimos').doc(loanId).get();
+        if (!doc.exists) {
+          showAlert('danger', 'Empréstimo não encontrado.');
+          return;
+        }
 
-        // Formata para dd/mm/yyyy HH:MM
-        const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = now.getFullYear();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const newReturnDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+        const data = doc.data();
+        
+        // Verifica se o empréstimo pode ser renovado
+        if (data.status === 'DEVOLVIDO') {
+          showAlert('warning', 'Este empréstimo já foi devolvido e não pode ser renovado.');
+          return;
+        }
 
-        await db.collection('emprestimos').doc(loanId).update({
-          returnDate: newReturnDate,
-          status: 'EMPRESTADO'
-        });
+        // Preenche o modal com os dados do empréstimo
+        document.getElementById('renewLoanId').value = loanId;
+        
+        // Busca informações do usuário e livros
+        let userName = 'N/A';
+        try {
+          const userDoc = await db.collection('usuarios').doc(data.userId).get();
+          if (userDoc.exists) userName = userDoc.data().nome;
+        } catch {}
 
-        showAlert('success', 'Empréstimo renovado com sucesso!');
-        loadLoans();
+        let bookTitles = [];
+        if (Array.isArray(data.books)) {
+          for (const b of data.books) {
+            try {
+              const bookDoc = await db.collection('livros').doc(b.bookId).get();
+              if (bookDoc.exists) bookTitles.push(`${bookDoc.data().titulo} (Qtd: ${b.quantity})`);
+              else bookTitles.push(`${b.bookId} (Qtd: ${b.quantity})`);
+            } catch {
+              bookTitles.push(`${b.bookId} (Qtd: ${b.quantity})`);
+            }
+          }
+        }
+
+        // Preenche as informações do empréstimo no modal
+        document.getElementById('renewLoanInfo').innerHTML = `
+          <div class="card">
+            <div class="card-body">
+              <h6 class="card-title">Informações do Empréstimo</h6>
+              <p class="mb-1"><strong>Usuário:</strong> ${userName}</p>
+              <p class="mb-1"><strong>Livro(s):</strong> ${bookTitles.join(', ')}</p>
+              <p class="mb-1"><strong>Data do Empréstimo:</strong> ${data.loanDate}</p>
+              <p class="mb-0"><strong>Data de Devolução Atual:</strong> ${data.returnDate}</p>
+            </div>
+          </div>
+        `;
+
+        // Define a data padrão (7 dias a partir de hoje)
+        const today = new Date();
+        today.setDate(today.getDate() + 7);
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        document.getElementById('renewReturnDate').value = `${day}/${month}/${year}`;
+
+        // Abre o modal
+        const renewLoanModal = new bootstrap.Modal(document.getElementById('renewLoanModal'));
+        renewLoanModal.show();
+
       } catch (error) {
-        console.error('Erro ao renovar empréstimo:', error);
-        showAlert('danger', 'Erro ao renovar empréstimo.');
+        console.error('Erro ao abrir modal de renovação:', error);
+        showAlert('danger', 'Erro ao carregar dados do empréstimo para renovação.');
       }
     }
 
@@ -3431,3 +3661,4 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
