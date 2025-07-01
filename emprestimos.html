@@ -1133,7 +1133,7 @@
     }
 
     // Função para exibir alertas de feedback ao usuário
-    function showAlert(type, message) {
+    function showAlert(type, message, timeout = 4000) {
       // Remove alertas antigos
       document.querySelectorAll('.custom-alert').forEach(e => e.remove());
       const alert = document.createElement('div');
@@ -1141,7 +1141,7 @@
       alert.style.zIndex = 2000;
       alert.innerHTML = message;
       document.body.appendChild(alert);
-      setTimeout(() => alert.remove(), 4000);
+      setTimeout(() => alert.remove(), timeout);
     }
 
     // Função para fechar o modal de novo empréstimo
@@ -2977,6 +2977,11 @@ if (snapshot.docs.length === 0) {
         tbody.innerHTML = '';
         
         let count = 0;
+        const now = new Date();
+        
+        // Array para armazenar atualizações em lote
+        const batch = db.batch();
+        let batchUpdates = 0;
         
         for (const doc of snapshot.docs) {
           const data = doc.data();
@@ -3010,22 +3015,97 @@ if (snapshot.docs.length === 0) {
             }
           }
           
-          // Calcular status atual
-          const returnDate = data.returnDate;
-          const now = new Date();
+          // Atualizar empréstimo relacionado se existir
           let currentStatus = 'DEVOLVIDO';
+          let currentDaysLate = 0;
           
-          if (returnDate && returnDate !== 'N/A') {
-            const [datePart] = returnDate.split(' ');
-            const [day, month, year] = datePart.split('/');
-            const returnDateTime = new Date(year, month - 1, day);
-            
-            if (returnDateTime < now) {
-              const diffTime = Math.abs(now - returnDateTime);
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              currentStatus = `ATRASADO (${diffDays} dias)`;
-            } else {
-              currentStatus = 'EMPRESTADO';
+          if (data.loanId) {
+            try {
+              const loanDoc = await db.collection('emprestimos').doc(data.loanId).get();
+              if (loanDoc.exists) {
+                const loanData = loanDoc.data();
+                const returnDate = loanData.returnDate;
+                
+                if (returnDate && returnDate !== 'N/A' && loanData.status !== 'DEVOLVIDO') {
+                  const [datePart] = returnDate.split(' ');
+                  const [day, month, year] = datePart.split('/');
+                  const returnDateTime = new Date(year, month - 1, day);
+                  
+                  if (returnDateTime < now) {
+                    const diffTime = Math.abs(now - returnDateTime);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    currentDaysLate = diffDays;
+                    currentStatus = `ATRASADO (${diffDays} dias)`;
+                    
+                    // Atualizar status do empréstimo no banco
+                    const loanRef = db.collection('emprestimos').doc(data.loanId);
+                    batch.update(loanRef, {
+                      status: 'ATRASADO'
+                    });
+                    batchUpdates++;
+                    
+                    // Atualizar dados na advertência se os dias de atraso mudaram
+                    if (data.daysLate !== diffDays) {
+                      const warningRef = db.collection('warnings').doc(doc.id);
+                      batch.update(warningRef, {
+                        daysLate: diffDays,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                      });
+                      batchUpdates++;
+                    }
+                  } else {
+                    currentStatus = 'EMPRESTADO';
+                    
+                    // Se não está mais atrasado, atualizar status
+                    if (loanData.status === 'ATRASADO') {
+                      const loanRef = db.collection('emprestimos').doc(data.loanId);
+                      batch.update(loanRef, {
+                        status: 'EMPRESTADO'
+                      });
+                      batchUpdates++;
+                    }
+                  }
+                } else if (loanData.status === 'DEVOLVIDO') {
+                  currentStatus = 'DEVOLVIDO';
+                } else {
+                  currentStatus = 'EMPRESTADO';
+                }
+              }
+            } catch (error) {
+              console.error('Erro ao verificar empréstimo:', error);
+              // Usar dados da advertência como fallback
+              const returnDate = data.returnDate;
+              if (returnDate && returnDate !== 'N/A') {
+                const [datePart] = returnDate.split(' ');
+                const [day, month, year] = datePart.split('/');
+                const returnDateTime = new Date(year, month - 1, day);
+                
+                if (returnDateTime < now) {
+                  const diffTime = Math.abs(now - returnDateTime);
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  currentStatus = `ATRASADO (${diffDays} dias)`;
+                  currentDaysLate = diffDays;
+                } else {
+                  currentStatus = 'EMPRESTADO';
+                }
+              }
+            }
+          } else {
+            // Se não há loanId, usar dados da advertência
+            const returnDate = data.returnDate;
+            if (returnDate && returnDate !== 'N/A') {
+              const [datePart] = returnDate.split(' ');
+              const [day, month, year] = datePart.split('/');
+              const returnDateTime = new Date(year, month - 1, day);
+              
+              if (returnDateTime < now) {
+                const diffTime = Math.abs(now - returnDateTime);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                currentStatus = `ATRASADO (${diffDays} dias)`;
+                currentDaysLate = diffDays;
+              } else {
+                currentStatus = 'EMPRESTADO';
+              }
             }
           }
           
@@ -3045,7 +3125,7 @@ if (snapshot.docs.length === 0) {
               <td>${bookTitles.join('; ')}</td>
               <td>${data.loanDate || 'N/A'}</td>
               <td>${data.returnDate || 'N/A'}</td>
-              <td>${data.daysLate || 0}</td>
+              <td>${currentDaysLate}</td>
               <td>
                 <span class="badge ${currentStatus.includes('ATRASADO') ? 'bg-danger' : currentStatus === 'EMPRESTADO' ? 'bg-warning' : 'bg-success'}">
                   ${currentStatus}
@@ -3068,11 +3148,26 @@ if (snapshot.docs.length === 0) {
           `;
         }
         
+        // Executar atualizações em lote se houver alguma
+        if (batchUpdates > 0) {
+          try {
+            await batch.commit();
+            console.log(`${batchUpdates} registros atualizados no banco de dados`);
+          } catch (error) {
+            console.error('Erro ao atualizar registros em lote:', error);
+          }
+        }
+        
         if (count === 0) {
           tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhuma advertência encontrada</td></tr>';
         }
         
         document.getElementById('warningsCount').textContent = count;
+        
+        // Mostrar feedback visual se houve atualizações
+        if (batchUpdates > 0) {
+          showAlert('info', `${batchUpdates} registros foram atualizados no banco de dados`, 3000);
+        }
         
       } catch (error) {
         console.error('Erro ao carregar advertências:', error);
