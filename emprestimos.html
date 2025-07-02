@@ -1026,6 +1026,35 @@
       defaultLoanDays: 14
     };
 
+    // Função para obter data/hora no horário de Brasília
+    function getDataBrasilia() {
+      // Cria uma nova data no horário UTC
+      const agora = new Date();
+      
+      // Converte para o horário de Brasília (UTC-3)
+      // Durante horário de verão seria UTC-2, mas vamos usar UTC-3 como padrão
+      const brasiliaOffset = -3; // UTC-3
+      const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
+      const brasilia = new Date(utc + (brasiliaOffset * 3600000));
+      
+      return brasilia;
+    }
+
+    // Função para formatar data no padrão brasileiro (DD/MM/AAAA)
+    function formatarDataBrasil(data) {
+      const day = String(data.getDate()).padStart(2, '0');
+      const month = String(data.getMonth() + 1).padStart(2, '0');
+      const year = data.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    // Função para adicionar dias a uma data (horário Brasília)
+    function adicionarDias(data, dias) {
+      const novaData = new Date(data);
+      novaData.setDate(novaData.getDate() + dias);
+      return novaData;
+    }
+
     // Inicializar Email.js
     (function() {
       emailjs.init("SUA_PUBLIC_KEY_DO_EMAILJS"); // Substitua pela sua chave pública do Email.js
@@ -1373,20 +1402,19 @@
           }
           document.getElementById('registroNumero').value = String(nextNumber).padStart(6, '0');
           
-          // Define automaticamente as datas no formato brasileiro
-          const hoje = new Date();
-          const dataEmprestimo = hoje.toLocaleDateString('pt-BR');
+          // Define automaticamente as datas no formato brasileiro usando horário de Brasília
+          const hoje = getDataBrasilia();
+          const dataEmprestimo = formatarDataBrasil(hoje);
           
           // Adiciona 7 dias para a data de devolução
-          const dataDevolucao = new Date(hoje);
-          dataDevolucao.setDate(dataDevolucao.getDate() + 7);
-          const dataRetorno = dataDevolucao.toLocaleDateString('pt-BR');
+          const dataDevolucao = adicionarDias(hoje, 7);
+          const dataRetorno = formatarDataBrasil(dataDevolucao);
           
           // Define os valores nos campos
           document.getElementById('loanDate').value = dataEmprestimo;
           document.getElementById('returnDate').value = dataRetorno;
           
-          console.log('Datas definidas automaticamente:', {
+          console.log('Datas definidas automaticamente (Horário Brasília):', {
             emprestimo: dataEmprestimo,
             devolucao: dataRetorno
           });
@@ -1402,15 +1430,14 @@
             const [day, month, year] = loanDateInput.value.split('/');
             const loanDate = new Date(year, month - 1, day);
             
-            // Adiciona 7 dias
-            const returnDate = new Date(loanDate);
-            returnDate.setDate(returnDate.getDate() + 7);
+            // Adiciona 7 dias usando a função utilitária
+            const returnDate = adicionarDias(loanDate, 7);
             
-            // Formata para dd/mm/yyyy
-            const formattedDate = returnDate.toLocaleDateString('pt-BR');
+            // Formata para dd/mm/yyyy usando horário de Brasília
+            const formattedDate = formatarDataBrasil(returnDate);
             returnDateInput.value = formattedDate;
             
-            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo', 2000);
+            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo (Horário Brasília)', 2000);
           } else {
             showAlert('warning', 'Primeiro defina a data do empréstimo', 3000);
           }
@@ -1426,15 +1453,14 @@
             const [day, month, year] = editLoanDateInput.value.split('/');
             const loanDate = new Date(year, month - 1, day);
             
-            // Adiciona 7 dias
-            const returnDate = new Date(loanDate);
-            returnDate.setDate(returnDate.getDate() + 7);
+            // Adiciona 7 dias usando a função utilitária
+            const returnDate = adicionarDias(loanDate, 7);
             
-            // Formata para dd/mm/yyyy
-            const formattedDate = returnDate.toLocaleDateString('pt-BR');
+            // Formata para dd/mm/yyyy usando horário de Brasília
+            const formattedDate = formatarDataBrasil(returnDate);
             editReturnDateInput.value = formattedDate;
             
-            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo', 2000);
+            showAlert('info', 'Data de devolução definida para 7 dias após o empréstimo (Horário Brasília)', 2000);
           } else {
             showAlert('warning', 'Primeiro defina a data do empréstimo', 3000);
           }
@@ -1442,15 +1468,12 @@
 
         // Event listener para o botão "+7 dias" no modal de renovação
         document.getElementById('setDefaultRenewReturnDate').addEventListener('click', function() {
-          const today = new Date();
-          today.setDate(today.getDate() + 7);
+          const today = getDataBrasilia();
+          const dataComSeteDias = adicionarDias(today, 7);
+          const dataFormatada = formatarDataBrasil(dataComSeteDias);
           
-          const day = String(today.getDate()).padStart(2, '0');
-          const month = String(today.getMonth() + 1).padStart(2, '0');
-          const year = today.getFullYear();
-          
-          document.getElementById('renewReturnDate').value = `${day}/${month}/${year}`;
-          showAlert('info', 'Data de devolução definida para 7 dias a partir de hoje', 2000);
+          document.getElementById('renewReturnDate').value = dataFormatada;
+          showAlert('info', 'Data de devolução definida para 7 dias a partir de hoje (Horário Brasília)', 2000);
         });
 
         // Limpa o formulário quando o modal é fechado
@@ -1510,9 +1533,9 @@
             userName = 'Usuário não encontrado';
           }
           
-          // Verifica se o empréstimo está realmente atrasado baseado na data
+          // Verifica se o empréstimo está realmente atrasado baseado na data (horário Brasília)
           let statusAtual = data.status;
-          const hoje = new Date();
+          const hoje = getDataBrasilia();
           hoje.setHours(0, 0, 0, 0);
           
           // Se o status for EMPRESTADO, verifica se está atrasado
@@ -1908,12 +1931,12 @@
       }
 
       try {
-        // Determina o status inicial baseado na data de devolução
+        // Determina o status inicial baseado na data de devolução (horário Brasília)
         const [day, month, year] = returnDate.split('/');
         const loanReturnDate = new Date(year, month - 1, day);
         loanReturnDate.setHours(0, 0, 0, 0);
         
-        const todayForStatus = new Date();
+        const todayForStatus = getDataBrasilia();
         todayForStatus.setHours(0, 0, 0, 0);
         
         // Para novos empréstimos, geralmente será EMPRESTADO, mas por segurança verificamos
@@ -2027,25 +2050,25 @@
         return;
       }
 
-      // Verificar se a nova data não está no passado
+      // Verificar se a nova data não está no passado (usando horário de Brasília)
       const [day, month, year] = returnDate.split('/');
       const newReturnDate = new Date(year, month - 1, day);
-      const today = new Date();
+      const today = getDataBrasilia();
       today.setHours(0, 0, 0, 0);
       newReturnDate.setHours(0, 0, 0, 0);
 
       if (newReturnDate < today) {
-        showAlert('warning', 'A nova data de devolução não pode ser anterior à data atual');
+        showAlert('warning', 'A nova data de devolução não pode ser anterior à data atual (Horário Brasília)');
         return;
       }
 
       try {
-        // Determina o status correto baseado na nova data de devolução
-        const [day, month, year] = returnDate.split('/');
-        const renewReturnDate = new Date(year, month - 1, day);
+        // Determina o status correto baseado na nova data de devolução (horário Brasília)
+        const [day2, month2, year2] = returnDate.split('/');
+        const renewReturnDate = new Date(year2, month2 - 1, day2);
         renewReturnDate.setHours(0, 0, 0, 0);
         
-        const todayForStatus = new Date();
+        const todayForStatus = getDataBrasilia();
         todayForStatus.setHours(0, 0, 0, 0);
         
         // Define o status baseado na comparação de datas
@@ -2055,7 +2078,7 @@
           returnDate: returnDate,
           status: newStatus, // Status determinado dinamicamente baseado na data
           renewedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          renewedDate: new Date().toLocaleDateString('pt-BR')
+          renewedDate: formatarDataBrasil(getDataBrasilia())
         });
         
         showAlert('success', 'Empréstimo renovado com sucesso!');
@@ -2085,11 +2108,12 @@
           return;
         }
 
-        // Atualiza o status do empréstimo
+        // Atualiza o status do empréstimo usando horário de Brasília
+        const dataDevolucao = getDataBrasilia();
         await db.collection('emprestimos').doc(loanId).update({
           status: 'DEVOLVIDO',
           returnedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          actualReturnDate: new Date().toLocaleDateString('pt-BR')
+          actualReturnDate: formatarDataBrasil(dataDevolucao)
         });        // Retorna a quantidade de livros ao estoque
         const updatePromises = [];
         for (const book of loanData.books) {
@@ -2172,13 +2196,11 @@
           </div>
         `;
 
-        // Define a data padrão (7 dias a partir de hoje)
-        const today = new Date();
-        today.setDate(today.getDate() + 7);
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        document.getElementById('renewReturnDate').value = `${day}/${month}/${year}`;
+        // Define a data padrão (7 dias a partir de hoje) usando horário de Brasília
+        const today = getDataBrasilia();
+        const dataComSeteDias = adicionarDias(today, 7);
+        const dataFormatada = formatarDataBrasil(dataComSeteDias);
+        document.getElementById('renewReturnDate').value = dataFormatada;
 
         // Abre o modal
         const renewLoanModal = new bootstrap.Modal(document.getElementById('renewLoanModal'));
@@ -2265,7 +2287,7 @@
 
     async function updateNotReturnedBar() {
       try {
-        const today = new Date();
+        const today = getDataBrasilia();
         today.setHours(0, 0, 0, 0);
 
         const snapshot = await db.collection('emprestimos')
@@ -2331,7 +2353,7 @@
         let atrasadoCount = 0;
         let devolvidoCount = 0;
 
-        const today = new Date();
+        const today = getDataBrasilia();
         today.setHours(0, 0, 0, 0);
 
         for (const doc of snapshot.docs) {
@@ -2375,7 +2397,7 @@
 
     // Função de teste para verificar parsing de datas (pode ser executada no console)
     function testDateParsing() {
-      const today = new Date();
+      const today = getDataBrasilia();
       today.setHours(0, 0, 0, 0);
       
       console.log('=== TESTE DE PARSING DE DATAS ===');
@@ -2420,8 +2442,8 @@
           .get()
           .then(async (snapshot) => {
             tbody.innerHTML = '';
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas a data
+            const today = getDataBrasilia();
+            today.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas a data (horário Brasília)
             
             const overdueLoans = [];
             
@@ -2556,7 +2578,7 @@
 
               // Calcula dias de atraso se aplicável
               let diffDays = 0;
-              const today = new Date();
+              const today = getDataBrasilia();
               today.setHours(0, 0, 0, 0);
               if (data.status === 'ATRASADO' && data.returnDate) {
                 const dateParts = data.returnDate.split('/');
@@ -2736,7 +2758,7 @@
         currentWarningLoanId = loanId;
 
         // Calcula dias de atraso
-        const today = new Date();
+        const today = getDataBrasilia();
         today.setHours(0, 0, 0, 0);
         
         let returnDate;
@@ -2844,7 +2866,8 @@
         document.getElementById('warningConsequences').innerHTML = consequencesHtml;
 
         // Define data da advertência
-        document.getElementById('warningDate').textContent = new Date().toLocaleDateString('pt-BR');
+        const dataAdvertencia = getDataBrasilia();
+        document.getElementById('warningDate').textContent = formatarDataBrasil(dataAdvertencia);
 
         // Inicializa pads de assinatura
         const warningCanvas = document.getElementById('warningSignaturePad');
@@ -2911,19 +2934,21 @@
         const librarianSignature = librarianSignaturePad.toDataURL();
 
         // Salva a advertência
+        const dataAdvertenciaSalvar = getDataBrasilia();
         await db.collection('advertencias').add({
           loanId: currentWarningLoanId,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          warningDate: new Date().toLocaleDateString('pt-BR'),
+          warningDate: formatarDataBrasil(dataAdvertenciaSalvar),
           userSignature: userSignature,
           librarianSignature: librarianSignature,
           status: 'EMITIDA'
         });
 
         // Atualiza o empréstimo com flag de advertência
+        const dataAdvertenciaUpdate = getDataBrasilia();
         await db.collection('emprestimos').doc(currentWarningLoanId).update({
           hasWarning: true,
-          warningDate: new Date().toLocaleDateString('pt-BR')
+          warningDate: formatarDataBrasil(dataAdvertenciaUpdate)
         });
 
         showAlert('success', 'Advertência salva com sucesso!');
@@ -3254,7 +3279,7 @@ if (snapshot.docs.length === 0) {
         
         // Filtro por data se selecionado
         if (dateFilter) {
-          const daysAgo = new Date();
+          const daysAgo = getDataBrasilia();
           daysAgo.setDate(daysAgo.getDate() - parseInt(dateFilter));
           query = query.where('issueDate', '>=', daysAgo);
         }
@@ -3264,7 +3289,7 @@ if (snapshot.docs.length === 0) {
         tbody.innerHTML = '';
         
         let count = 0;
-        const now = new Date();
+        const now = getDataBrasilia();
         
         // Array para armazenar atualizações em lote
         const batch = db.batch();
@@ -3624,7 +3649,7 @@ if (snapshot.docs.length === 0) {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Advertências");
         
-        const now = new Date();
+        const now = getDataBrasilia();
         const fileName = `advertencias_${now.getFullYear()}_${(now.getMonth() + 1).toString().padStart(2, '0')}_${now.getDate().toString().padStart(2, '0')}.xlsx`;
         
         XLSX.writeFile(wb, fileName);
@@ -3718,3 +3743,4 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
