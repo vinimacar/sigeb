@@ -71,22 +71,22 @@
           <label class="form-label" for="livrosGenero">Gênero</label>
           <select class="form-select" id="livrosGenero" name="livrosGenero">
             <option value="">Todos</option>
-            <option value="ROMANCE">Romance</option>
-            <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
-            <option value="FANTASIA">Fantasia</option>
-            <option value="MISTERIO">Mistério</option>
-            <option value="TERROR">Terror</option>
-            <option value="DRAMA">Drama</option>
             <option value="AVENTURA">Aventura</option>
-            <option value="BIOGRAFIA">Biografia</option>
-            <option value="HISTORIA">História</option>
-            <option value="CIENCIAS">Ciências</option>
-            <option value="TECNOLOGIA">Tecnologia</option>
             <option value="AUTOAJUDA">Autoajuda</option>
+            <option value="BIOGRAFIA">Biografia</option>
+            <option value="CIENCIAS">Ciências</option>
+            <option value="DRAMA">Drama</option>
             <option value="EDUCACAO">Educação</option>
+            <option value="FANTASIA">Fantasia</option>
+            <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
+            <option value="HISTORIA">História</option>
             <option value="INFANTIL">Infantil</option>
-            <option value="POESIA">Poesia</option>
+            <option value="MISTERIO">Mistério</option>
             <option value="OUTROS">Outros</option>
+            <option value="POESIA">Poesia</option>
+            <option value="ROMANCE">Romance</option>
+            <option value="TECNOLOGIA">Tecnologia</option>
+            <option value="TERROR">Terror</option>
           </select>
         </div>
         <div class="col-md-3 d-none" id="usuariosFilters">
@@ -206,6 +206,11 @@
           if (snapshot.empty) {
             html = '<p>Nenhum livro encontrado com os filtros selecionados.</p>';
           } else {
+            // Ordena os livros por título (alfabético)
+            const livrosOrdenados = snapshot.docs
+              .map(doc => doc.data())
+              .sort((a, b) => (a.titulo || '').localeCompare(b.titulo || '', 'pt-BR', { sensitivity: 'base' }));
+
             html = `
               <table class="table table-bordered table-sm">
                 <thead>
@@ -213,12 +218,10 @@
                 </thead>
                 <tbody>
             `;
-            snapshot.forEach(doc => {
-              const l = doc.data();
+            livrosOrdenados.forEach(l => {
               const quantidade = l.quantidade || 0;
               const disponivel = l.quantidadeDisponivel || 0;
               const emprestados = l.emprestados || 0;
-              // Mostra todos os autores, se houver
               const autores = Array.isArray(l.autores) ? l.autores.join(', ') : (l.autores || l.autor || 'Autor não informado');
 
               html += `
