@@ -1505,7 +1505,7 @@
       try {
         const snapshot = await db.collection('emprestimos')
           .orderBy('createdAt', 'desc')
-          .limit(30)
+          .limit(15)
           .get();
 
         tbody.innerHTML = '';
