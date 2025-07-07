@@ -218,11 +218,13 @@
               const quantidade = l.quantidade || 0;
               const disponivel = l.quantidadeDisponivel || 0;
               const emprestados = l.emprestados || 0;
-              
+              // Mostra todos os autores, se houver
+              const autores = Array.isArray(l.autores) ? l.autores.join(', ') : (l.autores || l.autor || 'Autor não informado');
+
               html += `
                 <tr>
                   <td>${l.titulo || 'Sem título'}</td>
-                  <td>${l.autor || 'Autor não informado'}</td>
+                  <td>${autores}</td>
                   <td>${l.genero || 'Não informado'}</td>
                   <td>${quantidade}</td>
                   <td>${disponivel}</td>
