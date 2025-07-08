@@ -507,6 +507,10 @@
         <h2>Gerenciamento de Livros</h2>
         <p>Gerencie o acervo da biblioteca</p>
       </div>      <div class="d-flex gap-2">
+        <button class="btn btn-info" onclick="diagnosticarEstoque()" title="Diagnosticar problemas de estoque">
+          <i class='bx bx-search-alt'></i>
+          Diagnosticar
+        </button>
         <button class="btn btn-success" onclick="updateAllStock()" title="Atualizar estoque de todos os livros">
           <i class='bx bx-refresh'></i>
           Atualizar Estoque
@@ -1136,8 +1140,26 @@
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
         const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
 
-        // Atualizar apenas se houver diferença
-        if (book.quantidadeDisponivel !== quantidadeDisponivel || book.emprestados !== quantidadeEmprestada) {
+        // Debug detalhado para livros específicos
+        if (book.titulo && book.titulo.toLowerCase().includes('brasília')) {
+          console.log(`=== DEBUG LIVRO BRASÍLIA ===`);
+          console.log(`Título: ${book.titulo}`);
+          console.log(`Quantidade no banco: ${quantidadeTotal}`);
+          console.log(`Emprestados calculados: ${quantidadeEmprestada}`);
+          console.log(`Disponível calculado: ${quantidadeDisponivel}`);
+          console.log(`Dados atuais no banco:`, {
+            quantidadeDisponivel: book.quantidadeDisponivel,
+            emprestados: book.emprestados,
+            disponivel: book.disponivel
+          });
+        }
+
+        // Atualizar apenas se houver diferença OU se forçar atualização
+        const needsUpdate = book.quantidadeDisponivel !== quantidadeDisponivel || 
+                           book.emprestados !== quantidadeEmprestada ||
+                           book.disponivel !== (quantidadeDisponivel > 0);
+                           
+        if (needsUpdate) {
           const docRef = doc(db, 'livros', bookId);
           batch.update(docRef, {
             quantidadeDisponivel: quantidadeDisponivel,
@@ -1146,6 +1168,8 @@
             ultimaAtualizacao: serverTimestamp()
           });
           updates++;
+          
+          console.log(`Atualizando livro ${book.titulo}: Total=${quantidadeTotal}, Emprestados=${quantidadeEmprestada}, Disponível=${quantidadeDisponivel}`);
         }
       });
 
@@ -1284,6 +1308,17 @@
       const quantidadeTotal = book.quantidade || 0;
       const quantidadeDisponivel = Math.max(0, quantidadeTotal - totalEmprestado);
 
+      console.log(`=== DETALHES DO LIVRO: ${book.titulo} ===`);
+      console.log(`Total no banco: ${quantidadeTotal}`);
+      console.log(`Empréstimos ativos encontrados: ${emprestimosAtivos.length}`);
+      console.log(`Total emprestado calculado: ${totalEmprestado}`);
+      console.log(`Disponível calculado: ${quantidadeDisponivel}`);
+      console.log(`Dados salvos no banco:`, {
+        quantidadeDisponivel: book.quantidadeDisponivel,
+        emprestados: book.emprestados,
+        disponivel: book.disponivel
+      });
+
       // Criar modal para mostrar detalhes
       const modalId = 'bookDetailsModal';
       let modal = document.getElementById(modalId);
@@ -1377,7 +1412,16 @@
               </h5>
               <p class="mb-1"><strong>Total:</strong> ${quantidadeTotal} exemplares</p>
               <p class="mb-1"><strong>Disponível:</strong> ${quantidadeDisponivel} exemplares</p>
-              <p class="mb-0"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
+              <p class="mb-1"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
+              <hr>
+              <small class="text-muted">
+                <strong>Debug:</strong><br>
+                Dados salvos no banco: Disponível=${book.quantidadeDisponivel}, Emprestados=${book.emprestados || 0}<br>
+                Calculado agora: Disponível=${quantidadeDisponivel}, Emprestados=${totalEmprestado}
+                ${(book.quantidadeDisponivel !== quantidadeDisponivel || (book.emprestados || 0) !== totalEmprestado) ? 
+                  '<br><span class="text-warning">⚠️ Discrepância detectada!</span>' : 
+                  '<br><span class="text-success">✅ Dados consistentes</span>'}
+              </small>
             </div>
           </div>
         </div>
@@ -1572,11 +1616,163 @@
     button.disabled = true;
 
     try {
-      await loadBooks();
-      showAlert('success', 'Estoque atualizado com sucesso!');
+      console.log('=== FORÇANDO ATUALIZAÇÃO COMPLETA DE ESTOQUE ===');
+      
+      // Buscar todos os empréstimos
+      const emprestimosSnapshot = await getDocs(collection(db, 'emprestimos'));
+      const livrosEmprestados = new Map();
+      
+      console.log(`Analisando ${emprestimosSnapshot.docs.length} empréstimos...`);
+      
+      emprestimosSnapshot.forEach(doc => {
+        const emprestimo = doc.data();
+        const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
+        
+        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
+          emprestimo.books.forEach(book => {
+            const bookId = book.bookId;
+            const quantity = parseInt(book.quantity) || 1;
+            const currentEmprestado = livrosEmprestados.get(bookId) || 0;
+            livrosEmprestados.set(bookId, currentEmprestado + quantity);
+          });
+        }
+      });
+      
+      // Forçar atualização de todos os livros
+      const livrosRef = collection(db, 'livros');
+      const querySnapshot = await getDocs(livrosRef);
+      const batch = writeBatch(db);
+      let updates = 0;
+      
+      console.log(`Atualizando ${querySnapshot.docs.length} livros...`);
+      
+      querySnapshot.forEach((docSnap) => {
+        const book = docSnap.data();
+        const bookId = docSnap.id;
+        const quantidadeTotal = book.quantidade || 0;
+        const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
+        const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+        
+        // Mostrar diagnóstico para todos os livros
+        console.log(`Livro: ${book.titulo}`);
+        console.log(`  Total: ${quantidadeTotal} | Emprestados: ${quantidadeEmprestada} | Disponível: ${quantidadeDisponivel}`);
+        
+        // Atualizar TODOS os livros independente de diferenças
+        const docRef = doc(db, 'livros', bookId);
+        batch.update(docRef, {
+          quantidadeDisponivel: quantidadeDisponivel,
+          emprestados: quantidadeEmprestada,
+          disponivel: quantidadeDisponivel > 0,
+          ultimaAtualizacao: serverTimestamp()
+        });
+        updates++;
+      });
+      
+      if (updates > 0) {
+        await batch.commit();
+        console.log(`${updates} livros foram atualizados com sucesso!`);
+        showAlert('success', `Estoque atualizado! ${updates} livros foram atualizados.`);
+        
+        // Recarregar a lista
+        await loadBooks();
+      }
     } catch (error) {
       console.error('Erro ao atualizar estoque:', error);
-      showAlert('danger', 'Erro ao atualizar estoque');
+      showAlert('danger', 'Erro ao atualizar estoque: ' + error.message);
+    } finally {
+      button.innerHTML = originalHtml;
+      button.disabled = false;
+    }
+  };
+
+  // Função para diagnosticar problemas de estoque
+  window.diagnosticarEstoque = async function() {
+    const button = event.target;
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="bx bx-loader bx-spin"></i> Analisando...';
+    button.disabled = true;
+
+    try {
+      console.log('=== DIAGNÓSTICO DE ESTOQUE ===');
+      
+      // Buscar todos os livros
+      const livrosSnapshot = await getDocs(collection(db, 'livros'));
+      
+      // Buscar todos os empréstimos
+      const emprestimosSnapshot = await getDocs(collection(db, 'emprestimos'));
+      const livrosEmprestados = new Map();
+      
+      // Calcular empréstimos ativos
+      emprestimosSnapshot.forEach(doc => {
+        const emprestimo = doc.data();
+        const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
+        
+        console.log(`Empréstimo ${doc.id}: Status = ${emprestimo.status}, Ativo = ${statusAtivos.includes(emprestimo.status)}`);
+        
+        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
+          emprestimo.books.forEach(book => {
+            const bookId = book.bookId;
+            const quantity = parseInt(book.quantity) || 1;
+            const currentEmprestado = livrosEmprestados.get(bookId) || 0;
+            livrosEmprestados.set(bookId, currentEmprestado + quantity);
+            
+            console.log(`  - Livro ${bookId}: +${quantity} (total emprestado: ${currentEmprestado + quantity})`);
+          });
+        }
+      });
+      
+      // Analisar cada livro
+      let problemas = [];
+      livrosSnapshot.forEach(doc => {
+        const book = doc.data();
+        const bookId = doc.id;
+        
+        const quantidadeTotal = book.quantidade || 0;
+        const quantidadeEmprestadaCalculada = livrosEmprestados.get(bookId) || 0;
+        const quantidadeDisponivelCalculada = Math.max(0, quantidadeTotal - quantidadeEmprestadaCalculada);
+        
+        const quantidadeDisponivelSalva = book.quantidadeDisponivel;
+        const emprestadosSalvos = book.emprestados || 0;
+        
+        console.log(`\n=== ${book.titulo} ===`);
+        console.log(`ID: ${bookId}`);
+        console.log(`Total no banco: ${quantidadeTotal}`);
+        console.log(`Emprestados calculados: ${quantidadeEmprestadaCalculada}`);
+        console.log(`Disponível calculado: ${quantidadeDisponivelCalculada}`);
+        console.log(`Disponível salvo: ${quantidadeDisponivelSalva}`);
+        console.log(`Emprestados salvos: ${emprestadosSalvos}`);
+        
+        // Verificar discrepâncias
+        if (quantidadeDisponivelSalva !== quantidadeDisponivelCalculada || 
+            emprestadosSalvos !== quantidadeEmprestadaCalculada) {
+          problemas.push({
+            titulo: book.titulo,
+            total: quantidadeTotal,
+            emprestadosCalculados: quantidadeEmprestadaCalculada,
+            disponivelCalculado: quantidadeDisponivelCalculada,
+            emprestadosSalvos: emprestadosSalvos,
+            disponivelSalvo: quantidadeDisponivelSalva
+          });
+        }
+      });
+      
+      if (problemas.length > 0) {
+        console.log(`\n🚨 ENCONTRADOS ${problemas.length} PROBLEMAS:`);
+        problemas.forEach(p => {
+          console.log(`- ${p.titulo}:`);
+          console.log(`  Calculado: ${p.emprestadosCalculados} emprestados, ${p.disponivelCalculado} disponível`);
+          console.log(`  Salvo: ${p.emprestadosSalvos} emprestados, ${p.disponivelSalvo} disponível`);
+        });
+        
+        showAlert('warning', `Encontrados ${problemas.length} livros com discrepâncias. Clique em "Atualizar Estoque" para corrigir.`);
+      } else {
+        console.log('✅ Nenhum problema encontrado!');
+        showAlert('success', 'Todos os contadores estão corretos!');
+      }
+      
+    } catch (error) {
+      console.error('Erro no diagnóstico:', error);
+      showAlert('danger', 'Erro no diagnóstico: ' + error.message);
     } finally {
       button.innerHTML = originalHtml;
       button.disabled = false;
