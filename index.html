@@ -317,8 +317,9 @@
         <form id="loginForm">
           <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Login</h5>
           <div class="mb-2">
-            <label for="loginEmail" class="form-label">E-mail</label>
-            <input type="email" class="form-control form-control-sm" id="loginEmail" required autocomplete="username">
+            <label for="loginEmail" class="form-label">E-mail ou Usuário</label>
+            <input type="text" class="form-control form-control-sm" id="loginEmail" required autocomplete="username" placeholder="Digite seu e-mail ou nome de usuário">
+            <small class="text-muted" style="font-size:0.8rem;">Você pode usar seu e-mail ou nome de usuário para fazer login</small>
           </div>
           <div class="mb-2 position-relative">
             <label for="loginPassword" class="form-label">Senha</label>
@@ -343,6 +344,12 @@
             Entrar com Google
           </button>
         </div>
+        <!-- Link para ver usuários de exemplo -->
+        <div class="text-center mt-2">
+          <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#usuariosExemplo" style="font-size:0.85rem;">
+            <i class="bx bx-info-circle"></i> Ver usuários de exemplo
+          </button>
+        </div>
       </div>
       <div id="register-container" style="display:none;">
         <form id="registerForm">
@@ -355,6 +362,11 @@
             <button type="button" id="continueRegisterBtn" class="btn btn-success btn-sm w-100">Continuar cadastro</button>
           </div>
           <div id="registerStep2" style="display:none;">
+            <div class="mb-2">
+              <label for="registerUsuario" class="form-label">Nome de Usuário</label>
+              <input type="text" class="form-control form-control-sm" id="registerUsuario" required placeholder="Ex: joao123">
+              <small class="text-muted" style="font-size:0.85rem;">Usado para fazer login (sem espaços)</small>
+            </div>
             <div class="mb-2 position-relative">
               <label for="registerPassword" class="form-label">Senha</label>
               <input type="password" class="form-control form-control-sm" id="registerPassword" required autocomplete="new-password" minlength="6">
@@ -406,6 +418,56 @@
       WhatsApp: <a href="https://wa.me/5534999188660" target="_blank" style="color:#4facfe; text-decoration:underline;">(99) 99999-9999</a>
     </div>
   </footer>
+  <!-- Modal com usuários de exemplo -->
+  <div class="modal fade" id="usuariosExemplo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background: var(--secondary); color: var(--text-light); border: 1px solid var(--accent2);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--accent2);">
+          <h5 class="modal-title" style="color: var(--accent2);">
+            <i class="bx bx-users"></i> Usuários de Exemplo
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-light); margin-bottom: 1rem;">Você pode fazer login com qualquer uma dessas opções:</p>
+          
+          <div class="row mb-3">
+            <div class="col-6"><strong>Administrador:</strong></div>
+            <div class="col-6">
+              <small>admin@sigeb.com</small><br>
+              <small>ou: <code>admin</code></small>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-6"><strong>Bibliotecária:</strong></div>
+            <div class="col-6">
+              <small>bibliotecaria@sigeb.com</small><br>
+              <small>ou: <code>maria</code></small>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-6"><strong>Diretor:</strong></div>
+            <div class="col-6">
+              <small>diretor@sigeb.com</small><br>
+              <small>ou: <code>joao</code></small>
+            </div>
+          </div>
+          
+          <div class="alert" style="background: rgba(255,193,7,0.1); border: 1px solid #ffc107; color: #ffc107; font-size: 0.9rem;">
+            <i class="bx bx-info-circle"></i> 
+            <strong>Senha padrão para todos:</strong> <code>123456</code>
+          </div>
+          
+          <p style="font-size: 0.85rem; color: #b8e0ff; margin-bottom: 0;">
+            <i class="bx bx-shield-check"></i> 
+            Altere as senhas após o primeiro login por segurança.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
   <script>
@@ -442,21 +504,58 @@
     // --- LOGIN ---
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const email = document.getElementById('loginEmail').value.trim();
+      const loginInput = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const errorDiv = document.getElementById('loginError');
       errorDiv.style.display = 'none';
+      
       try {
+        let email = loginInput;
+        
+        // Verificar se é um email válido
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const isEmail = emailRegex.test(loginInput);
+        
+        // Se não for email, buscar pelo nome de usuário
+        if (!isEmail) {
+          try {
+            const snapshot = await db.ref('usuarios').orderByChild('usuario').equalTo(loginInput).once('value');
+            const users = snapshot.val();
+            
+            if (users) {
+              const userData = Object.values(users)[0];
+              email = userData.email;
+            } else {
+              // Tentar buscar por nome também
+              const snapshotByName = await db.ref('usuarios').orderByChild('nome').equalTo(loginInput).once('value');
+              const usersByName = snapshotByName.val();
+              
+              if (usersByName) {
+                const userData = Object.values(usersByName)[0];
+                email = userData.email;
+              } else {
+                throw new Error('Usuário não encontrado');
+              }
+            }
+          } catch (dbError) {
+            throw new Error('Usuário não encontrado');
+          }
+        }
+        
+        // Fazer login com o email encontrado
         await auth.signInWithEmailAndPassword(email, password);
         window.location.href = 'dashboard.html';
+        
       } catch (error) {
-        let msg = 'E-mail ou senha inválidos.';
+        let msg = 'Usuário ou senha inválidos.';
         if (error.code === 'auth/user-not-found') {
           msg = 'Usuário não cadastrado.';
         } else if (error.code === 'auth/wrong-password') {
           msg = 'Senha incorreta.';
         } else if (error.code === 'auth/invalid-email') {
           msg = 'E-mail inválido.';
+        } else if (error.message === 'Usuário não encontrado') {
+          msg = 'Usuário não encontrado. Verifique se o nome de usuário está correto.';
         }
         errorDiv.textContent = msg;
         errorDiv.style.display = 'block';
@@ -534,53 +633,53 @@
       document.getElementById('registerStep2').style.display = 'block';
     };
 
-    // Cadastro de novo usuário
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('registerEmail').value.trim();
-      const password = document.getElementById('registerPassword').value;
-      const errorDiv = document.getElementById('registerError');
-      const successDiv = document.getElementById('registerSuccess');
-      errorDiv.style.display = 'none';
-      successDiv.style.display = 'none';
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        // Salva o tipo de usuário no banco de dados
-        await db.ref('usuarios/' + user.uid).set({
-          email: email,
-          tipo: 'usuario',
-          cadastroCompleto: false
-        });
-        // Redireciona para página de completar cadastro
-        window.location.href = 'completar_cadastro.html';
-      } catch (error) {
-        errorDiv.textContent = error.message || 'Erro ao cadastrar. Verifique os dados.';
-        errorDiv.style.display = 'block';
-      }
-    });
-
     // Recuperação de senha
-    document.getElementById('forgotPasswordBtn').onclick = function() {
-      const email = document.getElementById('loginEmail').value.trim();
-      if (!email) {
-        alert('Digite seu e-mail para recuperar a senha.');
+    document.getElementById('forgotPasswordBtn').onclick = async function() {
+      const loginInput = document.getElementById('loginEmail').value.trim();
+      if (!loginInput) {
+        alert('Digite seu e-mail ou nome de usuário para recuperar a senha.');
         document.getElementById('loginEmail').focus();
         return;
       }
-      auth.sendPasswordResetEmail(email)
-        .then(() => {
-          alert('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
-        })
-        .catch((error) => {
-          let msg = 'Erro ao enviar e-mail de recuperação.';
-          if (error.code === 'auth/user-not-found') {
-            msg = 'E-mail não cadastrado.';
-          } else if (error.code === 'auth/invalid-email') {
-            msg = 'E-mail inválido.';
+      
+      try {
+        let email = loginInput;
+        
+        // Verificar se é um email válido
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const isEmail = emailRegex.test(loginInput);
+        
+        // Se não for email, buscar pelo nome de usuário
+        if (!isEmail) {
+          try {
+            const snapshot = await db.ref('usuarios').orderByChild('usuario').equalTo(loginInput).once('value');
+            const users = snapshot.val();
+            
+            if (users) {
+              const userData = Object.values(users)[0];
+              email = userData.email;
+            } else {
+              throw new Error('Usuário não encontrado');
+            }
+          } catch (dbError) {
+            alert('Usuário não encontrado. Verifique se o nome de usuário está correto.');
+            return;
           }
-          alert(msg);
-        });
+        }
+        
+        // Enviar email de recuperação
+        await auth.sendPasswordResetEmail(email);
+        alert('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+        
+      } catch (error) {
+        let msg = 'Erro ao enviar e-mail de recuperação.';
+        if (error.code === 'auth/user-not-found') {
+          msg = 'E-mail não cadastrado.';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'E-mail inválido.';
+        }
+        alert(msg);
+      }
     };
 
     // Mostrar/ocultar senha
@@ -599,6 +698,47 @@
         }
       });
     });
+
+    // Validação em tempo real do nome de usuário
+document.getElementById('registerUsuario').addEventListener('input', async function() {
+  const usuario = this.value.trim();
+  const errorDiv = document.getElementById('registerError');
+  
+  // Limpar erro anterior
+  if (errorDiv.textContent.includes('nome de usuário')) {
+    errorDiv.style.display = 'none';
+  }
+  
+  if (usuario.length > 0) {
+    // Validar formato
+    const usuarioRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usuarioRegex.test(usuario)) {
+      this.style.borderColor = '#dc3545';
+      return;
+    }
+    
+    // Verificar disponibilidade (apenas se tiver 3+ caracteres)
+    if (usuario.length >= 3) {
+      try {
+        const snapshot = await db.ref('usuarios').orderByChild('usuario').equalTo(usuario).once('value');
+        if (snapshot.exists()) {
+          this.style.borderColor = '#dc3545';
+          this.setAttribute('title', 'Nome de usuário já em uso');
+        } else {
+          this.style.borderColor = '#28a745';
+          this.setAttribute('title', 'Nome de usuário disponível');
+        }
+      } catch (error) {
+        // Ignorar erros de verificação
+      }
+    } else {
+      this.style.borderColor = '';
+    }
+  } else {
+    this.style.borderColor = '';
+  }
+});
+
   </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -649,6 +789,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
   e.preventDefault();
   
   const email = document.getElementById('registerEmail').value.trim();
+  const usuario = document.getElementById('registerUsuario').value.trim();
   const password = document.getElementById('registerPassword').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
   const errorDiv = document.getElementById('registerError');
@@ -676,6 +817,23 @@ document.getElementById('registerForm').addEventListener('submit', async functio
       throw new Error('Digite um e-mail válido');
     }
     
+    // Validar nome de usuário
+    if (!usuario || usuario.length < 3) {
+      throw new Error('Nome de usuário deve ter pelo menos 3 caracteres');
+    }
+    
+    // Validar se nome de usuário não tem espaços ou caracteres especiais
+    const usuarioRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usuarioRegex.test(usuario)) {
+      throw new Error('Nome de usuário deve conter apenas letras, números e underscore');
+    }
+    
+    // Verificar se nome de usuário já existe
+    const snapshot = await db.ref('usuarios').orderByChild('usuario').equalTo(usuario).once('value');
+    if (snapshot.exists()) {
+      throw new Error('Este nome de usuário já está em uso');
+    }
+    
     // Cadastrar no Firebase
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
@@ -683,6 +841,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     // Salvar dados do usuário
     await db.ref('usuarios/' + user.uid).set({
       email: email,
+      usuario: usuario,
       tipo: 'usuario',
       cadastroCompleto: false,
       dataCadastro: new Date().toISOString()
@@ -723,5 +882,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     Enviar mensagem pelo WhatsApp
   </a>
 </div>
+<!-- Bootstrap JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
