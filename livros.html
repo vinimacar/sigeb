@@ -998,28 +998,42 @@
       bookGrid.innerHTML = '<p class="text-center p-4">Carregando livros...</p>';
 
       // Debug: mostrar os filtros aplicados
+      console.log('=== CARREGANDO LIVROS ===');
       console.log('Filtros aplicados:', { filterTitulo, filterAutor, filterEditora, selectedGenre });
 
       // Buscar todos os livros
       let q = query(collection(db, 'livros'), orderBy('titulo'));
       const snapshot = await getDocs(q);
+      console.log(`Total de livros no banco: ${snapshot.docs.length}`);
 
       // Buscar todos os empréstimos para calcular disponibilidade
       const emprestimosSnapshot = await getDocs(collection(db, 'emprestimos'));
+      console.log(`Total de empréstimos no banco: ${emprestimosSnapshot.docs.length}`);
       
-      // Mapear livros emprestados (não devolvidos)
+      // Mapear livros emprestados (apenas empréstimos ativos)
       const livrosEmprestados = new Map();
+      let emprestimosAtivos = 0;
+      
       emprestimosSnapshot.forEach(doc => {
         const emprestimo = doc.data();
-        if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+        // Apenas contar empréstimos que estão EMPRESTADO ou ATRASADO (não DEVOLVIDO ou CANCELADO)
+        const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
+        console.log(`Empréstimo ${doc.id}: Status = ${emprestimo.status}`);
+        
+        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
+          emprestimosAtivos++;
           emprestimo.books.forEach(book => {
             const bookId = book.bookId;
-            const quantity = book.quantity || 1;
+            const quantity = parseInt(book.quantity) || 1; // Garantir que seja número
             const currentEmprestado = livrosEmprestados.get(bookId) || 0;
             livrosEmprestados.set(bookId, currentEmprestado + quantity);
+            console.log(`  - Livro ${bookId}: +${quantity} exemplar(es) emprestado(s)`);
           });
         }
       });
+
+      console.log(`Empréstimos ativos: ${emprestimosAtivos}`);
+      console.log('Livros emprestados (resumo):', Array.from(livrosEmprestados.entries()));
 
       let booksToDisplay = snapshot.docs.map(doc => {
         const bookData = doc.data();
@@ -1029,6 +1043,11 @@
         const quantidadeTotal = bookData.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
         const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+        
+        // Debug para livros específicos
+        if (quantidadeTotal > 0) {
+          console.log(`Livro: ${bookData.titulo} | Total: ${quantidadeTotal} | Emprestados: ${quantidadeEmprestada} | Disponível: ${quantidadeDisponivel}`);
+        }
         
         return { 
           id: bookId, 
@@ -1233,15 +1252,18 @@
 
       emprestimosSnapshot.forEach((empDoc) => {
         const emprestimo = empDoc.data();
-        if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+        // Apenas contar empréstimos que estão EMPRESTADO ou ATRASADO
+        const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
+        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
           emprestimo.books.forEach(empBook => {
             if (empBook.bookId === id) {
+              const quantidade = parseInt(empBook.quantity) || 1;
               emprestimosAtivos.push({
                 id: empDoc.id,
                 ...emprestimo,
-                quantidade: empBook.quantity || 1
+                quantidade: quantidade
               });
-              totalEmprestado += empBook.quantity || 1;
+              totalEmprestado += quantidade;
             }
           });
         }
@@ -1455,10 +1477,12 @@
       
       emprestimosSnapshot.forEach((empDoc) => {
         const emprestimo = empDoc.data();
-        if (emprestimo.status !== 'DEVOLVIDO' && Array.isArray(emprestimo.books)) {
+        // Apenas contar empréstimos que estão EMPRESTADO ou ATRASADO
+        const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
+        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
           emprestimo.books.forEach(empBook => {
             if (empBook.bookId === id) {
-              quantidadeEmprestada += empBook.quantity || 1;
+              quantidadeEmprestada += parseInt(empBook.quantity) || 1;
             }
           });
         }
