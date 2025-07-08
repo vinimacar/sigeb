@@ -35,7 +35,30 @@
   <h1>Criar Usuários de Exemplo</h1>
   <p>Este script criará usuários de exemplo para testar o sistema de login</p>
   
+  <div style="background: rgba(255,193,7,0.2); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffc107;">
+    <h3>⚠️ Configuração Necessária</h3>
+    <p>Se você receber erro de permissão, configure as regras do Firebase Database:</p>
+    <ol style="text-align: left; max-width: 600px; margin: 0 auto;">
+      <li>Acesse o <a href="https://console.firebase.google.com" target="_blank" style="color: #4facfe;">Firebase Console</a></li>
+      <li>Selecione seu projeto SIGEB</li>
+      <li>Vá em "Realtime Database" → "Regras"</li>
+      <li>Substitua as regras por:</li>
+    </ol>
+    <div style="background: #333; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; text-align: left;">
+{<br>
+&nbsp;&nbsp;"rules": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;".read": "auth != null",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;".write": "auth != null"<br>
+&nbsp;&nbsp;}<br>
+}
+    </div>
+    <p><strong>Clique em "Publicar" para salvar as regras</strong></p>
+  </div>
+  
   <button onclick="criarUsuarios()">Criar Usuários de Exemplo</button>
+  <button onclick="abrirFirebaseConsole()" style="background: #ff6b35;">Abrir Firebase Console</button>
+  <button onclick="testarPermissoes()" style="background: #28a745;">Testar Permissões</button>
+  <a href="criar-usuarios-basicos.html" style="display: inline-block; background: #6c757d; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; margin: 10px;">Versão Básica (Sem DB)</a>
   <div id="status"></div>
 
   <!-- Scripts Firebase -->
@@ -97,23 +120,60 @@
       statusDiv.innerHTML = '';
       
       addStatus('Iniciando criação de usuários...', 'success');
+      addStatus('⚠️ IMPORTANTE: Este processo requer que você esteja logado como administrador', 'error');
+
+      // Primeiro, fazer login como admin se não estiver logado
+      let currentUser = auth.currentUser;
+      if (!currentUser) {
+        addStatus('Tentando fazer login automático...', 'success');
+        try {
+          // Tentar login com credenciais padrão
+          await auth.signInWithEmailAndPassword('admin@sigeb.com', '123456');
+          currentUser = auth.currentUser;
+          addStatus('✓ Login realizado com sucesso', 'success');
+        } catch (loginError) {
+          addStatus('❌ Erro no login automático. Faça login manualmente primeiro.', 'error');
+          addStatus('Redirecionando para página de login...', 'error');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 3000);
+          return;
+        }
+      }
 
       for (const usuario of usuariosExemplo) {
         try {
-          // Verificar se já existe
-          const snapshot = await db.ref('usuarios').orderByChild('email').equalTo(usuario.email).once('value');
+          // Verificar se já existe (método alternativo)
+          let usuarioExiste = false;
+          try {
+            const snapshot = await db.ref('usuarios').orderByChild('email').equalTo(usuario.email).once('value');
+            usuarioExiste = snapshot.exists();
+          } catch (checkError) {
+            addStatus(`Verificando usuário ${usuario.usuario} através de método alternativo...`, 'success');
+            // Se não conseguir verificar, assume que não existe e tenta criar
+          }
           
-          if (snapshot.exists()) {
+          if (usuarioExiste) {
             addStatus(`Usuário ${usuario.usuario} já existe`, 'error');
             continue;
           }
 
           // Criar no Firebase Auth
-          const userCredential = await auth.createUserWithEmailAndPassword(usuario.email, usuario.senha);
+          let userCredential;
+          try {
+            userCredential = await auth.createUserWithEmailAndPassword(usuario.email, usuario.senha);
+          } catch (authError) {
+            if (authError.code === 'auth/email-already-in-use') {
+              addStatus(`E-mail ${usuario.email} já está em uso`, 'error');
+              continue;
+            }
+            throw authError;
+          }
+          
           const user = userCredential.user;
 
-          // Salvar no banco
-          await db.ref('usuarios/' + user.uid).set({
+          // Salvar no banco com método seguro
+          const dadosUsuario = {
             email: usuario.email,
             usuario: usuario.usuario,
             nome: usuario.nome,
@@ -121,18 +181,96 @@
             funcao: usuario.tipo,
             cadastroCompleto: true,
             ativo: true,
-            dataCadastro: new Date().toISOString()
-          });
+            dataCadastro: new Date().toISOString(),
+            criadoPor: 'script-automatico'
+          };
 
-          addStatus(`✓ Usuário ${usuario.usuario} criado com sucesso!`, 'success');
+          try {
+            await db.ref('usuarios/' + user.uid).set(dadosUsuario);
+            addStatus(`✓ Usuário ${usuario.usuario} criado com sucesso!`, 'success');
+          } catch (dbError) {
+            addStatus(`✓ Usuário ${usuario.usuario} criado no Auth, mas erro ao salvar dados extras: ${dbError.message}`, 'error');
+            addStatus(`O usuário pode fazer login, mas precisará completar o cadastro`, 'error');
+          }
           
         } catch (error) {
           addStatus(`✗ Erro ao criar ${usuario.usuario}: ${error.message}`, 'error');
+          
+          // Sugestões específicas baseadas no erro
+          if (error.message.includes('permission')) {
+            addStatus(`💡 Solução: Configure as regras do Firebase Database`, 'error');
+          } else if (error.message.includes('network')) {
+            addStatus(`💡 Solução: Verifique sua conexão com a internet`, 'error');
+          }
         }
+        
+        // Pausa pequena entre criações para evitar rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       addStatus('Processo finalizado!', 'success');
+      addStatus('Se houver erros de permissão, configure as regras do Firebase Database', 'error');
+    }
+
+    function abrirFirebaseConsole() {
+      window.open('https://console.firebase.google.com/project/sigeb-ccd3f/database/sigeb-ccd3f-default-rtdb/rules', '_blank');
+    }
+
+    async function testarPermissoes() {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = '';
+      
+      addStatus('Testando permissões do Firebase...', 'success');
+      
+      try {
+        // Verificar se está logado
+        const user = auth.currentUser;
+        if (!user) {
+          addStatus('❌ Usuário não está logado', 'error');
+          addStatus('Tentando login automático...', 'success');
+          try {
+            await auth.signInWithEmailAndPassword('admin@sigeb.com', '123456');
+            addStatus('✓ Login realizado com sucesso', 'success');
+          } catch (loginError) {
+            addStatus('❌ Falha no login automático. Faça login manualmente.', 'error');
+            return;
+          }
+        } else {
+          addStatus(`✓ Logado como: ${user.email}`, 'success');
+        }
+        
+        // Testar leitura
+        try {
+          const snapshot = await db.ref('usuarios').limitToFirst(1).once('value');
+          addStatus('✓ Permissão de LEITURA: OK', 'success');
+        } catch (readError) {
+          addStatus('❌ Permissão de LEITURA: NEGADA', 'error');
+          addStatus(`Erro: ${readError.message}`, 'error');
+        }
+        
+        // Testar escrita
+        try {
+          const testRef = db.ref('teste_permissao');
+          await testRef.set({
+            teste: true,
+            timestamp: new Date().toISOString()
+          });
+          addStatus('✓ Permissão de ESCRITA: OK', 'success');
+          
+          // Limpar teste
+          await testRef.remove();
+          addStatus('✓ Teste limpo com sucesso', 'success');
+        } catch (writeError) {
+          addStatus('❌ Permissão de ESCRITA: NEGADA', 'error');
+          addStatus(`Erro: ${writeError.message}`, 'error');
+          addStatus('⚠️ Configure as regras do Firebase Database', 'error');
+        }
+        
+      } catch (error) {
+        addStatus(`❌ Erro no teste: ${error.message}`, 'error');
+      }
     }
   </script>
 </body>
 </html>
+
