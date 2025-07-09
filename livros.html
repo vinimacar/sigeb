@@ -1628,8 +1628,10 @@
         const bookId = docSnap.id;
         const quantidadeTotal = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
+
+        // Calcular estoque disponível como quantidade total menos quantidade emprestada
         const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
-        
+
         const docRef = doc(db, 'livros', bookId);
         batch.update(docRef, {
           quantidadeDisponivel: quantidadeDisponivel,
