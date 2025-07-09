@@ -1163,7 +1163,6 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // Inicializar as variáveis antes de usá-las
     const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
     const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
@@ -1176,10 +1175,6 @@
         statusClass = 'status-indisponivel';
         statusText = 'Indisponível';
         statusIcon = 'bx-x-circle';
-    } else if (quantidadeDisponivel <= 2) {
-        statusClass = 'status-estoque-baixo';
-        statusText = `${quantidadeDisponivel} disponível(is)`;
-        statusIcon = 'bx-error-circle';
     } else {
         statusClass = 'status-disponivel';
         statusText = `${quantidadeDisponivel} disponível(is)`;
@@ -1328,6 +1323,32 @@
       }
 
       // Preencher conteúdo do modal
+      document.getElementById('bookDetailsBody').innerHTML = `
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Informações Básicas</h6>
+            <p><strong>Título:</strong> ${book.titulo || 'N/A'}</p>
+            <p><strong>Autor(es):</strong> ${Array.isArray(book.autores) ? book.autores.join(', ') : book.autores || 'N/A'}</p>
+            <p><strong>ISBN:</strong> ${book.isbn || 'N/A'}</p>
+            <p><strong>Gênero:</strong> ${book.genero || 'N/A'}</p>
+            <p><strong>Editora:</strong> ${book.editora || 'N/A'}</p>
+            <p><strong>Ano:</strong> ${book.anoPublicacao || book.ano || 'N/A'}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Controle de Estoque</h6>
+            <div class="alert ${quantidadeDisponivel === 0 ? 'alert-danger' : 'alert-success'}">
+              <h5 class="mb-2">
+                <i class="bx ${quantidadeDisponivel === 0 ? 'bx-x-circle' : 'bx-check-circle'}"></i>
+                ${quantidadeDisponivel === 0 ? 'Indisponível' : 'Disponível'}
+              </h5>
+              <p class="mb-1"><strong>Total:</strong> ${quantidadeTotal} exemplares</p>
+              <p class="mb-1"><strong>Disponível:</strong> ${quantidadeDisponivel} exemplares</p>
+              <p class="mb-1"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
+            </div>
+          </div>
+        </div>
+      `;
+
       let emprestimosHtml = '';
       if (emprestimosAtivos.length > 0) {
         emprestimosHtml = `
@@ -1368,42 +1389,7 @@
         emprestimosHtml = '<p class="text-muted mt-3">Nenhum empréstimo ativo para este livro.</p>';
       }
 
-      document.getElementById('bookDetailsBody').innerHTML = `
-        <div class="row">
-          <div class="col-md-6">
-            <h6>Informações Básicas</h6>
-            <p><strong>Título:</strong> ${book.titulo || 'N/A'}</p>
-            <p><strong>Autor(es):</strong> ${Array.isArray(book.autores) ? book.autores.join(', ') : book.autores || 'N/A'}</p>
-            <p><strong>ISBN:</strong> ${book.isbn || 'N/A'}</p>
-            <p><strong>Gênero:</strong> ${book.genero || 'N/A'}</p>
-            <p><strong>Editora:</strong> ${book.editora || 'N/A'}</p>
-            <p><strong>Ano:</strong> ${book.anoPublicacao || book.ano || 'N/A'}</p>
-          </div>
-          <div class="col-md-6">
-            <h6>Controle de Estoque</h6>
-            <div class="alert ${quantidadeDisponivel === 0 ? 'alert-danger' : quantidadeDisponivel <= 2 ? 'alert-warning' : 'alert-success'}">
-              <h5 class="mb-2">
-                <i class="bx ${quantidadeDisponivel === 0 ? 'bx-x-circle' : quantidadeDisponivel <= 2 ? 'bx-error-circle' : 'bx-check-circle'}"></i>
-                ${quantidadeDisponivel === 0 ? 'Indisponível' : quantidadeDisponivel <= 2 ? 'Estoque Baixo' : 'Disponível'}
-              </h5>
-              <p class="mb-1"><strong>Total:</strong> ${quantidadeTotal} exemplares</p>
-              <p class="mb-1"><strong>Disponível:</strong> ${quantidadeDisponivel} exemplares</p>
-              <p class="mb-1"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
-              <hr>
-              <small class="text-muted">
-                <strong>Debug:</strong><br>
-                Dados salvos no banco: Disponível=${book.quantidadeDisponivel}, Emprestados=${book.emprestados || 0}<br>
-                Calculado agora: Disponível=${quantidadeDisponivel}, Emprestados=${totalEmprestado}
-                ${(book.quantidadeDisponivel !== quantidadeDisponivel || (book.emprestados || 0) !== totalEmprestado) ? 
-                  '<br><span class="text-warning">⚠️ Discrepância detectada!</span>' : 
-                  '<br><span class="text-success">✅ Dados consistentes</span>'}
-              </small>
-            </div>
-          </div>
-        </div>
-        ${book.descricao ? `<div class="mt-3"><h6>Descrição</h6><p>${book.descricao}</p></div>` : ''}
-        ${emprestimosHtml}
-      `;
+      document.getElementById('bookDetailsBody').innerHTML += emprestimosHtml;
       
       // Mostrar modal
       const bsModal = new bootstrap.Modal(modal);
