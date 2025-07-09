@@ -460,7 +460,6 @@
                     const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
                     const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
 
-                    // Atualizar apenas se houver diferença
                     if (book.quantidadeDisponivel !== quantidadeDisponivel || book.emprestados !== quantidadeEmprestada) {
                         const docRef = doc(db, 'livros', bookId);
                         batch.update(docRef, {
@@ -906,6 +905,7 @@
     </script>
 </body>
 </html>
+
 
 
 
