@@ -1497,6 +1497,18 @@
         });
       }
     }); // <-- Adiciona o fechamento do event listener aqui
+
+    document.getElementById('addLoanModal').addEventListener('shown.bs.modal', function () {
+      // Garante que o foco seja aplicado ao primeiro campo do modal após ele ser exibido
+      const firstInput = document.querySelector('#addLoanModal input');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    });
+    document.getElementById('addLoanModal').addEventListener('show.bs.modal', function () {
+      const modal = document.getElementById('addLoanModal');
+      modal.removeAttribute('aria-hidden');
+    });
     // Função para buscar e exibir os últimos 15 empréstimos
     async function loadLoans() {
       const tbody = document.getElementById('loansTableBody');
@@ -3743,4 +3755,5 @@ if (printLoanModal) {
 </script>
 </body>
 </html>
+
 
