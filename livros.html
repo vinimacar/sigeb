@@ -1046,7 +1046,7 @@
         // Calcular quantidade disponível
         const quantidadeTotal = bookData.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-        const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
         
         // Debug para livros específicos
         if (quantidadeTotal > 0) {
@@ -1139,11 +1139,8 @@
         const quantidadeTotal = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
 
-        // Calcular estoque disponível como quantidade total menos quantidade emprestada
-        const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
-
-        const docRef = doc(db, 'livros', bookId);
-        batch.update(docRef, {
+        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+        batch.update(doc(db, 'livros', bookId), {
           quantidadeDisponivel: quantidadeDisponivel,
           emprestados: quantidadeEmprestada,
           disponivel: quantidadeDisponivel > 0,
@@ -1167,7 +1164,7 @@
     card.className = 'book-card';
     
     // Determinar status do estoque
-    const quantidadeDisponivel = book.quantidadeDisponivel || 0;
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
     const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
     
@@ -1285,7 +1282,7 @@
       }
 
       const quantidadeTotal = book.quantidade || 0;
-      const quantidadeDisponivel = Math.max(0, quantidadeTotal - totalEmprestado);
+      const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, totalEmprestado);
 
       console.log(`=== DETALHES DO LIVRO: ${book.titulo} ===`);
       console.log(`Total no banco: ${quantidadeTotal}`);
@@ -1519,6 +1516,8 @@
       let autores = document.getElementById('editAutores').value;
       autores = autores.split(',').map(a => a.trim()).filter(a => a);
 
+      const quantidadeDisponivel = calcularQuantidadeDisponivel(newQuantidade, quantidadeEmprestada);
+
       const bookData = {
         titulo: document.getElementById('editTitulo').value,
         isbn: document.getElementById('editISBN').value,
@@ -1528,9 +1527,9 @@
         edicao: document.getElementById('editEdicao').value,
         genero: document.getElementById('editGenero').value,
         quantidade: newQuantidade,
-        quantidadeDisponivel: Math.max(0, newQuantidade - quantidadeEmprestada),
+        quantidadeDisponivel: quantidadeDisponivel,
         emprestados: quantidadeEmprestada,
-        disponivel: (newQuantidade - quantidadeEmprestada) > 0,
+        disponivel: quantidadeDisponivel > 0,
         descricao: document.getElementById('editDescricao').value,
         updatedAt: serverTimestamp()
       };
@@ -1629,11 +1628,8 @@
         const quantidadeTotal = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
 
-        // Calcular estoque disponível como quantidade total menos quantidade emprestada
-        const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
-
-        const docRef = doc(db, 'livros', bookId);
-        batch.update(docRef, {
+        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+        batch.update(doc(db, 'livros', bookId), {
           quantidadeDisponivel: quantidadeDisponivel,
           emprestados: quantidadeEmprestada,
           disponivel: quantidadeDisponivel > 0,
@@ -1696,7 +1692,7 @@
         
         const quantidadeTotal = book.quantidade || 0;
         const quantidadeEmprestadaCalculada = livrosEmprestados.get(bookId) || 0;
-        const quantidadeDisponivelCalculada = Math.max(0, quantidadeTotal - quantidadeEmprestadaCalculada);
+        const quantidadeDisponivelCalculada = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestadaCalculada);
         
         const quantidadeDisponivelSalva = book.quantidadeDisponivel;
         const emprestadosSalvos = book.emprestados || 0;
@@ -2105,7 +2101,7 @@
           ano: book.ano,
           genero: book.genero,
           quantidade: book.quantidade,
-          quantidadeDisponivel: book.quantidade,
+          quantidadeDisponivel: calcularQuantidadeDisponivel(book.quantidade, book.emprestados),
           emprestados: 0,
           createdAt: serverTimestamp(),
           importedAt: serverTimestamp()
@@ -2182,7 +2178,7 @@
       autores,
       genero,
       quantidade,
-      quantidadeDisponivel: quantidade, // Inicialmente toda quantidade está disponível
+      quantidadeDisponivel: calcularQuantidadeDisponivel(quantidade, 0), // Inicialmente toda quantidade está disponível
       emprestados: 0, // Inicialmente nenhum exemplar emprestado
       disponivel: quantidade > 0,
       editora,
@@ -2380,6 +2376,10 @@
       });
     }
   });
+
+  function calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada) {
+    return Math.max(0, quantidadeTotal - quantidadeEmprestada);
+  }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
