@@ -1162,30 +1162,30 @@
   function createBookCard(id, book) {
     const card = document.createElement('div');
     card.className = 'book-card';
-    
-    // Determinar status do estoque
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+
+    // Inicializar as variáveis antes de usá-las
     const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+
     let statusClass = '';
     let statusText = '';
     let statusIcon = '';
-    
+
     if (quantidadeDisponivel === 0) {
-      statusClass = 'status-indisponivel';
-      statusText = 'Indisponível';
-      statusIcon = 'bx-x-circle';
+        statusClass = 'status-indisponivel';
+        statusText = 'Indisponível';
+        statusIcon = 'bx-x-circle';
     } else if (quantidadeDisponivel <= 2) {
-      statusClass = 'status-estoque-baixo';
-      statusText = `${quantidadeDisponivel} disponível(is)`;
-      statusIcon = 'bx-error-circle';
+        statusClass = 'status-estoque-baixo';
+        statusText = `${quantidadeDisponivel} disponível(is)`;
+        statusIcon = 'bx-error-circle';
     } else {
-      statusClass = 'status-disponivel';
-      statusText = `${quantidadeDisponivel} disponível(is)`;
-      statusIcon = 'bx-check-circle';
+        statusClass = 'status-disponivel';
+        statusText = `${quantidadeDisponivel} disponível(is)`;
+        statusIcon = 'bx-check-circle';
     }
-    
+
     card.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
         <div class="flex-grow-1">
