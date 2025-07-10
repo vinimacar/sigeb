@@ -1048,10 +1048,14 @@
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
         const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
         
-        // Debug para livros específicos
-        if (quantidadeTotal > 0) {
-          console.log(`Livro: ${bookData.titulo} | Total: ${quantidadeTotal} | Emprestados: ${quantidadeEmprestada} | Disponível: ${quantidadeDisponivel}`);
-        }
+        // Debug detalhado para todos os livros
+        console.log(`=== LIVRO: ${bookData.titulo} ===`);
+        console.log(`ID: ${bookId}`);
+        console.log(`Total cadastrado: ${quantidadeTotal}`);
+        console.log(`Emprestados contados: ${quantidadeEmprestada}`);
+        console.log(`Disponível calculado: ${quantidadeDisponivel}`);
+        console.log(`Função calcular retorna: ${calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada)}`);
+        console.log('===========================');
         
         return { 
           id: bookId, 
@@ -1163,11 +1167,10 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // Total sempre será o valor cadastrado no banco
+    // Usar os valores já calculados na função loadBooks
     const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    // Disponível = Total cadastrado - Emprestados
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+    const quantidadeDisponivel = book.quantidadeDisponivel || 0;
 
     let statusClass = '';
     let statusText = '';
