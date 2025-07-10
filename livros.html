@@ -1167,10 +1167,11 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // Usar os valores já calculados na função loadBooks
+    // Estoque cadastrado é sempre o valor fixo do banco de dados
     const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    const quantidadeDisponivel = book.quantidadeDisponivel || 0;
+    // Disponível = Estoque fixo cadastrado - Emprestados
+    const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
 
     let statusClass = '';
     let statusText = '';
