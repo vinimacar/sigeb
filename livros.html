@@ -2133,75 +2133,83 @@
 
   // Função para importar os livros
   async function importBooks() {
-    const validBooks = parsedImportData.filter(book => book.valid);
+  const validBooks = parsedImportData.filter(book => book.valid);
+
+  if (validBooks.length === 0) {
+    showAlert('warning', 'Nenhum livro válido para importar');
+    return;
+  }
+
+  const progressDiv = document.getElementById('importProgress');
+  const progressBar = document.getElementById('importProgressBar');
+  const statusDiv = document.getElementById('importStatus');
+  const startBtn = document.getElementById('startImportBtn');
+
+  progressDiv.style.display = 'block';
+  startBtn.disabled = true;
+
+  let imported = 0;
+  let errors = 0;
+
+  for (let i = 0; i < validBooks.length; i++) {
+    const book = validBooks[i];
+
+    try {
+      // Corrigir campo ano para nunca ser undefined
+      let ano = book.ano;
+      if (ano === undefined || ano === null || isNaN(Number(ano))) {
+        ano = (book.anoPublicacao !== undefined && !isNaN(Number(book.anoPublicacao)))
+          ? Number(book.anoPublicacao)
+          : new Date().getFullYear();
+      }
+
+      const bookData = {
+        titulo: book.titulo,
+        autores: book.autor.split(',').map(a => a.trim()),
+        isbn: book.isbn,
+        editora: book.editora,
+        ano: ano,
+        genero: book.genero,
+        quantidade: book.quantidade,
+        quantidadeDisponivel: Math.max(0, book.quantidade - (book.emprestados || 0)),
+        emprestados: 0,
+        createdAt: serverTimestamp(),
+        importedAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, 'livros'), bookData);
+      imported++;
+
+    } catch (error) {
+      console.error('Erro ao importar livro:', book.titulo, error);
+      errors++;
+    }
+
+    // Atualizar progresso
+    const progress = ((i + 1) / validBooks.length) * 100;
+    progressBar.style.width = progress + '%';
+    statusDiv.innerHTML = `Importando... ${i + 1}/${validBooks.length} (${imported} sucessos, ${errors} erros)`;
+  }
+
+  // Finalizar importação
+  setTimeout(() => {
+    progressDiv.style.display = 'none';
+    startBtn.disabled = false;
     
-    if (validBooks.length === 0) {
-      showAlert('warning', 'Nenhum livro válido para importar');
-      return;
+    if (imported > 0) {
+      showAlert('success', `Importação concluída! ${imported} livros importados com sucesso${errors > 0 ? `, ${errors} erros` : ''}`);
+      bootstrap.Modal.getInstance(document.getElementById('importBooksModal')).hide();
+      loadBooks(); // Recarregar lista de livros
+    } else {
+      showAlert('danger', 'Nenhum livro foi importado. Verifique o formato dos dados.');
     }
     
-    const progressDiv = document.getElementById('importProgress');
-    const progressBar = document.getElementById('importProgressBar');
-    const statusDiv = document.getElementById('importStatus');
-    const startBtn = document.getElementById('startImportBtn');
+    // Limpar dados da importação
+    parsedImportData = [];
+    document.getElementById('importFile').value = '';
+    document.getElementById('importPreview').style.display = 'none';
     
-    progressDiv.style.display = 'block';
-    startBtn.disabled = true;
-    
-    let imported = 0;
-    let errors = 0;
-    
-    for (let i = 0; i < validBooks.length; i++) {
-      const book = validBooks[i];
-      
-      try {
-        const bookData = {
-          titulo: book.titulo,
-          autores: book.autor.split(',').map(a => a.trim()),
-          isbn: book.isbn,
-          editora: book.editora,
-          ano: book.ano,
-          genero: book.genero,
-          quantidade: book.quantidade,
-          quantidadeDisponivel: Math.max(0, book.quantidade - (book.emprestados || 0)),
-          emprestados: 0,
-          createdAt: serverTimestamp(),
-          importedAt: serverTimestamp()
-        };
-        
-        await addDoc(collection(db, 'livros'), bookData);
-        imported++;
-        
-      } catch (error) {
-        console.error('Erro ao importar livro:', book.titulo, error);
-        errors++;
-      }
-      
-      // Atualizar progresso
-      const progress = ((i + 1) / validBooks.length) * 100;
-      progressBar.style.width = progress + '%';
-      statusDiv.innerHTML = `Importando... ${i + 1}/${validBooks.length} (${imported} sucessos, ${errors} erros)`;
-    }
-    
-    // Finalizar importação
-    setTimeout(() => {
-      progressDiv.style.display = 'none';
-      startBtn.disabled = false;
-      
-      if (imported > 0) {
-        showAlert('success', `Importação concluída! ${imported} livros importados com sucesso${errors > 0 ? `, ${errors} erros` : ''}`);
-        bootstrap.Modal.getInstance(document.getElementById('importBooksModal')).hide();
-        loadBooks(); // Recarregar lista de livros
-      } else {
-        showAlert('danger', 'Nenhum livro foi importado. Verifique o formato dos dados.');
-      }
-      
-      // Limpar dados da importação
-      parsedImportData = [];
-      document.getElementById('importFile').value = '';
-      document.getElementById('importPreview').style.display = 'none';
-      
-    }, 1000);
+  }, 1000);
   }
 
   // Função para lidar com a submissão do formulário de adicionar livro
