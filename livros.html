@@ -1190,14 +1190,6 @@
         statusText = `${quantidadeDisponivel} de ${estoqueCadastrado} disponível(is)`;
         statusIcon = 'bx-check-circle';
     }
-        statusClass = 'status-emprestado';
-        statusText = 'Todos os exemplares emprestados';
-        statusIcon = 'bx-time';
-    } else {
-        statusClass = 'status-disponivel';
-        statusText = `${quantidadeDisponivel} de ${quantidadeTotal} disponível(is)`;
-        statusIcon = 'bx-check-circle';
-    }
 
     card.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
