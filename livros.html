@@ -1017,45 +1017,71 @@
       // Mapear livros emprestados (apenas empréstimos ativos)
       const livrosEmprestados = new Map();
       let emprestimosAtivos = 0;
+      let emprestimosDevolvidos = 0;
+      let emprestimosInvalidos = 0;
       
       emprestimosSnapshot.forEach(doc => {
         const emprestimo = doc.data();
+        const emprestimoId = doc.id;
+        
+        console.log(`\n=== EMPRÉSTIMO ${emprestimoId} ===`);
+        console.log(`Status: ${emprestimo.status}`);
+        console.log(`Data: ${emprestimo.dataEmprestimo ? new Date(emprestimo.dataEmprestimo.seconds * 1000).toLocaleDateString() : 'N/A'}`);
+        console.log(`Usuário ID: ${emprestimo.userId || 'N/A'}`);
+        console.log(`Books array:`, emprestimo.books);
+        
         // Apenas contar empréstimos que estão EMPRESTADO ou ATRASADO (não DEVOLVIDO ou CANCELADO)
         const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
-        console.log(`Empréstimo ${doc.id}: Status = ${emprestimo.status}`);
         
-        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
-          emprestimosAtivos++;
-          emprestimo.books.forEach(book => {
-            const bookId = book.bookId;
-            const quantity = parseInt(book.quantity) || 1; // Garantir que seja número
-            const currentEmprestado = livrosEmprestados.get(bookId) || 0;
-            livrosEmprestados.set(bookId, currentEmprestado + quantity);
-            console.log(`  - Livro ${bookId}: +${quantity} exemplar(es) emprestado(s)`);
-          });
+        if (statusAtivos.includes(emprestimo.status)) {
+          if (Array.isArray(emprestimo.books) && emprestimo.books.length > 0) {
+            emprestimosAtivos++;
+            emprestimo.books.forEach((book, index) => {
+              console.log(`  Livro ${index + 1}:`);
+              console.log(`    BookID: ${book.bookId}`);
+              console.log(`    Quantity: ${book.quantity} (tipo: ${typeof book.quantity})`);
+              console.log(`    Título: ${book.titulo || 'N/A'}`);
+              
+              const bookId = book.bookId;
+              const quantity = parseInt(book.quantity) || 1; // Garantir que seja número
+              
+              if (bookId) {
+                const currentEmprestado = livrosEmprestados.get(bookId) || 0;
+                livrosEmprestados.set(bookId, currentEmprestado + quantity);
+                console.log(`    → Adicionado ${quantity} ao total emprestado do livro ${bookId}`);
+              } else {
+                console.log(`    ⚠️ BookID inválido!`);
+              }
+            });
+          } else {
+            console.log(`  ⚠️ Empréstimo ativo sem livros válidos!`);
+            emprestimosInvalidos++;
+          }
+        } else if (['DEVOLVIDO', 'CANCELADO'].includes(emprestimo.status)) {
+          emprestimosDevolvidos++;
+          console.log(`  ✅ Empréstimo ${emprestimo.status.toLowerCase()}`);
+        } else {
+          console.log(`  ⚠️ Status desconhecido: ${emprestimo.status}`);
+          emprestimosInvalidos++;
         }
       });
 
+      console.log(`\n=== RESUMO DOS EMPRÉSTIMOS ===`);
+      console.log(`Total de empréstimos: ${emprestimosSnapshot.docs.length}`);
       console.log(`Empréstimos ativos: ${emprestimosAtivos}`);
-      console.log('Livros emprestados (resumo):', Array.from(livrosEmprestados.entries()));
+      console.log(`Empréstimos devolvidos/cancelados: ${emprestimosDevolvidos}`);
+      console.log(`Empréstimos inválidos: ${emprestimosInvalidos}`);
+      console.log(`Livros com exemplares emprestados:`, Array.from(livrosEmprestados.entries()));
 
       let booksToDisplay = snapshot.docs.map(doc => {
         const bookData = doc.data();
         const bookId = doc.id;
         
-        // Calcular quantidade disponível
-        const quantidadeTotal = bookData.quantidade || 0;
+        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
+        const estoqueCadastrado = bookData.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
-        
-        // Debug detalhado para todos os livros
-        console.log(`=== LIVRO: ${bookData.titulo} ===`);
-        console.log(`ID: ${bookId}`);
-        console.log(`Total cadastrado: ${quantidadeTotal}`);
-        console.log(`Emprestados contados: ${quantidadeEmprestada}`);
-        console.log(`Disponível calculado: ${quantidadeDisponivel}`);
-        console.log(`Função calcular retorna: ${calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada)}`);
-        console.log('===========================');
+        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
+        const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
         
         return { 
           id: bookId, 
@@ -1140,10 +1166,12 @@
       querySnapshot.forEach((docSnap) => {
         const book = docSnap.data();
         const bookId = docSnap.id;
-        const quantidadeTotal = book.quantidade || 0;
+        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
+        const estoqueCadastrado = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-
-        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
+        const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
+        
         batch.update(doc(db, 'livros', bookId), {
           quantidadeDisponivel: quantidadeDisponivel,
           emprestados: quantidadeEmprestada,
@@ -1291,14 +1319,15 @@
         }
       }
 
-      const quantidadeTotal = book.quantidade || 0;
-      const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, totalEmprestado);
+      // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
+      const estoqueCadastrado = book.quantidade || 0;
+      const quantidadeDisponivel = Math.max(0, estoqueCadastrado - totalEmprestado);
 
       console.log(`=== DETALHES DO LIVRO: ${book.titulo} ===`);
-      console.log(`Total no banco: ${quantidadeTotal}`);
+      console.log(`Estoque Cadastrado (FIXO): ${estoqueCadastrado}`);
       console.log(`Empréstimos ativos encontrados: ${emprestimosAtivos.length}`);
       console.log(`Total emprestado calculado: ${totalEmprestado}`);
-      console.log(`Disponível calculado: ${quantidadeDisponivel}`);
+      console.log(`Disponível calculado: ${quantidadeDisponivel} (${estoqueCadastrado} - ${totalEmprestado})`);
       console.log(`Dados salvos no banco:`, {
         quantidadeDisponivel: book.quantidadeDisponivel,
         emprestados: book.emprestados,
@@ -1517,7 +1546,7 @@
       let autores = document.getElementById('editAutores').value;
       autores = autores.split(',').map(a => a.trim()).filter(a => a);
 
-      const quantidadeDisponivel = calcularQuantidadeDisponivel(newQuantidade, quantidadeEmprestada);
+      const quantidadeDisponivel = Math.max(0, newQuantidade - quantidadeEmprestada);
 
       const bookData = {
         titulo: document.getElementById('editTitulo').value,
@@ -1626,10 +1655,12 @@
       querySnapshot.forEach((docSnap) => {
         const book = docSnap.data();
         const bookId = docSnap.id;
-        const quantidadeTotal = book.quantidade || 0;
+        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
+        const estoqueCadastrado = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-
-        const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
+        const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
+        
         batch.update(doc(db, 'livros', bookId), {
           quantidadeDisponivel: quantidadeDisponivel,
           emprestados: quantidadeEmprestada,
@@ -1661,21 +1692,41 @@
     button.disabled = true;
 
     try {
-      console.log('=== DIAGNÓSTICO DE ESTOQUE ===');
+      console.log('=== DIAGNÓSTICO COMPLETO DE ESTOQUE ===');
       
       // Buscar todos os livros
       const livrosSnapshot = await getDocs(collection(db, 'livros'));
+      console.log(`Total de livros cadastrados: ${livrosSnapshot.docs.length}`);
       
       // Buscar todos os empréstimos
       const emprestimosSnapshot = await getDocs(collection(db, 'emprestimos'));
-      const livrosEmprestados = new Map();
+      console.log(`Total de empréstimos no banco: ${emprestimosSnapshot.docs.length}`);
       
-      // Calcular empréstimos ativos
+      const livrosEmprestados = new Map();
+      let contadorStatus = {
+        EMPRESTADO: 0,
+        ATRASADO: 0,
+        DEVOLVIDO: 0,
+        CANCELADO: 0,
+        OUTROS: 0
+      };
+      
+      // Analisar todos os empréstimos
+      console.log('\n=== ANÁLISE DOS EMPRÉSTIMOS ===');
       emprestimosSnapshot.forEach(doc => {
         const emprestimo = doc.data();
+        const status = emprestimo.status || 'SEM_STATUS';
+        
+        if (contadorStatus.hasOwnProperty(status)) {
+          contadorStatus[status]++;
+        } else {
+          contadorStatus.OUTROS++;
+          console.log(`Status desconhecido encontrado: ${status}`);
+        }
+        
         const statusAtivos = ['EMPRESTADO', 'ATRASADO'];
         
-        if (statusAtivos.includes(emprestimo.status) && Array.isArray(emprestimo.books)) {
+        if (statusAtivos.includes(status) && Array.isArray(emprestimo.books)) {
           emprestimo.books.forEach(book => {
             const bookId = book.bookId;
             const quantity = parseInt(book.quantity) || 1;
@@ -1685,35 +1736,61 @@
         }
       });
       
+      console.log('Contadores por status:', contadorStatus);
+      console.log('Livros com exemplares emprestados:', Array.from(livrosEmprestados.entries()));
+      
       // Analisar cada livro
       let problemas = [];
+      let livrosCorretos = 0;
+      
+      console.log('\n=== ANÁLISE POR LIVRO ===');
       livrosSnapshot.forEach(doc => {
         const book = doc.data();
         const bookId = doc.id;
         
-        const quantidadeTotal = book.quantidade || 0;
+        const estoqueCadastrado = book.quantidade || 0;
         const quantidadeEmprestadaCalculada = livrosEmprestados.get(bookId) || 0;
-        const quantidadeDisponivelCalculada = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestadaCalculada);
+        const quantidadeDisponivelCalculada = Math.max(0, estoqueCadastrado - quantidadeEmprestadaCalculada);
         
         const quantidadeDisponivelSalva = book.quantidadeDisponivel;
         const emprestadosSalvos = book.emprestados || 0;
         
+        console.log(`\nLivro: ${book.titulo}`);
+        console.log(`  Estoque Cadastrado: ${estoqueCadastrado}`);
+        console.log(`  Emprestados (calculado): ${quantidadeEmprestadaCalculada}`);
+        console.log(`  Emprestados (salvo): ${emprestadosSalvos}`);
+        console.log(`  Disponível (calculado): ${quantidadeDisponivelCalculada}`);
+        console.log(`  Disponível (salvo): ${quantidadeDisponivelSalva}`);
+        
         // Verificar discrepâncias
         if (quantidadeDisponivelSalva !== quantidadeDisponivelCalculada || 
             emprestadosSalvos !== quantidadeEmprestadaCalculada) {
+          console.log(`  ⚠️ PROBLEMA ENCONTRADO!`);
           problemas.push({
+            id: bookId,
             titulo: book.titulo,
-            total: quantidadeTotal,
+            estoqueCadastrado: estoqueCadastrado,
             emprestadosCalculados: quantidadeEmprestadaCalculada,
             disponivelCalculado: quantidadeDisponivelCalculada,
             emprestadosSalvos: emprestadosSalvos,
             disponivelSalvo: quantidadeDisponivelSalva
           });
+        } else {
+          console.log(`  ✅ OK`);
+          livrosCorretos++;
         }
       });
       
+      console.log(`\n=== RESULTADO FINAL ===`);
+      console.log(`Livros corretos: ${livrosCorretos}`);
+      console.log(`Livros com problemas: ${problemas.length}`);
+      
       if (problemas.length > 0) {
-        showAlert('warning', `Encontrados ${problemas.length} livros com discrepâncias. Clique em "Atualizar Estoque" para corrigir.`);
+        console.log('\nProblemas encontrados:');
+        problemas.forEach(p => {
+          console.log(`- ${p.titulo}: Calculado(${p.emprestadosCalculados}/${p.disponivelCalculado}) vs Salvo(${p.emprestadosSalvos}/${p.disponivelSalvo})`);
+        });
+        showAlert('warning', `Encontrados ${problemas.length} livros com discrepâncias. Verifique o console para detalhes. Clique em "Atualizar Estoque" para corrigir.`);
       } else {
         showAlert('success', 'Todos os contadores estão corretos!');
       }
@@ -2102,7 +2179,7 @@
           ano: book.ano,
           genero: book.genero,
           quantidade: book.quantidade,
-          quantidadeDisponivel: calcularQuantidadeDisponivel(book.quantidade, book.emprestados),
+          quantidadeDisponivel: Math.max(0, book.quantidade - (book.emprestados || 0)),
           emprestados: 0,
           createdAt: serverTimestamp(),
           importedAt: serverTimestamp()
@@ -2179,7 +2256,7 @@
       autores,
       genero,
       quantidade,
-      quantidadeDisponivel: calcularQuantidadeDisponivel(quantidade, 0), // Inicialmente toda quantidade está disponível
+      quantidadeDisponivel: quantidade, // Inicialmente toda quantidade está disponível
       emprestados: 0, // Inicialmente nenhum exemplar emprestado
       disponivel: quantidade > 0,
       editora,
@@ -2377,10 +2454,6 @@
       });
     }
   });
-
-  function calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada) {
-    return Math.max(0, quantidadeTotal - quantidadeEmprestada);
-  }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
