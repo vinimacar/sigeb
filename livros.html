@@ -1163,10 +1163,11 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
+    // Total sempre será o valor cadastrado no banco
+    const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    const quantidadeDisponivel = book.quantidadeDisponivel || 0;
-    // Total calculado como disponível + emprestado
-    const quantidadeTotal = quantidadeDisponivel + quantidadeEmprestada;
+    // Disponível = Total cadastrado - Emprestados
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
 
     let statusClass = '';
     let statusText = '';
