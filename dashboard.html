@@ -463,6 +463,17 @@
           Distribuição dos usuários cadastrados por função
         </div>
       </div>
+
+      <div class="chart-card" data-aos="fade-up" data-aos-delay="1100">
+        <h4><i class='bx bx-error-circle'></i>Atrasos por Mês</h4>
+        <div class="chart-container">
+          <canvas id="lateChart"></canvas>
+        </div>
+        <div class="chart-info">
+          <i class='bx bx-info-circle'></i>
+          Quantidade de empréstimos em atraso por mês (últimos 12 meses)
+        </div>
+      </div>
     </div>
 
     <div class="recent-activities" data-aos="fade-up" data-aos-delay="1000">
@@ -507,7 +518,7 @@
     const db = firebase.firestore();
 
     // Variáveis globais para os gráficos
-    let statusChart, genreChart, loansChart, usersChart, popularBooksChart;
+    let statusChart, genreChart, loansChart, usersChart, popularBooksChart, lateChart;
 
     // Configurações padrão dos gráficos
     const chartColors = {
@@ -1166,6 +1177,78 @@
       });
     }
 
+    // Função para criar gráfico de atrasos por mês
+    function criarGraficoAtrasosPorMes() {
+      const ctx = document.getElementById('lateChart').getContext('2d');
+      if (lateChart) lateChart.destroy();
+
+      // Gera labels dos últimos 12 meses
+      const labels = [];
+      const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const hoje = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        labels.push(`${meses[d.getMonth()]}/${d.getFullYear().toString().slice(-2)}`);
+      }
+
+      lateChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Atrasos',
+            data: new Array(12).fill(0),
+            backgroundColor: '#dc3545',
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          ...chartOptions,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, font: { family: 'Poppins' } },
+              grid: { color: 'rgba(0,0,0,0.1)' }
+            },
+            x: {
+              ticks: { font: { family: 'Poppins' } },
+              grid: { display: false }
+            }
+          },
+          plugins: {
+            ...chartOptions.plugins,
+            legend: { display: false }
+          }
+        }
+      });
+
+      // Atualiza dados em tempo real
+      db.collection('emprestimos').onSnapshot(snapshot => {
+        const atrasosPorMes = new Array(12).fill(0);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
+            if (data.returnDate) {
+              // Espera formato dd/mm/yyyy
+              const [d, m, y] = data.returnDate.split('/');
+              const dataRetorno = new Date(y, m - 1, d);
+              const hoje = new Date();
+              if (dataRetorno < hoje) {
+                // Está atrasado
+                const diffMeses = (hoje.getFullYear() - dataRetorno.getFullYear()) * 12 + (hoje.getMonth() - dataRetorno.getMonth());
+                if (diffMeses >= 0 && diffMeses < 12) {
+                  atrasosPorMes[11 - diffMeses]++;
+                }
+              }
+            }
+          }
+        });
+        lateChart.data.datasets[0].data = atrasosPorMes;
+        lateChart.update();
+      });
+    }
+
     // Função para inicializar todos os gráficos
     function inicializarGraficos() {
       criarGraficoStatus();
@@ -1173,6 +1256,7 @@
       criarGraficoEmprestimos();
       criarGraficoLivrosPopulares();
       criarGraficoUsuarios();
+      criarGraficoAtrasosPorMes();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1213,6 +1297,7 @@
         if (loansChart) loansChart.resize();
         if (popularBooksChart) popularBooksChart.resize();
         if (usersChart) usersChart.resize();
+        if (lateChart) lateChart.resize();
       });
     });
   </script>
