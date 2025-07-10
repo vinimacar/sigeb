@@ -1163,9 +1163,10 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    const quantidadeTotal = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(quantidadeTotal, quantidadeEmprestada);
+    const quantidadeDisponivel = book.quantidadeDisponivel || 0;
+    // Total calculado como disponível + emprestado
+    const quantidadeTotal = quantidadeDisponivel + quantidadeEmprestada;
 
     let statusClass = '';
     let statusText = '';
