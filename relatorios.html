@@ -537,6 +537,17 @@
 
     // Chame a função ao carregar a página
     buscarQuantidadeLivros();
+
+    // Buscar todos os empréstimos do Firestore
+    async function buscarEmprestimos() {
+      const snapshot = await db.collection('emprestimos').get();
+      const emprestimos = [];
+      snapshot.forEach(doc => {
+        emprestimos.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(emprestimos);
+      return emprestimos;
+    }
   });
 </script>
 </body>
