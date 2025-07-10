@@ -2278,7 +2278,7 @@
 
     // Mostrar/ocultar opções baseado no formato
     if (importFormatSelect && csvOptionsDiv && xlsOptionsDiv) {
-      importFormatSelect.addEventListener('change', function() {
+      importFormatSelect.addEventListener('change', async function() {
         const format = this.value;
         const filename = importFileInput.files[0]?.name.toLowerCase() || '';
         
@@ -2294,7 +2294,7 @@
               
           // Carregar planilhas automaticamente para arquivos Excel
           try {
-            const arrayBuffer = await this.files[0].arrayBuffer();
+            const arrayBuffer = await importFileInput.files[0].arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'array' });
             updateSheetList(workbook.SheetNames);
             currentWorkbook = workbook;
@@ -2453,3 +2453,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
