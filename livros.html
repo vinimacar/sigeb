@@ -1167,13 +1167,13 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // ESTOQUE CADASTRADO: Valor fixo/estático do campo "quantidade" no cadastro (NUNCA MUDA)
+    // ESTOQUE CADASTRADO = QUANTIDADE (CAMPO FIXO DO CADASTRO - NUNCA MUDA)
     const estoqueCadastrado = book.quantidade || 0;
     
-    // EMPRESTADOS: Quantidade atualmente emprestada (DINÂMICO - varia conforme empréstimos)
+    // EMPRESTADOS: Quantidade atualmente emprestada (DINÂMICO)
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
     
-    // DISPONÍVEL: Calculado dinamicamente = Estoque fixo - Emprestados (DINÂMICO)
+    // DISPONÍVEL: ESTOQUE CADASTRADO - EMPRESTADOS (DINÂMICO)
     const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
 
     let statusClass = '';
