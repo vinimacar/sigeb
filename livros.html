@@ -1167,21 +1167,29 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // Estoque cadastrado é sempre o valor fixo do banco de dados
-    const quantidadeTotal = book.quantidade || 0;
+    // Estoque cadastrado é o valor do campo "quantidade" inserido no cadastro do livro
+    const estoqueCadastrado = book.quantidade || 0;
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    // Disponível = Estoque fixo cadastrado - Emprestados
-    const quantidadeDisponivel = Math.max(0, quantidadeTotal - quantidadeEmprestada);
+    // Disponível = Estoque cadastrado - Emprestados
+    const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
 
     let statusClass = '';
     let statusText = '';
     let statusIcon = '';
 
-    if (quantidadeTotal === 0) {
+    if (estoqueCadastrado === 0) {
         statusClass = 'status-indisponivel';
         statusText = 'Sem estoque cadastrado';
         statusIcon = 'bx-x-circle';
     } else if (quantidadeDisponivel === 0) {
+        statusClass = 'status-emprestado';
+        statusText = 'Todos os exemplares emprestados';
+        statusIcon = 'bx-time';
+    } else {
+        statusClass = 'status-disponivel';
+        statusText = `${quantidadeDisponivel} de ${estoqueCadastrado} disponível(is)`;
+        statusIcon = 'bx-check-circle';
+    }
         statusClass = 'status-emprestado';
         statusText = 'Todos os exemplares emprestados';
         statusIcon = 'bx-time';
@@ -1210,7 +1218,7 @@
             </span>
             <div class="estoque-detalhes mt-1">
               <small class="text-muted">
-                <i class="bx bx-archive me-1"></i>Estoque Cadastrado: ${quantidadeTotal} | 
+                <i class="bx bx-archive me-1"></i>Estoque Cadastrado: ${estoqueCadastrado} | 
                 <i class="bx bx-check-circle me-1"></i>Disponível: ${quantidadeDisponivel} | 
                 <i class="bx bx-bookmark me-1"></i>Emprestado: ${quantidadeEmprestada}
               </small>
