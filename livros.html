@@ -1171,13 +1171,17 @@
     let statusText = '';
     let statusIcon = '';
 
-    if (quantidadeDisponivel === 0) {
+    if (quantidadeTotal === 0) {
         statusClass = 'status-indisponivel';
-        statusText = 'Indisponível';
+        statusText = 'Sem estoque';
         statusIcon = 'bx-x-circle';
+    } else if (quantidadeDisponivel === 0) {
+        statusClass = 'status-emprestado';
+        statusText = `${quantidadeTotal} exemplar(es) - Todos emprestados`;
+        statusIcon = 'bx-time';
     } else {
         statusClass = 'status-disponivel';
-        statusText = `${quantidadeDisponivel} disponível(is)`;
+        statusText = `${quantidadeTotal} exemplar(es) disponível(is)`;
         statusIcon = 'bx-check-circle';
     }
 
@@ -1200,7 +1204,9 @@
             </span>
             <div class="estoque-detalhes mt-1">
               <small class="text-muted">
-                Total: ${quantidadeTotal} | Emprestados: ${quantidadeEmprestada}
+                <i class="bx bx-package me-1"></i>Total: ${quantidadeTotal} | 
+                <i class="bx bx-check me-1"></i>Disponível: ${quantidadeDisponivel} | 
+                <i class="bx bx-bookmark me-1"></i>Emprestado: ${quantidadeEmprestada}
               </small>
             </div>
           </div>
