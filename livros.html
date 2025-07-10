@@ -1077,11 +1077,11 @@
         const bookData = doc.data();
         const bookId = doc.id;
         
-        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
-        const estoqueCadastrado = bookData.quantidade || 0;
+        // QUANTIDADE = VALOR FIXO DO CADASTRO
+        const quantidade = bookData.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
-        const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
+        // DISPONÍVEL = QUANTIDADE - EMPRESTADOS
+        const quantidadeDisponivel = Math.max(0, quantidade - quantidadeEmprestada);
         
         return { 
           id: bookId, 
@@ -1166,10 +1166,10 @@
       querySnapshot.forEach((docSnap) => {
         const book = docSnap.data();
         const bookId = docSnap.id;
-        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
+        // QUANTIDADE = VALOR FIXO DO CADASTRO
         const estoqueCadastrado = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
+        // DISPONÍVEL = QUANTIDADE - EMPRESTADOS
         const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
         
         batch.update(doc(db, 'livros', bookId), {
@@ -1195,22 +1195,22 @@
     const card = document.createElement('div');
     card.className = 'book-card';
 
-    // ESTOQUE CADASTRADO = QUANTIDADE (CAMPO FIXO DO CADASTRO - NUNCA MUDA)
-    const estoqueCadastrado = book.quantidade || 0;
+    // QUANTIDADE = VALOR FIXO DO CADASTRO (NUNCA MUDA)
+    const quantidade = book.quantidade || 0;
     
     // EMPRESTADOS: Quantidade atualmente emprestada (DINÂMICO)
     const quantidadeEmprestada = book.quantidadeEmprestada || 0;
     
-    // DISPONÍVEL: ESTOQUE CADASTRADO - EMPRESTADOS (DINÂMICO)
-    const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
+    // DISPONÍVEL: QUANTIDADE - EMPRESTADOS (DINÂMICO)
+    const quantidadeDisponivel = Math.max(0, quantidade - quantidadeEmprestada);
 
     let statusClass = '';
     let statusText = '';
     let statusIcon = '';
 
-    if (estoqueCadastrado === 0) {
+    if (quantidade === 0) {
         statusClass = 'status-indisponivel';
-        statusText = 'Sem estoque cadastrado';
+        statusText = 'Sem quantidade cadastrada';
         statusIcon = 'bx-x-circle';
     } else if (quantidadeDisponivel === 0) {
         statusClass = 'status-emprestado';
@@ -1218,7 +1218,7 @@
         statusIcon = 'bx-time';
     } else {
         statusClass = 'status-disponivel';
-        statusText = `${quantidadeDisponivel} de ${estoqueCadastrado} disponível(is)`;
+        statusText = `${quantidadeDisponivel} de ${quantidade} disponível(is)`;
         statusIcon = 'bx-check-circle';
     }
 
@@ -1241,7 +1241,7 @@
             </span>
             <div class="estoque-detalhes mt-1">
               <small class="text-muted">
-                <i class="bx bx-archive me-1"></i>Estoque Cadastrado: ${estoqueCadastrado} | 
+                <i class="bx bx-archive me-1"></i>Quantidade: ${quantidade} | 
                 <i class="bx bx-check-circle me-1"></i>Disponível: ${quantidadeDisponivel} | 
                 <i class="bx bx-bookmark me-1"></i>Emprestado: ${quantidadeEmprestada}
               </small>
@@ -1319,15 +1319,15 @@
         }
       }
 
-      // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
-      const estoqueCadastrado = book.quantidade || 0;
-      const quantidadeDisponivel = Math.max(0, estoqueCadastrado - totalEmprestado);
+      // QUANTIDADE = VALOR FIXO DO CADASTRO
+      const quantidade = book.quantidade || 0;
+      const quantidadeDisponivel = Math.max(0, quantidade - totalEmprestado);
 
       console.log(`=== DETALHES DO LIVRO: ${book.titulo} ===`);
-      console.log(`Estoque Cadastrado (FIXO): ${estoqueCadastrado}`);
+      console.log(`Quantidade (FIXO): ${quantidade}`);
       console.log(`Empréstimos ativos encontrados: ${emprestimosAtivos.length}`);
       console.log(`Total emprestado calculado: ${totalEmprestado}`);
-      console.log(`Disponível calculado: ${quantidadeDisponivel} (${estoqueCadastrado} - ${totalEmprestado})`);
+      console.log(`Disponível calculado: ${quantidadeDisponivel} (${quantidade} - ${totalEmprestado})`);
       console.log(`Dados salvos no banco:`, {
         quantidadeDisponivel: book.quantidadeDisponivel,
         emprestados: book.emprestados,
@@ -1385,7 +1385,7 @@
                 <i class="bx ${quantidadeDisponivel === 0 ? 'bx-x-circle' : 'bx-check-circle'}"></i>
                 ${quantidadeDisponivel === 0 ? 'Indisponível' : 'Disponível'}
               </h5>
-              <p class="mb-1"><strong>Total:</strong> ${estoqueCadastrado} exemplares</p>
+              <p class="mb-1"><strong>Total:</strong> ${quantidade} exemplares</p>
               <p class="mb-1"><strong>Disponível:</strong> ${quantidadeDisponivel} exemplares</p>
               <p class="mb-1"><strong>Emprestado:</strong> ${totalEmprestado} exemplares</p>
             </div>
@@ -1655,11 +1655,11 @@
       querySnapshot.forEach((docSnap) => {
         const book = docSnap.data();
         const bookId = docSnap.id;
-        // ESTOQUE CADASTRADO = QUANTIDADE (FIXO)
-        const estoqueCadastrado = book.quantidade || 0;
+        // QUANTIDADE = VALOR FIXO DO CADASTRO
+        const quantidade = book.quantidade || 0;
         const quantidadeEmprestada = livrosEmprestados.get(bookId) || 0;
-        // DISPONÍVEL = ESTOQUE CADASTRADO - EMPRESTADOS
-        const quantidadeDisponivel = Math.max(0, estoqueCadastrado - quantidadeEmprestada);
+        // DISPONÍVEL = QUANTIDADE - EMPRESTADOS
+        const quantidadeDisponivel = Math.max(0, quantidade - quantidadeEmprestada);
         
         batch.update(doc(db, 'livros', bookId), {
           quantidadeDisponivel: quantidadeDisponivel,
@@ -1748,15 +1748,15 @@
         const book = doc.data();
         const bookId = doc.id;
         
-        const estoqueCadastrado = book.quantidade || 0;
+        const quantidade = book.quantidade || 0;
         const quantidadeEmprestadaCalculada = livrosEmprestados.get(bookId) || 0;
-        const quantidadeDisponivelCalculada = Math.max(0, estoqueCadastrado - quantidadeEmprestadaCalculada);
+        const quantidadeDisponivelCalculada = Math.max(0, quantidade - quantidadeEmprestadaCalculada);
         
         const quantidadeDisponivelSalva = book.quantidadeDisponivel;
         const emprestadosSalvos = book.emprestados || 0;
         
         console.log(`\nLivro: ${book.titulo}`);
-        console.log(`  Estoque Cadastrado: ${estoqueCadastrado}`);
+        console.log(`  Quantidade: ${quantidade}`);
         console.log(`  Emprestados (calculado): ${quantidadeEmprestadaCalculada}`);
         console.log(`  Emprestados (salvo): ${emprestadosSalvos}`);
         console.log(`  Disponível (calculado): ${quantidadeDisponivelCalculada}`);
@@ -1769,7 +1769,7 @@
           problemas.push({
             id: bookId,
             titulo: book.titulo,
-            estoqueCadastrado: estoqueCadastrado,
+            quantidade: quantidade,
             emprestadosCalculados: quantidadeEmprestadaCalculada,
             disponivelCalculado: quantidadeDisponivelCalculada,
             emprestadosSalvos: emprestadosSalvos,
