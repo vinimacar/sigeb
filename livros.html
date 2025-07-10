@@ -1197,12 +1197,6 @@
 
     // QUANTIDADE = VALOR FIXO DO CADASTRO (NUNCA MUDA)
     const quantidade = book.quantidade || 0;
-    
-    // EMPRESTADOS: Quantidade atualmente emprestada (DINÂMICO)
-    const quantidadeEmprestada = book.quantidadeEmprestada || 0;
-    
-    // DISPONÍVEL: QUANTIDADE - EMPRESTADOS (DINÂMICO)
-    const quantidadeDisponivel = Math.max(0, quantidade - quantidadeEmprestada);
 
     let statusClass = '';
     let statusText = '';
@@ -1212,14 +1206,10 @@
         statusClass = 'status-indisponivel';
         statusText = 'Sem quantidade cadastrada';
         statusIcon = 'bx-x-circle';
-    } else if (quantidadeDisponivel === 0) {
-        statusClass = 'status-emprestado';
-        statusText = 'Todos os exemplares emprestados';
-        statusIcon = 'bx-time';
     } else {
         statusClass = 'status-disponivel';
-        statusText = `${quantidadeDisponivel} de ${quantidade} disponível(is)`;
-        statusIcon = 'bx-check-circle';
+        statusText = `Estoque: ${quantidade}`;
+        statusIcon = 'bx-archive';
     }
 
     card.innerHTML = `
@@ -1239,13 +1229,6 @@
               <i class="bx ${statusIcon} me-1"></i>
               ${statusText}
             </span>
-            <div class="estoque-detalhes mt-1">
-              <small class="text-muted">
-                <i class="bx bx-archive me-1"></i>Quantidade: ${quantidade} | 
-                <i class="bx bx-check-circle me-1"></i>Disponível: ${quantidadeDisponivel} | 
-                <i class="bx bx-bookmark me-1"></i>Emprestado: ${quantidadeEmprestada}
-              </small>
-            </div>
           </div>
           ${book.isbn ? `<small class="text-muted"><i class="bx bx-barcode me-1"></i>ISBN: ${book.isbn}</small>` : ''}
         </div>
@@ -1683,6 +1666,7 @@
       button.disabled = false;
     }
   };
+
 
   // Função para diagnosticar problemas de estoque
   window.diagnosticarEstoque = async function() {
@@ -2307,6 +2291,17 @@
           csvOptionsDiv.style.display = 'block';
         } else if (format === 'xls' || (format === 'auto' && (filename.endsWith('.xls') || filename.endsWith('.xlsx')))) {
           xlsOptionsDiv.style.display = 'block';
+              
+          // Carregar planilhas automaticamente para arquivos Excel
+          try {
+            const arrayBuffer = await this.files[0].arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            updateSheetList(workbook.SheetNames);
+            currentWorkbook = workbook;
+            showAlert('info', `Arquivo Excel carregado. ${workbook.SheetNames.length} planilha(s) encontrada(s).`);
+          } catch (error) {
+            showAlert('warning', 'Erro ao carregar planilhas do Excel: ' + error.message);
+          }
         }
       });
     }
@@ -2458,4 +2453,3 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
