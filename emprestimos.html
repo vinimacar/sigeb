@@ -1988,27 +1988,26 @@ emprestados: firebase.firestore.FieldValue.increment(book.quantity)
 await Promise.all(updatePromises);
 
 // Fecha o modal e mostra mensagem de sucesso
-// ...existing code...
-document.getElementById('btnEnviarWhatsappForm').onclick = async function() {
-    // Validação dos campos obrigatórios
-    const userId = document.getElementById('selectedUserId').value;
-    const loanDate = document.getElementById('loanDate').value;
-    const returnDate = document.getElementById('returnDate').value;
-    const bookRows = document.querySelectorAll('#multiBookLoans .loan-book-row');
-    const books = [];
-    let valid = true;
+showAlert('success', 'Empréstimo registrado com sucesso!');
+document.getElementById('btnEnviarWhatsappForm').style.display = 'inline-block';
+document.getElementById('btnEnviarWhatsappForm').onclick = function() {
+sendWhatsAppOnLoan(userId, books, loanDate, returnDate);
+};
+const addLoanModal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
+if (addLoanModal) addLoanModal.hide();
+setTimeout(() => {
+document.getElementById('btnEnviarWhatsapp').focus();
+}, 500);
+loadLoans();
+updateLoanStats();
+updateNotReturnedBar();
 
-    for (const row of bookRows) {
-        const bookId = row.querySelector('.selectedBookId').value;
-        const quantity = parseInt(row.querySelector('.quantity').value);
-        if (!bookId || isNaN(quantity) || quantity <= 0) {
-            valid = false;
-            break;
-        }
-        books.push({ bookId, quantity });
-    }
-    if (!userId || !loanDate || !returnDate || books.length === 0 || !valid) {
-        showAlert('warning',
+} catch (error) {
+console.error('Erro ao registrar empréstimo:', error);
+showAlert('danger', 'Erro ao registrar empréstimo.');
+}
+}
+
 
 // Funções de edição, devolução, renovação e exclusão de empréstimos
 async function openEditLoanModal(loanId) {
