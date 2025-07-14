@@ -703,13 +703,17 @@ min-width: 0;
 </div>
 </div>
 </div>
-<div class="modal-footer">
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-<button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
-<button type="button" class="btn btn-success" id="btnEnviarWhatsappForm" style="display:none;">
-<i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
-</button>
+<!-- Substitua o bloco da modal-footer do modal de novo empréstimo por este: -->
+<div class="modal-footer d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-success" id="btnEnviarWhatsappForm">
+        <i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
+    </button>
+    <div>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
+    </div>
 </div>
+<!-- Remova o botão WhatsApp duplicado fora do modal, se existir -->
 </form>
 <!-- Exemplo: Adicione este botão no modal de sucesso ou onde desejar -->
 <button type="button" class="btn btn-success" id="btnEnviarWhatsapp" style="display:none; margin-top:10px;">
