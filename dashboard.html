@@ -1392,6 +1392,21 @@
       });
     }
 
+    // Função para inicializar todos os gráficos
+    function inicializarGraficos() {
+      try {
+        criarGraficoStatus();
+        criarGraficoGeneros();
+        criarGraficoEmprestimos();
+        criarGraficoLivrosPopulares();
+        criarGraficoUsuarios();
+        criarGraficoAtrasosPorMes();
+        console.log('Gráficos inicializados com sucesso!');
+      } catch (error) {
+        console.error('Erro ao inicializar gráficos:', error);
+      }
+    }
+
     // Função para atualizar o card de atrasos com informações detalhadas
     function atualizarCardAtrasos(emprestimosAtrasados) {
       const cardAtrasos = document.querySelector('.stat-card:nth-child(4)');
@@ -1693,7 +1708,50 @@
       return (diasAtraso * valorMultaDia).toFixed(2);
     }
 
-    // ...existing code...
+    // Inicialização quando o DOM estiver carregado
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 800,
+        once: true,
+        offset: 50
+      });
+
+      // Função para toggle da sidebar em dispositivos móveis
+      const toggleSidebar = () => {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          mainContent.style.marginLeft = sidebar.classList.contains('active') ? '250px' : '0';
+        }
+      };
+
+      // Adiciona botão hamburger em dispositivos móveis
+      if (window.innerWidth <= 768) {
+        const header = document.querySelector('.dashboard-header');
+        const hamburger = document.createElement('button');
+        hamburger.className = 'btn btn-primary d-md-none mb-3';
+        hamburger.innerHTML = '<i class="bx bx-menu"></i>';
+        hamburger.onclick = toggleSidebar;
+        header.prepend(hamburger);
+      }
+
+      // Inicializa tooltips
+      const tooltips = document.querySelectorAll('[title]');
+      tooltips.forEach(el => {
+        new bootstrap.Tooltip(el);
+      });
+
+      // Redimensiona gráficos quando a janela é redimensionada
+      window.addEventListener('resize', () => {
+        if (statusChart) statusChart.resize();
+        if (genreChart) genreChart.resize();
+        if (loansChart) loansChart.resize();
+        if (popularBooksChart) popularBooksChart.resize();
+        if (usersChart) usersChart.resize();
+        if (lateChart) lateChart.resize();
+      });
+    });
   </script>
 </body>
 </html>
