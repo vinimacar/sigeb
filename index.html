@@ -341,8 +341,14 @@
       transform: translateY(-10px) scale(1.02);
       background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(46,139,87,0.10) 100%);
       border: 1px solid var(--accent1);
-      color: var(--text-light);
+      color: #ffffff !important;
       box-shadow: 0 15px 40px rgba(255, 215, 0, 0.2);
+    }
+    .feature-card:hover h6 {
+      color: #ffffff !important;
+    }
+    .feature-card:hover p {
+      color: #ffffff !important;
     }
     .feature-icon {
       font-size: 2.8rem;
@@ -422,18 +428,21 @@
     }
     
     .feature-card h6 {
-      color: #ffffff;
-      font-weight: 600;
+      color: #ffffff !important;
+      font-weight: 700;
       margin-bottom: 0.75rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+      font-size: 1.1rem;
     }
     
     .feature-card p {
-      color: #f8f9fa;
+      color: #ffffff !important;
       margin-bottom: 0;
-      opacity: 0.95;
+      opacity: 1;
       line-height: 1.4;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      font-weight: 500;
+      font-size: 0.95rem;
     }
 
     /* Toggle password styling */
@@ -646,18 +655,18 @@
     <div class="feature-section" style="margin-top: 1.2rem;">
       <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
         <i class="bx bx-book-reader feature-icon"></i>
-        <h6>Gestão de Acervo</h6>
-        <p style="font-size:0.95rem;">Controle completo dos livros e materiais.</p>
+        <h6 style="color: #ffffff !important; font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">Gestão de Acervo</h6>
+        <p style="font-size:0.95rem; color: #ffffff !important; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">Controle completo dos livros e materiais.</p>
       </div>
       <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
         <i class="bx bx-user-check feature-icon"></i>
-        <h6>Controle de Usuários</h6>
-        <p style="font-size:0.95rem;">Gerenciamento eficiente de membros.</p>
+        <h6 style="color: #ffffff !important; font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">Controle de Usuários</h6>
+        <p style="font-size:0.95rem; color: #ffffff !important; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">Gerenciamento eficiente de membros.</p>
       </div>
       <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
         <i class="bx bx-transfer-alt feature-icon"></i>
-        <h6>Empréstimos</h6>
-        <p style="font-size:0.95rem;">Sistema inteligente de empréstimos.</p>
+        <h6 style="color: #ffffff !important; font-weight: 700; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">Empréstimos</h6>
+        <p style="font-size:0.95rem; color: #ffffff !important; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">Sistema inteligente de empréstimos.</p>
       </div>
     </div>
   </div>
