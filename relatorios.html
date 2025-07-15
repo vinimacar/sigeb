@@ -543,6 +543,7 @@
       if (reportType === 'livros') titulo = 'Relatório de Livros';
       if (reportType === 'usuarios') titulo = 'Relatório de Usuários';
       if (reportType === 'emprestimos') titulo = 'Relatório de Empréstimos';
+      if (reportType === 'advertencias') titulo = 'Relatório de Advertências';
 
       // Adiciona informações de filtro ao título
       if (reportType === 'emprestimos') {
@@ -559,16 +560,126 @@
         }
       }
 
-      doc.text(titulo, 14, 15);
-
-      const table = reportResult.querySelector('table');
-      if (table) {
-        doc.autoTable({ html: table, startY: 25 });
-        doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
-      } else {
-        doc.text('Nenhum dado para exportar.', 14, 30);
-        doc.save('relatorio.pdf');
+      // Função para adicionar logo e cabeçalho
+      function adicionarCabecalho() {
+        // Adicionar logo ABA.png
+        try {
+          const logoImg = new Image();
+          logoImg.onload = function() {
+            // Adicionar logo no canto superior esquerdo
+            doc.addImage(logoImg, 'PNG', 14, 10, 30, 30);
+            
+            // Adicionar informações da escola
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Escola Estadual Professor Álvaro Brandão de Andrade', 50, 20);
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Sistema de Gestão de Biblioteca - SIGEB', 50, 28);
+            
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(titulo, 50, 38);
+            
+            // Adicionar data de geração
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 50);
+            
+            // Linha separadora
+            doc.setLineWidth(0.5);
+            doc.line(14, 55, 196, 55);
+            
+            // Gerar tabela
+            const table = reportResult.querySelector('table');
+            if (table) {
+              doc.autoTable({ 
+                html: table, 
+                startY: 60,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [13, 40, 71] },
+                theme: 'striped'
+              });
+            } else {
+              doc.text('Nenhum dado para exportar.', 14, 70);
+            }
+            
+            // Adicionar rodapé
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+              doc.setPage(i);
+              doc.setFontSize(8);
+              doc.text(`Página ${i} de ${pageCount}`, 14, 285);
+              doc.text('© 2025 SIGEB - Sistema de Gestão de Biblioteca', 120, 285);
+            }
+            
+            doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
+          };
+          
+          logoImg.onerror = function() {
+            console.warn('Erro ao carregar logo, gerando PDF sem logo');
+            gerarPDFSemLogo();
+          };
+          
+          logoImg.src = 'logoaba.png';
+        } catch (error) {
+          console.warn('Erro ao processar logo:', error);
+          gerarPDFSemLogo();
+        }
       }
+
+      // Função alternativa sem logo
+      function gerarPDFSemLogo() {
+        // Adicionar informações da escola
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Escola Estadual Professor Álvaro Brandão de Andrade', 14, 20);
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Sistema de Gestão de Biblioteca - SIGEB', 14, 28);
+        
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(titulo, 14, 38);
+        
+        // Adicionar data de geração
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 48);
+        
+        // Linha separadora
+        doc.setLineWidth(0.5);
+        doc.line(14, 52, 196, 52);
+
+        const table = reportResult.querySelector('table');
+        if (table) {
+          doc.autoTable({ 
+            html: table, 
+            startY: 58,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [13, 40, 71] },
+            theme: 'striped'
+          });
+        } else {
+          doc.text('Nenhum dado para exportar.', 14, 68);
+        }
+        
+        // Adicionar rodapé
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(`Página ${i} de ${pageCount}`, 14, 285);
+          doc.text('© 2025 SIGEB - Sistema de Gestão de Biblioteca', 120, 285);
+        }
+        
+        doc.save(`${titulo.replace(/\s/g, '_').toLowerCase()}.pdf`);
+      }
+
+      // Iniciar processo de geração
+      adicionarCabecalho();
     }
 
     btnBaixarPDF.addEventListener('click', baixarPDF);
