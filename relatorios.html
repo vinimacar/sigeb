@@ -65,6 +65,7 @@
             <option value="livros">Livros</option>
             <option value="usuarios">Usuários</option>
             <option value="emprestimos">Empréstimos</option>
+            <option value="advertencias">Advertências</option>
           </select>
         </div>
         <div class="col-md-3" id="livrosFilters">
@@ -459,6 +460,57 @@
           console.error('Erro ao buscar empréstimos:', error);
         }
       }
+
+      if (reportType.value === 'advertencias') {
+        try {
+          const snapshot = await db.collection('advertencias').orderBy('createdAt', 'desc').get();
+          if (snapshot.empty) {
+            html = '<p>Nenhuma advertência encontrada.</p>';
+          } else {
+            html = `
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Usuário</th>
+                    <th>Registro Empréstimo</th>
+                    <th>Dias de Atraso</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+            for (const doc of snapshot.docs) {
+              const adv = doc.data();
+              let nomeUsuario = 'Usuário não encontrado';
+              try {
+                if (adv.loanId) {
+                  const loanDoc = await db.collection('emprestimos').doc(adv.loanId).get();
+                  if (loanDoc.exists && loanDoc.data().userId) {
+                    const userDoc = await db.collection('usuarios').doc(loanDoc.data().userId).get();
+                    if (userDoc.exists) nomeUsuario = userDoc.data().nome || 'Nome não informado';
+                  }
+                }
+              } catch {}
+              html += `
+                <tr>
+                  <td>${adv.warningDate || '-'}</td>
+                  <td>${nomeUsuario}</td>
+                  <td>${adv.loanId || '-'}</td>
+                  <td>${adv.daysLate || '-'}</td>
+                  <td><span class="badge bg-warning">${adv.status || '-'}</span></td>
+                </tr>
+              `;
+            }
+            html += '</tbody></table>';
+            html += `<div class="mt-3"><strong>Total de advertências:</strong> ${snapshot.size}</div>`;
+          }
+        } catch (error) {
+          html = `<p class="text-danger">Erro ao carregar advertências: ${error.message}</p>`;
+          console.error('Erro ao buscar advertências:', error);
+        }
+      }
+
       reportResult.innerHTML = html;
     });
 
