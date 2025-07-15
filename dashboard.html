@@ -380,23 +380,9 @@
 
   <div class="main-content">
     <div class="dashboard-header" data-aos="fade-down">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h2>Bem-vindo ao SIGEB</h2>
-          <p>Sistema de Gestão de Biblioteca</p>
-          <p id="nomeEscola" style="font-weight:600;color:#4facfe"></p>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-warning" onclick="buscarEMostrarAtrasos()" title="Ver empréstimos em atraso">
-            <i class='bx bx-error-circle'></i>
-            Atrasos
-          </button>
-          <button class="btn btn-info" onclick="atualizarDashboard()" title="Atualizar dados">
-            <i class='bx bx-refresh'></i>
-            Atualizar
-          </button>
-        </div>
-      </div>
+      <h2>Bem-vindo ao SIGEB</h2>
+      <p>Sistema de Gestão de Biblioteca</p>
+      <p id="nomeEscola" style="font-weight:600;color:#4facfe"></p>
     </div>
 
     <div class="stats-container">
@@ -608,9 +594,6 @@
         atualizarDashboard();
         carregarAtividadesRecentes();
         
-        // Verifica e atualiza status de empréstimos automaticamente
-        verificarEAtualizarStatusEmprestimos();
-        
         // Inicializa os gráficos após carregar os dados
         setTimeout(inicializarGraficos, 1000);
       } else {
@@ -661,91 +644,31 @@
         let totalEmprestimos = 0;
         let totalAtrasados = 0;
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // Normaliza para meia-noite
-        
-        const emprestimosAtrasados = []; // Array para armazenar detalhes dos atrasos
-        
         snapshot.forEach(child => {
           const data = child.data();
           let booksArray = [];
-          
           if (Array.isArray(data.books)) {
             booksArray = data.books;
           } else if (data.bookId && data.quantity) {
             booksArray = [{ bookId: data.bookId, quantity: data.quantity }];
           }
-          
           if (data.status === 'EMPRESTADO') {
             let totalQtd = 0;
             booksArray.forEach(item => {
               totalQtd += item.quantity || 1;
             });
             totalEmprestimos += totalQtd;
-            
-            // Verifica se está atrasado
             if (data.returnDate) {
               const [d, m, y] = data.returnDate.split('/');
-              const dataDevolucao = new Date(y, m - 1, d);
-              dataDevolucao.setHours(0, 0, 0, 0);
-              
-              if (dataDevolucao < hoje) {
+              const dataDevolucao = new Date(`${y}-${m}-${d}`);
+              if (dataDevolucao.setHours(0,0,0,0) < hoje.setHours(0,0,0,0)) {
                 totalAtrasados += totalQtd;
-                
-                // Calcula dias de atraso
-                const diasAtraso = Math.floor((hoje - dataDevolucao) / (1000 * 60 * 60 * 24));
-                
-                // Armazena detalhes do atraso
-                emprestimosAtrasados.push({
-                  id: child.id,
-                  userId: data.userId,
-                  bookId: data.bookId,
-                  books: booksArray,
-                  returnDate: data.returnDate,
-                  loanDate: data.loanDate,
-                  diasAtraso: diasAtraso,
-                  quantity: totalQtd,
-                  userName: data.userName || 'Usuário não identificado',
-                  bookTitle: data.bookTitle || 'Livro não identificado'
-                });
               }
-            }
-          } else if (data.status === 'ATRASADO') {
-            // Caso já esteja marcado como atrasado no banco
-            let totalQtd = 0;
-            booksArray.forEach(item => {
-              totalQtd += item.quantity || 1;
-            });
-            totalAtrasados += totalQtd;
-            
-            if (data.returnDate) {
-              const [d, m, y] = data.returnDate.split('/');
-              const dataDevolucao = new Date(y, m - 1, d);
-              const diasAtraso = Math.floor((hoje - dataDevolucao) / (1000 * 60 * 60 * 24));
-              
-              emprestimosAtrasados.push({
-                id: child.id,
-                userId: data.userId,
-                bookId: data.bookId,
-                books: booksArray,
-                returnDate: data.returnDate,
-                loanDate: data.loanDate,
-                diasAtraso: diasAtraso,
-                quantity: totalQtd,
-                userName: data.userName || 'Usuário não identificado',
-                bookTitle: data.bookTitle || 'Livro não identificado'
-              });
             }
           }
         });
-        
         document.getElementById('totalEmprestimos').textContent = totalEmprestimos;
         document.getElementById('totalAtrasados').textContent = totalAtrasados;
-        
-        // Armazena a lista de atrasos globalmente para uso em outras funções
-        window.emprestimosAtrasados = emprestimosAtrasados;
-        
-        // Atualiza o card de atrasos com informações extras
-        atualizarCardAtrasos(emprestimosAtrasados);
       });
     }
 
@@ -875,8 +798,6 @@
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          const quantity = data.quantity || 1;
-          
           if (data.status === 'EMPRESTADO') {
             if (data.returnDate) {
               const [d, m, y] = data.returnDate.split('/');
@@ -884,17 +805,17 @@
               dataRetorno.setHours(0, 0, 0, 0);
               
               if (dataRetorno < hoje) {
-                atrasados += quantity;
+                atrasados++;
               } else {
-                emprestados += quantity;
+                emprestados++;
               }
             } else {
-              emprestados += quantity;
+              emprestados++;
             }
           } else if (data.status === 'ATRASADO') {
-            atrasados += quantity;
+            atrasados++;
           } else if (data.status === 'DEVOLVIDO') {
-            devolvidos += quantity;
+            devolvidos++;
           }
         });
 
@@ -1275,59 +1196,20 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Empréstimos em Atraso',
+            label: 'Atrasos',
             data: new Array(12).fill(0),
             backgroundColor: '#dc3545',
-            borderColor: '#dc3545',
-            borderWidth: 1,
             borderRadius: 8,
             borderSkipped: false
-          }, {
-            label: 'Dias Médios de Atraso',
-            data: new Array(12).fill(0),
-            backgroundColor: '#ffc107',
-            borderColor: '#ffc107',
-            borderWidth: 1,
-            borderRadius: 8,
-            borderSkipped: false,
-            yAxisID: 'y1'
           }]
         },
         options: {
           ...chartOptions,
           scales: {
             y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
               beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Quantidade de Empréstimos'
-              },
-              ticks: { 
-                stepSize: 1, 
-                font: { family: 'Poppins' } 
-              },
+              ticks: { stepSize: 1, font: { family: 'Poppins' } },
               grid: { color: 'rgba(0,0,0,0.1)' }
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Dias Médios'
-              },
-              ticks: { 
-                stepSize: 1, 
-                font: { family: 'Poppins' } 
-              },
-              grid: { 
-                drawOnChartArea: false,
-                color: 'rgba(0,0,0,0.1)' 
-              }
             },
             x: {
               ticks: { font: { family: 'Poppins' } },
@@ -1336,10 +1218,7 @@
           },
           plugins: {
             ...chartOptions.plugins,
-            legend: { 
-              display: true,
-              position: 'top'
-            }
+            legend: { display: false }
           }
         }
       });
@@ -1347,353 +1226,80 @@
       // Atualiza dados em tempo real
       db.collection('emprestimos').onSnapshot(snapshot => {
         const atrasosPorMes = new Array(12).fill(0);
-        const diasAtrasosPorMes = new Array(12).fill(0);
-        const contadorPorMes = new Array(12).fill(0);
-        
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        
         snapshot.forEach(doc => {
           const data = doc.data();
-          
           if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
             if (data.returnDate) {
+              // Espera formato dd/mm/yyyy
               const [d, m, y] = data.returnDate.split('/');
               const dataRetorno = new Date(y, m - 1, d);
-              dataRetorno.setHours(0, 0, 0, 0);
-              
+              const hoje = new Date();
               if (dataRetorno < hoje) {
-                // Está atrasado - calcula em que mês deveria ter sido devolvido
-                const diffMeses = (hoje.getFullYear() - dataRetorno.getFullYear()) * 12 + 
-                                 (hoje.getMonth() - dataRetorno.getMonth());
-                
+                // Está atrasado
+                const diffMeses = (hoje.getFullYear() - dataRetorno.getFullYear()) * 12 + (hoje.getMonth() - dataRetorno.getMonth());
                 if (diffMeses >= 0 && diffMeses < 12) {
-                  const indexMes = 11 - diffMeses;
-                  atrasosPorMes[indexMes]++;
-                  
-                  // Calcula dias de atraso
-                  const diasAtraso = Math.floor((hoje - dataRetorno) / (1000 * 60 * 60 * 24));
-                  diasAtrasosPorMes[indexMes] += diasAtraso;
-                  contadorPorMes[indexMes]++;
+                  atrasosPorMes[11 - diffMeses]++;
                 }
               }
             }
           }
         });
-        
-        // Calcula médias
-        const mediasPorMes = diasAtrasosPorMes.map((total, index) => {
-          return contadorPorMes[index] > 0 ? Math.round(total / contadorPorMes[index]) : 0;
-        });
-        
         lateChart.data.datasets[0].data = atrasosPorMes;
-        lateChart.data.datasets[1].data = mediasPorMes;
         lateChart.update();
       });
     }
 
-    // Função para atualizar o card de atrasos com informações detalhadas
-    function atualizarCardAtrasos(emprestimosAtrasados) {
-      const cardAtrasos = document.querySelector('.stat-card:nth-child(4)');
-      if (!cardAtrasos) return;
-      
-      // Remove tooltip anterior se existir
-      const tooltipExistente = cardAtrasos.querySelector('.tooltip-info');
-      if (tooltipExistente) {
-        tooltipExistente.remove();
-      }
-      
-      // Cria novo tooltip com informações detalhadas
-      const tooltip = document.createElement('i');
-      tooltip.className = 'bx bx-info-circle tooltip-info';
-      
-      if (emprestimosAtrasados.length > 0) {
-        // Calcula estatísticas dos atrasos
-        const totalDiasAtraso = emprestimosAtrasados.reduce((sum, emp) => sum + emp.diasAtraso, 0);
-        const mediaAtraso = Math.round(totalDiasAtraso / emprestimosAtrasados.length);
-        const maiorAtraso = Math.max(...emprestimosAtrasados.map(emp => emp.diasAtraso));
-        
-        tooltip.title = `Empréstimos em atraso:
-• Total: ${emprestimosAtrasados.length} empréstimos
-• Média de atraso: ${mediaAtraso} dias
-• Maior atraso: ${maiorAtraso} dias
-• Clique para ver detalhes`;
-        
-        // Adiciona evento de clique para mostrar detalhes
-        cardAtrasos.style.cursor = 'pointer';
-        cardAtrasos.onclick = () => mostrarDetalhesAtrasos(emprestimosAtrasados);
-      } else {
-        tooltip.title = 'Nenhum empréstimo em atraso';
-        cardAtrasos.style.cursor = 'default';
-        cardAtrasos.onclick = null;
-      }
-      
-      cardAtrasos.appendChild(tooltip);
-    }
-    
-    // Função para mostrar detalhes dos empréstimos atrasados
-    function mostrarDetalhesAtrasos(emprestimosAtrasados) {
-      if (emprestimosAtrasados.length === 0) {
-        alert('Nenhum empréstimo em atraso encontrado.');
-        return;
-      }
-      
-      // Ordena por dias de atraso (maior primeiro)
-      emprestimosAtrasados.sort((a, b) => b.diasAtraso - a.diasAtraso);
-      
-      let html = `
-        <div class="modal fade" id="modalAtrasos" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">
-                  <i class='bx bx-error-circle text-danger'></i>
-                  Empréstimos em Atraso (${emprestimosAtrasados.length})
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <div class="table-responsive">
-                  <table class="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Usuário</th>
-                        <th>Livro</th>
-                        <th>Data Empréstimo</th>
-                        <th>Data Prevista</th>
-                        <th>Dias Atraso</th>
-                        <th>Quantidade</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-      `;
-      
-      emprestimosAtrasados.forEach(emp => {
-        const corAtraso = emp.diasAtraso > 7 ? 'text-danger fw-bold' : 'text-warning';
-        html += `
-          <tr>
-            <td>${emp.userName}</td>
-            <td>${emp.bookTitle}</td>
-            <td>${emp.loanDate || 'N/A'}</td>
-            <td>${emp.returnDate}</td>
-            <td><span class="${corAtraso}">${emp.diasAtraso} dias</span></td>
-            <td>${emp.quantity}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" onclick="enviarNotificacao('${emp.id}', '${emp.userId}')">
-                <i class='bx bx-bell'></i> Notificar
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      
-      html += `
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" onclick="exportarAtrasos()">
-                  <i class='bx bx-download'></i> Exportar Lista
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Remove modal anterior se existir
-      const modalExistente = document.getElementById('modalAtrasos');
-      if (modalExistente) {
-        modalExistente.remove();
-      }
-      
-      // Adiciona o modal ao corpo do documento
-      document.body.insertAdjacentHTML('beforeend', html);
-      
-      // Exibe o modal
-      const modal = new bootstrap.Modal(document.getElementById('modalAtrasos'));
-      modal.show();
-    }
-    
-    // Função para buscar empréstimos atrasados com detalhes completos
-    async function buscarEmprestimosAtrasados() {
-      try {
-        const snapshot = await db.collection('emprestimos').get();
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        
-        const emprestimosAtrasados = [];
-        
-        for (const doc of snapshot.docs) {
-          const data = doc.data();
-          
-          if (data.status === 'EMPRESTADO' || data.status === 'ATRASADO') {
-            if (data.returnDate) {
-              const [d, m, y] = data.returnDate.split('/');
-              const dataDevolucao = new Date(y, m - 1, d);
-              dataDevolucao.setHours(0, 0, 0, 0);
-              
-              if (dataDevolucao < hoje) {
-                const diasAtraso = Math.floor((hoje - dataDevolucao) / (1000 * 60 * 60 * 24));
-                
-                // Busca detalhes do usuário e livro
-                let userName = 'Usuário não identificado';
-                let bookTitle = 'Livro não identificado';
-                
-                try {
-                  const [userDoc, bookDoc] = await Promise.all([
-                    db.collection('usuarios').doc(data.userId).get(),
-                    db.collection('livros').doc(data.bookId).get()
-                  ]);
-                  
-                  if (userDoc.exists) {
-                    userName = userDoc.data().nome || userDoc.data().email || 'Usuário não identificado';
-                  }
-                  
-                  if (bookDoc.exists) {
-                    bookTitle = bookDoc.data().titulo || 'Livro não identificado';
-                  }
-                } catch (error) {
-                  console.log('Erro ao buscar detalhes:', error);
-                }
-                
-                emprestimosAtrasados.push({
-                  id: doc.id,
-                  userId: data.userId,
-                  bookId: data.bookId,
-                  userName: userName,
-                  bookTitle: bookTitle,
-                  returnDate: data.returnDate,
-                  loanDate: data.loanDate,
-                  diasAtraso: diasAtraso,
-                  quantity: data.quantity || 1,
-                  status: data.status
-                });
-              }
-            }
-          }
-        }
-        
-        return emprestimosAtrasados.sort((a, b) => b.diasAtraso - a.diasAtraso);
-      } catch (error) {
-        console.error('Erro ao buscar empréstimos atrasados:', error);
-        return [];
-      }
-    }
-    
-    // Função para enviar notificação de atraso
-    async function enviarNotificacao(emprestimoId, userId) {
-      try {
-        // Aqui você pode implementar a lógica de notificação
-        // Por exemplo, enviar email, SMS, ou salvar uma notificação no banco
-        
-        // Exemplo de notificação simples no banco
-        await db.collection('notificacoes').add({
-          userId: userId,
-          emprestimoId: emprestimoId,
-          tipo: 'ATRASO',
-          mensagem: 'Você tem um empréstimo em atraso. Por favor, devolva o livro o mais rápido possível.',
-          dataEnvio: new Date().toISOString(),
-          lida: false
-        });
-        
-        alert('Notificação enviada com sucesso!');
-      } catch (error) {
-        console.error('Erro ao enviar notificação:', error);
-        alert('Erro ao enviar notificação. Tente novamente.');
-      }
-    }
-    
-    // Função para exportar lista de atrasos
-    function exportarAtrasos() {
-      if (!window.emprestimosAtrasados || window.emprestimosAtrasados.length === 0) {
-        alert('Nenhum empréstimo em atraso para exportar.');
-        return;
-      }
-      
-      let csvContent = 'Usuario,Livro,Data Emprestimo,Data Prevista,Dias Atraso,Quantidade\n';
-      
-      window.emprestimosAtrasados.forEach(emp => {
-        csvContent += `"${emp.userName}","${emp.bookTitle}","${emp.loanDate || 'N/A'}","${emp.returnDate}","${emp.diasAtraso}","${emp.quantity}"\n`;
-      });
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `atrasos_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    // Função para inicializar todos os gráficos
+    function inicializarGraficos() {
+      criarGraficoStatus();
+      criarGraficoGeneros();
+      criarGraficoEmprestimos();
+      criarGraficoLivrosPopulares();
+      criarGraficoUsuarios();
+      criarGraficoAtrasosPorMes();
     }
 
-    // Função para buscar e mostrar atrasos quando o botão for clicado
-    async function buscarEMostrarAtrasos() {
-      const btn = event.target.closest('button');
-      const originalText = btn.innerHTML;
-      
-      // Mostra loading
-      btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Carregando...';
-      btn.disabled = true;
-      
-      try {
-        const emprestimosAtrasados = await buscarEmprestimosAtrasados();
-        mostrarDetalhesAtrasos(emprestimosAtrasados);
-      } catch (error) {
-        console.error('Erro ao buscar atrasos:', error);
-        alert('Erro ao buscar empréstimos em atraso. Tente novamente.');
-      } finally {
-        // Restaura o botão
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-      }
-    }
-    
-    // Função para verificar e atualizar status de empréstimos automaticamente
-    function verificarEAtualizarStatusEmprestimos() {
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      
-      db.collection('emprestimos').where('status', '==', 'EMPRESTADO').get().then(snapshot => {
-        const batch = db.batch();
-        let updates = 0;
-        
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          
-          if (data.returnDate) {
-            const [d, m, y] = data.returnDate.split('/');
-            const dataRetorno = new Date(y, m - 1, d);
-            dataRetorno.setHours(0, 0, 0, 0);
-            
-            if (dataRetorno < hoje) {
-              // Empréstimo está atrasado - atualiza status
-              batch.update(doc.ref, { status: 'ATRASADO' });
-              updates++;
-            }
-          }
-        });
-        
-        if (updates > 0) {
-          batch.commit().then(() => {
-            console.log(`${updates} empréstimos atualizados para status ATRASADO`);
-          }).catch(error => {
-            console.error('Erro ao atualizar status:', error);
-          });
-        }
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 800,
+        once: true,
+        offset: 50
       });
-    }
-    
-    // Função para calcular multa por atraso (se aplicável)
-    function calcularMulta(diasAtraso, valorMultaDia = 0.50) {
-      return (diasAtraso * valorMultaDia).toFixed(2);
-    }
 
-    // ...existing code...
+      const toggleSidebar = () => {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          mainContent.style.marginLeft = sidebar.classList.contains('active') ? '250px' : '0';
+        }
+      };
+
+      if (window.innerWidth <= 768) {
+        const header = document.querySelector('.dashboard-header');
+        const hamburger = document.createElement('button');
+        hamburger.className = 'btn btn-primary d-md-none mb-3';
+        hamburger.innerHTML = '<i class="bx bx-menu"></i>';
+        hamburger.onclick = toggleSidebar;
+        header.prepend(hamburger);
+      }
+
+      // Add tooltips
+      const tooltips = document.querySelectorAll('[title]');
+      tooltips.forEach(el => {
+        new bootstrap.Tooltip(el);
+      });
+
+      // Redimensiona gráficos quando a janela é redimensionada
+      window.addEventListener('resize', () => {
+        if (statusChart) statusChart.resize();
+        if (genreChart) genreChart.resize();
+        if (loansChart) loansChart.resize();
+        if (popularBooksChart) popularBooksChart.resize();
+        if (usersChart) usersChart.resize();
+        if (lateChart) lateChart.resize();
+      });
+    });
   </script>
 </body>
 </html>
