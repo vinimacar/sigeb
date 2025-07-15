@@ -2619,1148 +2619,1343 @@ animation: marquee-bar 40s linear infinite;
 100% { transform: translateX(-100%);}
 }
 </style>
-<!-- Adicione esta linha ANTES do seu <script> principal, logo após os outros scripts externos -->
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
-</head>
-<body>
-<div class="sidebar">
-<div class="sidebar-header">
-<h3>SIGEB</h3>
-</div>
-<div class="menu-items">
-<a href="dashboard.html" class="menu-item">
-<i class='bx bxs-dashboard'></i>
-Dashboard
-</a>
-<a href="livros.html" class="menu-item">
-<i class='bx bxs-book'></i>
-Livros
-</a>
-<a href="usuarios.html" class="menu-item">
-<i class='bx bxs-user'></i>
-Usuários
-</a>
-<a href="emprestimos.html" class="menu-item active">
-<i class='bx bxs-bookmark'></i>
-Empréstimos
-</a>
-<a href="relatorios.html" class="menu-item" title="Relatórios do sistema">
-<i class='bx bxs-report'></i>
-Relatórios
-</a>
-<a href="configuracoes.html" class="menu-item">
-<i class='bx bxs-cog'></i>
-Configurações
-</a>
-<a href="index.html" class="menu-item">
-<i class='bx bxs-log-out'></i>
-Sair
-</a>
-</div>
-</div>
 
-<div class="main-content">
-<div class="page-header">
-<div>
-<h2>Gerenciamento de Empréstimos</h2>
-<p>Controle os empréstimos da biblioteca</p>
-</div>
-<div class="d-flex gap-2">
-<button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#warningsListModal">
-<i class='bx bx-error-circle'></i>
-Consultar Advertências
-</button>
-<button class="add-button" data-bs-toggle="modal" data-bs-target="#addLoanModal">
-<i class='bx bx-plus'></i>
-Novo Empréstimo
-</button>
-</div>
-</div>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
+};
 
-<!-- Barra piscante de atrasos -->
-<div id="notReturnedBar" style="display:none; margin-bottom:20px;"></div>
-
-<!-- Botões de filtro estilo gráfico -->
-<div id="loanStats" class="d-flex justify-content-center align-items-center mb-4" style="gap: 40px;">
-<div class="pie-btn shadow-lg" id="btnEmprestado" onclick="showLoansByStatus('EMPRESTADO')">
-<div class="pie-chart pie-emprestado">
-<span id="countEmprestado"></span>
-<svg class="pie-svg" width="90" height="90">
-<circle class="pie-bg" cx="45" cy="45" r="38"/>
-<circle class="pie-fg pie-fg-emprestado" cx="45" cy="45" r="38"/>
-</svg>
-</div>
-<div class="pie-label">Emprestados</div>
-</div>
-<div class="pie-btn shadow-lg" id="btnAtrasado" onclick="showLoansByStatus('ATRASADO')">
-<div class="pie-chart pie-atrasado">
-<span id="countAtrasado"></span>
-<svg class="pie-svg" width="90" height="90">
-<circle class="pie-bg" cx="45" cy="45" r="38"/>
-<circle class="pie-fg pie-fg-atrasado" cx="45" cy="45" r="38"/>
-</svg>
-</div>
-<div class="pie-label">Atrasos</div>
-</div>
-<div class="pie-btn shadow-lg" id="btnDevolvido" onclick="showLoansByStatus('DEVOLVIDO')">
-<div class="pie-chart pie-devolvido">
-<span id="countDevolvido"></span>
-<svg class="pie-svg" width="90" height="90">
-<circle class="pie-bg" cx="45" cy="45" r="38"/>
-<circle class="pie-fg pie-fg-devolvido" cx="45" cy="45" r="38"/>
-</svg>
-</div>
-<div class="pie-label">Devolvidos</div>
-</div>
-</div>
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
+}
+</script>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <style>
-#loanStats {
-margin-top: 40px;
-margin-bottom: 40px;
-gap: 40px;
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
 }
-.pie-btn {
-display: flex;
-flex-direction: column;
-align-items: center;
-cursor: pointer;
-min-width: 120px;
-transition: transform 0.18s, box-shadow 0.18s;
-border-radius: 18px;
-background: rgba(255,255,255,0.85);
-box-shadow: 0 4px 24px 0 rgba(80,120,255,0.07);
-padding: 18px 10px 10px 10px;
-position: relative;
-overflow: visible;
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
 }
-.pie-btn:hover {
-transform: translateY(-4px) scale(1.06);
-box-shadow: 0 8px 32px 0 rgba(80,120,255,0.13);
-background: linear-gradient(120deg, #f8fbff 80%, #e3f2fd 100%);
-}
-.pie-chart {
-width: 90px;
-height: 90px;
-border-radius: 50%;
-position: relative;
-margin-bottom: 10px;
-display: flex;
-align-items: center;
-justify-content: center;
-background: transparent;
-}
-.pie-chart span {
-position: absolute;
-left: 0; right: 0; top: 0; bottom: 0;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 2.1rem;
-font-weight: 700;
-z-index: 2;
-color: #222;
-pointer-events: none;
-text-shadow: 0 2px 8px #fff, 0 1px 0 #e3f2fd;
-}
-.pie-svg {
-position: absolute;
-left: 0; top: 0;
-z-index: 1;
-pointer-events: none;
-}
-.pie-bg {
-fill: none;
-stroke: #e3f2fd;
-stroke-width: 10;
-}
-.pie-fg {
-fill: none;
-stroke-width: 10;
-stroke-linecap: round;
-transform: rotate(-90deg);
-transform-origin: 50% 50%;
-transition: stroke-dasharray 0.7s cubic-bezier(.4,2,.6,1), stroke 0.3s;
-}
-.pie-fg-emprestado { stroke: #4facfe; }
-.pie-fg-atrasado { stroke: #c62828; }
-.pie-fg-devolvido { stroke: #2e7d32; }
-.pie-label {
-font-size: 1.13rem;
-font-weight: 600;
-margin-top: 8px;
-color: #1a1a2e;
+.sidebar-header {
+padding: 20px 0;
 text-align: center;
-letter-spacing: 0.01em;
-text-shadow: 0 1px 0 #fff;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
 }
 @media (max-width: 768px) {
-#loanStats {
-flex-direction: column !important;
-gap: 24px !important;
+.sidebar {
+transform: translateX(-100%);
 }
-.pie-btn {
-min-width: 0;
+.main-content {
+margin-left: 0;
 }
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
 }
 </style>
 
-<div class="search-box">
-<input type="text" id="searchInput" placeholder="Buscar por nome, matrícula ou registro do empréstimo...">
-<button class="add-button" onclick="searchLoans()">
-<i class='bx bx-search'></i> Buscar Empréstimo
-</button>
-</div>
-
-<!-- Lista dos últimos 15 empréstimos -->
-<div class="loans-table mt-4" id="recentLoansTable">
-<div class="table-responsive">
-<table class="table">
-<thead>
-<tr>
-<th>Livro</th>
-<th>Usuário</th>
-<th>Data Empréstimo</th>
-<th>Data Devolução</th>
-<th>Status</th>
-<th>Ações</th>
-</tr>
-</thead>
-<tbody id="loansTableBody">
-<!-- Dados serão carregados dinamicamente -->
-</tbody>
-</table>
-</div>
-</div>
-<!-- Fim da lista dos últimos 15 empréstimos -->
-
-</div>
-
-<!-- Modal Novo Empréstimo Melhorado -->
-<div class="modal fade" id="addLoanModal" tabindex="-1" aria-labelledby="addLoanModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-lg">
-<div class="modal-content">
-<form id="addLoanForm" class="needs-validation" novalidate>
-<div class="modal-header">
-<h5 class="modal-title" id="addLoanModalLabel">Novo Empréstimo</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<div class="row mb-3">
-<div class="col-md-4">
-<label class="form-label" for="registroNumero">Nº Registro</label>
-<input type="text" class="form-control" id="registroNumero" readonly>
-</div>
-<div class="col-md-8">
-<label class="form-label" for="userSearch">Usuário*</label>
-<div class="input-group">
-<input type="text" class="form-control" id="userSearch" required placeholder="Digite nome ou matrícula">
-<button class="btn btn-outline-secondary" type="button" onclick="searchUsers()">
-<i class='bx bx-search'></i>
-</button>
-</div>
-<div id="userSearchResults" class="dropdown-menu w-100"></div>
-<input type="hidden" id="selectedUserId">
-<div class="form-text">Selecione o usuário para o empréstimo.</div>
-</div>
-</div>
-<div class="mb-3">
-<label class="form-label">Livros*</label>
-<div id="multiBookLoans">
-<div class="loan-book-row row align-items-end mb-2">
-<div class="col-md-6">
-<label class="form-label visually-hidden" for="bookSearch0">Livro*</label>
-<div class="input-group">
-<input type="text" class="form-control bookSearch" id="bookSearch0" name="bookSearch0" required placeholder="Digite o título ou ISBN">
-<button class="btn btn-outline-secondary" type="button" onclick="searchBooks(this)">
-<i class='bx bx-search'></i>
-</button>
-</div>
-<div class="bookSearchResults dropdown-menu w-100"></div>
-<input type="hidden" class="selectedBookId" name="selectedBookId0" id="selectedBookId0">
-</div>
-<div class="col-md-3">
-<label class="form-label visually-hidden" for="quantity0">Quantidade*</label>
-<input type="number" class="form-control quantity" id="quantity0" name="quantity0" required min="1" value="1">
-<div class="form-text">Disponível: <span class="availableQuantity">-</span></div>
-</div>
-<div class="col-md-2">
-<button type="button" class="btn btn-danger removeBookRow" style="display:none;" onclick="removeBookRow(this)">
-<i class="bx bx-minus"></i>
-</button>
-</div>
-</div>
-</div>
-<small class="text-muted d-block mt-2">Adicione vários títulos diferentes para o mesmo usuário neste empréstimo.</small>
-</div>
-<div class="row">
-<div class="col-md-6 mb-3">
-<label for="loanDate" class="form-label">Data do Empréstimo*</label>
-<input type="text" class="form-control" id="loanDate" required autocomplete="off" placeholder="dd/mm/aaaa">
-<div class="form-text">Formato: DD/MM/AAAA (ex: 27/06/2025)</div>
-</div>
-<div class="col-md-6 mb-3">
-<label for="returnDate" class="form-label">Data de Devolução*</label>
-<div class="input-group">
-<input type="text" class="form-control" id="returnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
-<button class="btn btn-outline-secondary" type="button" id="setDefaultReturnDate" title="Definir 7 dias padrão">
-<i class='bx bx-calendar-plus'></i> 7 dias
-</button>
-</div>
-<div class="form-text">
-<span class="text-primary">Padrão: 7 dias.</span> 
-<span class="text-muted">Você pode alterar conforme necessário.</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Substitua o bloco da modal-footer do modal de novo empréstimo por este: -->
-<div class="modal-footer d-flex justify-content-between align-items-center">
-    <button type="button" class="btn btn-success" id="btnEnviarWhatsappForm">
-        <i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
-    </button>
-    <div>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar Empréstimo</button>
-    </div>
-</div>
-<!-- Remova o botão WhatsApp duplicado fora do modal, se existir -->
-</form>
-<!-- Exemplo: Adicione este botão no modal de sucesso ou onde desejar -->
-<button type="button" class="btn btn-success" id="btnEnviarWhatsapp" style="display:none; margin-top:10px;">
-<i class="bx bxl-whatsapp"></i> Enviar Via WhatsApp
-</button>
-</div>
-</div>
-</div>
-
-<!-- Modal Editar Empréstimo -->
-<div class="modal fade" id="editLoanModal" tabindex="-1" aria-labelledby="editLoanModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-lg">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title" id="editLoanModalLabel">Editar Empréstimo</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<form id="editLoanForm" class="needs-validation" novalidate>
-<input type="hidden" id="editLoanId">
-<div class="row">
-<div class="col-md-6 mb-3">
-<label for="editLoanDate" class="form-label">Data do Empréstimo*</label>
-<input type="text" class="form-control" id="editLoanDate" required>
-</div>
-<div class="col-md-6 mb-3">
-<label for="editReturnDate" class="form-label">Data de Devolução*</label>
-<div class="input-group">
-<input type="text" class="form-control" id="editReturnDate" required>
-<button class="btn btn-outline-secondary" type="button" id="setDefaultEditReturnDate" title="Definir 7 dias a partir da data do empréstimo">
-<i class='bx bx-calendar-plus'></i> +7 dias
-</button>
-</div>
-<div class="form-text text-muted">
-Você pode alterar a data de devolução conforme necessário.
-</div>
-</div>
-</div>
-</form>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-<button type="submit" form="editLoanForm" class="btn btn-primary">Salvar Alterações</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Modal Renovar Empréstimo -->
-<div class="modal fade" id="renewLoanModal" tabindex="-1" aria-labelledby="renewLoanModalLabel" aria-hidden="true">
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title" id="renewLoanModalLabel">Renovar Empréstimo</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<form id="renewLoanForm" class="needs-validation" novalidate>
-<input type="hidden" id="renewLoanId">
-
-<div class="alert alert-info">
-<i class="bx bx-info-circle me-2"></i>
-<strong>Renovação de Empréstimo</strong><br>
-Defina a nova data de devolução para este empréstimo.
-</div>
-
-<div id="renewLoanInfo" class="mb-3">
-<!-- Informações do empréstimo serão carregadas aqui -->
-</div>
-
-<div class="mb-3">
-<label for="renewReturnDate" class="form-label">Nova Data de Devolução*</label>
-<div class="input-group">
-<input type="text" class="form-control" id="renewReturnDate" required autocomplete="off" placeholder="dd/mm/aaaa">
-<button class="btn btn-outline-secondary" type="button" id="setDefaultRenewReturnDate" title="Definir 7 dias a partir de hoje">
-<i class='bx bx-calendar-plus'></i> +7 dias
-</button>
-</div>
-<div class="form-text">
-<span class="text-primary">Padrão: 7 dias a partir de hoje.</span> 
-<span class="text-muted">Você pode alterar conforme necessário.</span>
-</div>
-</div>
-
-<div class="alert alert-warning">
-<i class="bx bx-info-circle me-2"></i>
-<strong>Observação:</strong> A renovação atualizará apenas a data de devolução. O empréstimo continuará ativo com o novo prazo.
-</div>
-</form>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-<button type="submit" form="renewLoanForm" class="btn btn-success">
-<i class="bx bx-refresh me-2"></i>Renovar Empréstimo
-</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Modal Comprovante de Empréstimo -->
-<div class="modal fade" id="printLoanModal" tabindex="-1" aria-labelledby="printLoanModalLabel" aria-hidden="true">
-<div class="modal-dialog">
-<div class="modal-content" id="printArea">
-<div class="modal-header">
-<h5 class="modal-title" id="printLoanModalLabel">Comprovante de Empréstimo</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<div id="loanReceiptContent">
-<!-- Conteúdo preenchido via JS -->
-</div>
-<div class="mt-4">
-<label for="userSignature" class="form-label">Assinatura do Usuário:</label>
-<div style="border:1px solid #ccc; height:60px; margin-bottom:10px;">
-<canvas id="signaturePad" width="350" height="60" style="width:100%;height:60px;"></canvas>
-</div>
-<button type="button" class="btn btn-sm btn-secondary mb-2" onclick="clearSignature()">Limpar Assinatura</button>
-</div>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-primary" onclick="printLoanReceipt()">Imprimir</button>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Modal de Advertência por Atraso -->
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-lg">
-<div class="modal-content" id="warningPrintArea">
-<div class="modal-header bg-danger text-white">
-<h5 class="modal-title" id="warningModalLabel">
-<i class="bx bx-error-circle me-2"></i>Advertência por Atraso
-</h5>
-<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<div class="alert alert-danger mb-4">
-<h6 class="alert-heading">
-<i class="bx bx-time me-2"></i>Empréstimo em Atraso
-</h6>
-<p class="mb-0">Este documento constitui uma advertência formal devido ao atraso na devolução de material bibliográfico.</p>
-</div>
-
-<div class="row mb-4">
-<div class="col-md-6">
-<div class="card">
-<div class="card-header bg-light">
-<h6 class="mb-0">Dados da Instituição</h6>
-</div>
-<div class="card-body">
-<p class="mb-1"><strong>${SYSTEM_CONFIG.schoolName}</strong></p>
-<p class="mb-1">Sistema de Gerenciamento de Biblioteca</p>
-<p class="mb-0">Data: <span id="warningDate"></span></p>
-</div>
-</div>
-</div>
-<div class="col-md-6">
-<div class="card">
-<div class="card-header bg-light">
-<h6 class="mb-0">Dados do Usuário</h6>
-</div>
-<div class="card-body" id="warningUserData">
-<!-- Preenchido via JavaScript -->
-</div>
-</div>
-</div>
-</div>
-
-<div class="card mb-4">
-<div class="card-header bg-light">
-<h6 class="mb-0">Detalhes do Empréstimo</h6>
-</div>
-<div class="card-body" id="warningLoanDetails">
-<!-- Preenchido via JavaScript -->
-</div>
-</div>
-
-<div class="alert alert-warning" id="warningConsequences">
-<!-- Preenchido dinamicamente via JavaScript baseado nos dias de atraso -->
-</div>
-
-<div class="alert alert-info">
-<h6 class="alert-heading">Ações Necessárias:</h6>
-<ol class="mb-0">
-<li>Devolução imediata do material em atraso</li>
-<li>Pagamento de eventual multa aplicada</li>
-<li>Assinatura deste termo de advertência</li>
-</ol>
-</div>
-
-<div class="mt-4">
-<div class="row">
-<div class="col-md-6">
-<label class="form-label">Assinatura do Usuário:</label>
-<div style="border: 2px solid #dc3545; height: 80px; border-radius: 5px; margin-bottom: 10px; background-color: #fff;">
-<canvas id="warningSignaturePad" width="400" height="80" style="width: 100%; height: 80px;"></canvas>
-</div>
-<button type="button" class="btn btn-sm btn-outline-danger" onclick="clearWarningSignature()">
-<i class="bx bx-eraser me-1"></i>Limpar Assinatura
-</button>
-</div>
-<div class="col-md-6">
-<label class="form-label">Assinatura do Responsável pela Biblioteca:</label>
-<div style="border: 2px solid #dc3545; height: 80px; border-radius: 5px; margin-bottom: 10px; background-color: #fff;">
-<canvas id="librarianSignaturePad" width="400" height="80" style="width: 100%; height: 80px;"></canvas>
-</div>
-<button type="button" class="btn btn-sm btn-outline-danger" onclick="clearLibrarianSignature()">
-<i class="bx bx-eraser me-1"></i>Limpar Assinatura
-</button>
-</div>
-</div>
-</div>
-
-<div class="mt-4 p-3 bg-light border-start border-5 border-danger">
-<p class="mb-2"><strong>Declaração:</strong></p>
-<p class="mb-0 small">
-Declaro estar ciente das normas da biblioteca e das consequências do atraso na devolução de materiais. 
-Comprometo-me a devolver o material em atraso e a cumprir as penalidades aplicadas conforme regulamento interno.
-</p>
-</div>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-danger" onclick="printWarning()">
-<i class="bx bx-printer me-2"></i>Imprimir Advertência
-</button>
-<button type="button" class="btn btn-success" onclick="saveWarning()" id="saveWarningBtn">
-<i class="bx bx-save me-2"></i>Salvar Advertência
-</button>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-<i class="bx bx-x me-2"></i>Fechar
-</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Modal de Lista de Advertências -->
-<div class="modal fade" id="warningsListModal" tabindex="-1" aria-labelledby="warningsListModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-xl">
-<div class="modal-content">
-<div class="modal-header bg-warning text-dark">
-<h5 class="modal-title" id="warningsListModalLabel">
-<i class="bx bx-error-circle me-2"></i>Consulta de Advertências Emitidas
-</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-</div>
-<div class="modal-body">
-<div class="row mb-3">
-<div class="col-md-6">
-<div class="input-group">
-<span class="input-group-text"><i class="bx bx-search"></i></span>
-<input type="text" class="form-control" id="warningsSearch" placeholder="Buscar por nome do usuário...">
-</div>
-</div>
-<div class="col-md-3">
-<select class="form-select" id="warningsDateFilter">
-<option value="">Todas as datas</option>
-<option value="7">Últimos 7 dias</option>
-<option value="30">Últimos 30 dias</option>
-<option value="90">Últimos 90 dias</option>
-</select>
-</div>
-<div class="col-md-3">
-<button class="btn btn-primary w-100" onclick="loadWarnings()">
-<i class="bx bx-refresh me-1"></i>Atualizar
-</button>
-</div>
-</div>
-
-<div class="alert alert-info">
-<i class="bx bx-info-circle me-2"></i>
-Total de advertências encontradas: <span id="warningsCount" class="fw-bold">0</span>
-</div>
-
-<div class="table-responsive">
-<table class="table table-hover">
-<thead class="table-warning">
-<tr>
-<th>Data da Advertência</th>
-<th>Usuário</th>
-<th>Livro(s)</th>
-<th>Data do Empréstimo</th>
-<th>Data de Devolução</th>
-<th>Dias de Atraso</th>
-<th>Status</th>
-<th>Ações</th>
-</tr>
-</thead>
-<tbody id="warningsTableBody">
-<tr>
-<td colspan="8" class="text-center">Carregando advertências...</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-outline-primary" onclick="exportWarningsReport()">
-<i class="bx bx-download me-2"></i>Exportar Relatório
-</button>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-<i class="bx bx-x me-2"></i>Fechar
-</button>
-</div>
-</div>
-</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
 <script>
-// Configurações do sistema
-const SYSTEM_CONFIG = {
-schoolName: "Escola Estadual Professor Álvaro Brandão de Andrade", // Altere para o nome da sua escola
-systemName: "SIGEB - Sistema de Gerenciamento de Biblioteca",
-defaultLoanDays: 14
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
 };
 
-// Função para obter data/hora no horário de Brasília
-function getDataBrasilia() {
-// Cria uma nova data no horário UTC
-const agora = new Date();
-
-// Converte para o horário de Brasília (UTC-3)
-// Durante horário de verão seria UTC-2, mas vamos usar UTC-3 como padrão
-const brasiliaOffset = -3; // UTC-3
-const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
-const brasilia = new Date(utc + (brasiliaOffset * 3600000));
-
-return brasilia;
-}
-
-// Função para formatar data no padrão brasileiro (DD/MM/AAAA)
-function formatarDataBrasil(data) {
-const day = String(data.getDate()).padStart(2, '0');
-const month = String(data.getMonth() + 1).padStart(2, '0');
-const year = data.getFullYear();
-return `${day}/${month}/${year}`;
-}
-
-// Função para adicionar dias a uma data (horário Brasília)
-function adicionarDias(data, dias) {
-const novaData = new Date(data);
-novaData.setDate(novaData.getDate() + dias);
-return novaData;
-}
-
-// Inicializar Email.js
-(function() {
-emailjs.init("SUA_PUBLIC_KEY_DO_EMAILJS"); // Substitua pela sua chave pública do Email.js
-})();
-
-// Função genérica para enviar email
-async function sendEmailNotification(templateId, userId, data, subject) {
-try {
-const userDoc = await db.collection('usuarios').doc(userId).get();
-const userData = userDoc.data();
-
-if (!userData || !userData.email) {
-console.error('Email do usuário não encontrado ou dados do usuário inválidos');
-return;
-}
-
-const templateParams = {
-to_email: userData.email,
-to_name: userData.nome,
-subject: subject,
-...data
-};
-
-await emailjs.send(
-"SEU_SERVICE_ID_DO_EMAILJS", // Substitua pelo seu Service ID do Email.js
-templateId,
-templateParams
-);
-
-console.log(`Email de ${subject} enviado com sucesso`);
-} catch (error) {
-console.error(`Erro ao enviar email de ${subject}:`, error);
-showAlert('warning', `Houve um erro ao enviar o email de ${subject}`);
-}
-}
-
-// Template do email de empréstimo (usando variáveis do Email.js)
-const LOAN_EMAIL_TEMPLATE_ID = "SEU_TEMPLATE_ID_DO_EMAILJS_EMPRESTIMO"; // Crie um template no Email.js com estas variáveis
-const LOAN_EMAIL_TEMPLATE_VARS = `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-<h1 style="color: white; margin: 0; text-align: center;">${SYSTEM_CONFIG.systemName}</h1>
-<h2 style="color: white; margin: 10px 0 0; text-align: center; font-size: 1.2em;">${SYSTEM_CONFIG.schoolName}</h2>
-</div>
-
-<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-<h2 style="color: #1a1a2e; margin-top: 0;">Comprovante de Empréstimo</h2>
-<p><strong>Usuário:</strong> {{userName}}</p>
-<p><strong>Email:</strong> {{userEmail}}</p>
-<p><strong>Livros:</strong></p>
-<ul>{{booksList}}</ul>
-<p><strong>Data do Empréstimo:</strong> {{loanDate}}</p>
-<p><strong>Data de Devolução:</strong> {{returnDate}}</p>
-</div>
-
-<div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-<p style="color: #2e7d32; margin: 0;">
-⚠️ Por favor, mantenha este comprovante para referência futura.
-</p>
-</div>
-
-<div style="text-align: center; color: #666;">
-<p>Este é um email automático, por favor não responda.</p>
-<p>${SYSTEM_CONFIG.schoolName}</p>
-<p>${SYSTEM_CONFIG.systemName}</p>
-</div>
-</div>
-`;
-
-// Template do email de renovação (usando variáveis do Email.js)
-const RENEWAL_EMAIL_TEMPLATE_ID = "SEU_TEMPLATE_ID_DO_EMAILJS_RENOVACAO"; // Crie um template no Email.js com estas variáveis
-const RENEWAL_EMAIL_TEMPLATE_VARS = `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-<h1 style="color: white; margin: 0; text-align: center;">${SYSTEM_CONFIG.systemName}</h1>
-<h2 style="color: white; margin: 10px 0 0; text-align: center; font-size: 1.2em;">${SYSTEM_CONFIG.schoolName}</h2>
-</div>
-
-<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-<h2 style="color: #1a1a2e; margin-top: 0;">Confirmação de Renovação</h2>
-<p><strong>Usuário:</strong> {{userName}}</p>
-<p><strong>Email:</strong> {{userEmail}}</p>
-<p><strong>Livro:</strong> {{bookTitle}}</p>
-<p><strong>Nova Data de Devolução:</strong> {{newReturnDate}}</p>
-</div>
-
-<div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-<p style="color: #2e7d32; margin: 0;">
-⚠️ Por favor, anote a nova data de devolução.
-</p>
-</div>
-
-<div style="text-align: center; color: #666;">
-<p>Este é um email automático, por favor não responda.</p>
-<p>${SYSTEM_CONFIG.schoolName}</p>
-<p>${SYSTEM_CONFIG.systemName}</p>
-</div>
-</div>
-`;
-
-// Função para enviar email de empréstimo (agora usando a função genérica)
-async function sendLoanConfirmationEmail(userId, books, loanDate, returnDate) {
-let booksList = '';
-for (const item of books) {
-const bookDoc = await db.collection('livros').doc(item.bookId).get();
-const bookData = bookDoc.data();
-booksList += `<li>${bookData.titulo} - Quantidade: ${item.quantity}</li>`;
-}
-
-const emailData = {
-userName: (await db.collection('usuarios').doc(userId).get()).data().nome,
-userEmail: (await db.collection('usuarios').doc(userId).get()).data().email,
-booksList: booksList,
-loanDate: loanDate,
-returnDate: returnDate
-};
-
-await sendEmailNotification(LOAN_EMAIL_TEMPLATE_ID, userId, emailData, `${SYSTEM_CONFIG.schoolName} - Comprovante de Empréstimo`);
-}
-
-// Função para enviar email de renovação (agora usando a função genérica)
-async function sendRenewalConfirmationEmail(userId, bookTitle, newReturnDate) {
-const emailData = {
-userName: (await db.collection('usuarios').doc(userId).get()).data().nome,
-}
-} else if (loanData.status === 'DEVOLVIDO') {
-currentStatus = 'DEVOLVIDO';
-} else {
-currentStatus = 'EMPRESTADO';
-}
-}
-} catch (error) {
-console.error('Erro ao verificar empréstimo:', error);
-// Usar dados da advertência como fallback
-const returnDate = data.returnDate;
-if (returnDate && returnDate !== 'N/A') {
-const [datePart] = returnDate.split(' ');
-const [day, month, year] = datePart.split('/');
-const returnDateTime = new Date(year, month - 1, day);
-
-if (returnDateTime < now) {
-const diffTime = Math.abs(now - returnDateTime);
-const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-currentStatus = `ATRASADO (${diffDays} dias)`;
-currentDaysLate = diffDays;
-} else {
-currentStatus = 'EMPRESTADO';
-}
-}
-}
-} else {
-// Se não há loanId, usar dados da advertência
-const returnDate = data.returnDate;
-if (returnDate && returnDate !== 'N/A') {
-const [datePart] = returnDate.split(' ');
-const [day, month, year] = datePart.split('/');
-const returnDateTime = new Date(year, month - 1, day);
-
-if (returnDateTime < now) {
-const diffTime = Math.abs(now - returnDateTime);
-const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-currentStatus = `ATRASADO (${diffDays} dias)`;
-currentDaysLate = diffDays;
-} else {
-currentStatus = 'EMPRESTADO';
-}
-}
-}
-
-// Formatar data da advertência
-let issueDateFormatted = 'N/A';
-if (data.issueDate && data.issueDate.toDate) {
-const date = data.issueDate.toDate();
-issueDateFormatted = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
-}
-
-count++;
-
-tbody.innerHTML += `
-<tr>
-<td>${issueDateFormatted}</td>
-<td>${userName}</td>
-<td>${bookTitles.join('; ')}</td>
-<td>${data.loanDate || 'N/A'}</td>
-<td>${data.returnDate || 'N/A'}</td>
-<td>${currentDaysLate}</td>
-<td>
-<span class="badge ${currentStatus.includes('ATRASADO') ? 'bg-danger' : currentStatus === 'EMPRESTADO' ? 'bg-warning' : 'bg-success'}">
-${currentStatus}
-</span>
-</td>
-<td>
-<div class="btn-group btn-group-sm">
-<button class="btn btn-outline-primary" onclick="viewWarningDetails('${doc.id}')" title="Visualizar">
-<i class="bx bx-eye"></i>
-</button>
-<button class="btn btn-outline-secondary" onclick="reprintWarning('${doc.id}')" title="Reimprimir">
-<i class="bx bx-printer"></i>
-</button>
-<button class="btn btn-outline-danger" onclick="deleteWarning('${doc.id}')" title="Excluir">
-<i class="bx bx-trash"></i>
-</button>
-</div>
-</td>
-</tr>
-`;
-}
-
-// Executar atualizações em lote se houver alguma
-if (batchUpdates > 0) {
-try {
-await batch.commit();
-console.log(`${batchUpdates} registros atualizados no banco de dados`);
-} catch (error) {
-console.error('Erro ao atualizar registros em lote:', error);
-}
-}
-
-if (count === 0) {
-tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhuma advertência encontrada</td></tr>';
-}
-
-document.getElementById('warningsCount').textContent = count;
-
-// Mostrar feedback visual se houve atualizações
-if (batchUpdates > 0) {
-showAlert('info', `${batchUpdates} registros foram atualizados no banco de dados`, 3000);
-}
-
-} catch (error) {
-console.error('Erro ao carregar advertências:', error);
-document.getElementById('warningsTableBody').innerHTML = 
-'<tr><td colspan="8" class="text-center text-danger">Erro ao carregar advertências</td></tr>';
-}
-}
-
-async function viewWarningDetails(warningId) {
-try {
-const doc = await db.collection('warnings').doc(warningId).get();
-if (!doc.exists) {
-showAlert('danger', 'Advertência não encontrada');
-return;
-}
-
-const data = doc.data();
-
-// Buscar dados do usuário
-let userName = 'N/A';
-try {
-const userDoc = await db.collection('usuarios').doc(data.userId).get();
-if (userDoc.exists) userName = userDoc.data().nome;
-} catch {}
-
-// Criar modal para visualizar detalhes
-const modalId = 'warningDetailsModal';
-let modal = document.getElementById(modalId);
-
-if (!modal) {
-modal = document.createElement('div');
-modal.className = 'modal fade';
-modal.id = modalId;
-modal.setAttribute('tabindex', '-1');
-modal.innerHTML = `
-<div class="modal-dialog modal-lg">
-<div class="modal-content">
-<div class="modal-header bg-warning text-dark">
-<h5 class="modal-title">
-<i class="bx bx-error-circle me-2"></i>Detalhes da Advertência
-</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body" id="warningDetailsBody">
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-primary" onclick="reprintWarning('${warningId}')">
-<i class="bx bx-printer me-2"></i>Reimprimir
-</button>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-</div>
-</div>
-</div>
-`;
-document.body.appendChild(modal);
-}
-
-// Preencher conteúdo do modal
-document.getElementById('warningDetailsBody').innerHTML = data.content || 'Conteúdo não disponível';
-
-// Mostrar modal
-const bsModal = new bootstrap.Modal(modal);
-bsModal.show();
-
-} catch (error) {
-console.error('Erro ao visualizar advertência:', error);
-showAlert('danger', 'Erro ao carregar detalhes da advertência');
-}
-}
-
-async function reprintWarning(warningId) {
-try {
-const doc = await db.collection('warnings').doc(warningId).get();
-if (!doc.exists) {
-showAlert('danger', 'Advertência não encontrada');
-return;
-}
-
-const data = doc.data();
-
-// Criar janela de impressão
-const printWindow = window.open('', '_blank');
-printWindow.document.write(data.content || 'Conteúdo não disponível');
-printWindow.document.close();
-printWindow.print();
-
-showAlert('success', 'Advertência enviada para impressão');
-
-} catch (error) {
-console.error('Erro ao reimprimir advertência:', error);
-showAlert('danger', 'Erro ao reimprimir advertência');
-}
-}
-
-async function deleteWarning(warningId) {
-if (!confirm('Tem certeza que deseja excluir esta advertência? Esta ação é irreversível.')) {
-return;
-}
-
-try {
-await db.collection('warnings').doc(warningId).delete();
-showAlert('success', 'Advertência excluída com sucesso');
-loadWarnings(); // Recarregar lista
-
-} catch (error) {
-console.error('Erro ao excluir advertência:', error);
-showAlert('danger', 'Erro ao excluir advertência');
-}
-}
-
-async function exportWarningsReport() {
-try {
-const snapshot = await db.collection('warnings').orderBy('issueDate', 'desc').get();
-const warnings = [];
-
-for (const doc of snapshot.docs) {
-const data = doc.data();
-
-// Buscar dados do usuário
-let userName = 'N/A';
-try {
-const userDoc = await db.collection('usuarios').doc(data.userId).get();
-if (userDoc.exists) userName = userDoc.data().nome;
-} catch {}
-
-// Buscar dados dos livros
-let bookTitles = [];
-if (Array.isArray(data.books)) {
-for (const book of data.books) {
-try {
-const bookDoc = await db.collection('livros').doc(book.bookId).get();
-if (bookDoc.exists) {
-bookTitles.push(`${bookDoc.data().titulo} (Qtd: ${book.quantity})`);
-} else {
-bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
-}
-} catch {
-bookTitles.push(`${book.bookId} (Qtd: ${book.quantity})`);
-}
-}
-}
-
-// Formatar data da advertência
-let issueDateFormatted = 'N/A';
-if (data.issueDate && data.issueDate.toDate) {
-const date = data.issueDate.toDate();
-issueDateFormatted = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
-}
-
-warnings.push({
-'Data da Advertência': issueDateFormatted,
-'Usuário': userName,
-'Livros': bookTitles.join('; '),
-'Data do Empréstimo': data.loanDate || 'N/A',
-'Data de Devolução': data.returnDate || 'N/A',
-'Dias de Atraso': data.daysLate || 0,
-'Consequências': data.consequences || 'N/A'
-});
-}
-
-if (warnings.length === 0) {
-showAlert('warning', 'Nenhuma advertência encontrada para exportar');
-return;
-}
-
-const ws = XLSX.utils.json_to_sheet(warnings);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "Advertências");
-
-const now = getDataBrasilia();
-const fileName = `advertencias_${now.getFullYear()}_${(now.getMonth() + 1).toString().padStart(2, '0')}_${now.getDate().toString().padStart(2, '0')}.xlsx`;
-
-XLSX.writeFile(wb, fileName);
-showAlert('success', 'Relatório de advertências exportado com sucesso!');
-
-} catch (error) {
-console.error('Erro ao exportar relatório:', error);
-showAlert('danger', 'Erro ao exportar relatório de advertências');
-}
-}
-
-// Carregar advertências quando o modal for aberto
-document.getElementById('warningsListModal').addEventListener('shown.bs.modal', function () {
-loadWarnings();
-});
-
-// Configurar busca em tempo real
-document.getElementById('warningsSearch').addEventListener('input', function() {
-clearTimeout(this.searchTimeout);
-this.searchTimeout = setTimeout(() => {
-loadWarnings();
-}, 500);
-});
-
-// Configurar filtro de data
-document.getElementById('warningsDateFilter').addEventListener('change', function() {
-loadWarnings();
-});
-
-// Atualize todos os usuários para ter o campo nomeSearch
-db.collection('usuarios').get().then(snapshot => {
-snapshot.forEach(doc => {
-const nome = doc.data().nome || '';
-const nomeSearch = nome.toLowerCase().split(' ');
-db.collection('usuarios').doc(doc.id).update({ nomeSearch });
-});
-});
-db.collection('livros').get().then(snapshot => {
-snapshot.forEach(doc => {
-const titulo = doc.data().titulo || '';
-const tituloSearch = titulo.toLowerCase().split(' ');
-db.collection('livros').doc(doc.id).update({ tituloSearch });
-});
-}); </script>
-<script>
-document.addEventListener('focusin', function(e) {
-let el = e.target;
-while (el) {
-if (el.getAttribute && el.getAttribute('aria-hidden') === 'true') {
-// Remove o foco se estiver dentro de um aria-hidden
-if (typeof el.blur === 'function') el.blur();
-// Move o foco para o body
-document.body.focus();
-break;
-}
-el = el.parentElement;
-}
-});
-
-</script>
-<script>
-// Garante que aria-hidden="true" seja removido de modais abertos
-function fixAriaHiddenOnOpenModals() {
-document.querySelectorAll('.modal').forEach(function(modal) {
-const isVisible = window.getComputedStyle(modal).display === 'block';
-if (isVisible) {
-// Remove aria-hidden se existir
-if (modal.hasAttribute('aria-hidden')) {
-modal.removeAttribute('aria-hidden');
-}
-}
-});
-}
-
-// Monitora abertura de modais Bootstrap para garantir acessibilidade
-document.addEventListener('shown.bs.modal', fixAriaHiddenOnOpenModals);
-document.addEventListener('DOMContentLoaded', function() {
-// Corrige ao carregar a página caso algum modal esteja aberto
-fixAriaHiddenOnOpenModals();
-});
-
-// Também corrige ao abrir modal programaticamente (ex: printLoanModal)
-const printLoanModal = document.getElementById('printLoanModal');
-if (printLoanModal) {
-printLoanModal.addEventListener('shown.bs.modal', function() {
-if (printLoanModal.hasAttribute('aria-hidden')) {
-printLoanModal.removeAttribute('aria-hidden');
-}
-});
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
 }
 </script>
-</body>
-</html>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
+}
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
+}
+.sidebar-header {
+padding: 20px 0;
+text-align: center;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
+}
+@media (max-width: 768px) {
+.sidebar {
+transform: translateX(-100%);
+}
+.main-content {
+margin-left: 0;
+}
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
+}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
+};
+
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
+}
+</script>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
+}
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
+}
+.sidebar-header {
+padding: 20px 0;
+text-align: center;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
+}
+@media (max-width: 768px) {
+.sidebar {
+transform: translateX(-100%);
+}
+.main-content {
+margin-left: 0;
+}
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
+}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
+};
+
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
+}
+</script>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
+}
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
+}
+.sidebar-header {
+padding: 20px 0;
+text-align: center;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
+}
+@media (max-width: 768px) {
+.sidebar {
+transform: translateX(-100%);
+}
+.main-content {
+margin-left: 0;
+}
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
+}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
+};
+
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
+}
+</script>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
+}
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
+}
+.sidebar-header {
+padding: 20px 0;
+text-align: center;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
+}
+@media (max-width: 768px) {
+.sidebar {
+transform: translateX(-100%);
+}
+.main-content {
+margin-left: 0;
+}
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
+}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
+databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
+projectId: "sigeb-ccd3f",
+storageBucket: "sigeb-ccd3f.appspot.com",
+messagingSenderId: "209689711066",
+appId: "1:209689711066:web:5a99505e60bd34f29b70e3",
+measurementId: "G-VJBDW2B7HZ"
+};
+
+// Inicializa Firebase usando compat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Se quiser analytics (opcional, só se a API key for válida)
+if (firebase.analytics) {
+firebase.analytics();
+}
+</script>
+<!-- Email.js -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Date picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<!-- Importação do SheetJS para geração de relatórios XLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Biblioteca para assinatura digital -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+body {
+font-family: 'Poppins', sans-serif;
+background: #f0f2f5;
+margin: 0;
+padding: 0;
+}
+.sidebar {
+position: fixed;
+top: 0;
+left: 0;
+height: 100%;
+width: 250px;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+color: white;
+padding: 20px;
+transition: all 0.3s ease;
+z-index: 1000;
+}
+.sidebar-header {
+padding: 20px 0;
+text-align: center;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+margin: 0;
+font-weight: 600;
+}
+.menu-items {
+padding: 20px 0;
+}
+.menu-item {
+padding: 12px 20px;
+color: white;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: all 0.3s ease;
+border-radius: 8px;
+margin-bottom: 5px;
+}
+.menu-item:hover, .menu-item.active {
+background: rgba(255, 255, 255, 0.1);
+color: #4facfe;
+}
+.menu-item i {
+margin-right: 10px;
+font-size: 1.2rem;
+}
+.main-content {
+margin-left: 250px;
+padding: 20px;
+transition: all 0.3s ease;
+}
+.page-header {
+background: white;
+padding: 20px;
+border-radius: 15px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+margin-bottom: 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.loans-table {
+background: white;
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.table {
+margin-bottom: 0;
+}
+.table th {
+border-top: none;
+font-weight: 600;
+color: #1a1a2e;
+}
+.loan-status {
+display: inline-block;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 0.8rem;
+}
+.status-emprestado {
+background: #e8f5e9;
+color: #2e7d32;
+}
+.status-atrasado {
+background: #ffebee;
+color: #c62828;
+}
+.status-devolvido {
+background: #e3f2fd;
+color: #1565c0;
+}
+.add-button {
+background: linear-gradient(90deg, #00f2fe, #4facfe);
+color: white;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+transition: all 0.3s ease;
+}
+.add-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.search-box {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+.search-box input {
+flex: 1;
+padding: 10px 15px;
+border: 1px solid #ddd;
+border-radius: 8px;
+font-size: 0.9rem;
+}
+.action-buttons {
+display: flex;
+gap: 10px;
+}
+.action-button {
+background: none;
+border: none;
+padding: 5px;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.action-button:hover {
+transform: translateY(-2px);
+}
+.return-button {
+color: #4facfe;
+}
+.renew-button {
+color: #2e7d32;
+}
+@media (max-width: 768px) {
+.sidebar {
+transform: translateX(-100%);
+}
+.main-content {
+margin-left: 0;
+}
+.sidebar.active {
+transform: translateX(0);
+}
+.table-responsive {
+margin-bottom: 0;
+}
+}
+#notReturnedBar {
+position: relative;
+overflow: hidden;
+height: 48px;
+min-height: 48px;
+display: flex;
+align-items: center;
+}
+#notReturnedBar .marquee {
+display: inline-block;
+white-space: nowrap;
+will-change: transform;
+/* Velocidade ajustada para leitura humana: 40s */
+animation: marquee-bar 40s linear infinite;
+}
+@keyframes marquee-bar {
+0% { transform: translateX(100%);}
+100% { transform: translateX(-100%);}
+}
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<!-- Firebase Initialization -->
+<script>
+// Corrigido: Removido import/export e inicialização modular
+// Use apenas a versão compat!
+const firebaseConfig = {
+apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", // Troque pela chave correta do seu projeto!
+authDomain: "sigeb-ccd3f.firebaseapp.com",
