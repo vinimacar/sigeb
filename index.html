@@ -64,16 +64,19 @@
     }
 
     .school-logo {
-      width: 160px;
-      height: 160px;
+      width: 200px;
+      height: 200px;
       object-fit: contain;
       margin-bottom: 1rem;
-      filter: drop-shadow(0 0 30px var(--accent1)) drop-shadow(0 8px 16px rgba(255, 215, 0, 0.3));
+      filter: drop-shadow(0 0 40px var(--accent1)) drop-shadow(0 10px 20px rgba(255, 215, 0, 0.4)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.2));
       border-radius: 50%;
       background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-      padding: 12px;
-      border: 4px solid var(--accent1);
+      padding: 15px;
+      border: 6px solid var(--accent1);
       transition: var(--transition);
+      position: relative;
+      z-index: 5;
+      box-shadow: 0 0 80px rgba(255, 215, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.15);
     }
 
     .institutional-logo {
@@ -105,9 +108,10 @@
     }
 
     .school-logo:hover {
-      transform: scale(1.08) rotate(-3deg);
-      filter: drop-shadow(0 0 40px var(--accent1)) drop-shadow(0 12px 24px rgba(255, 215, 0, 0.4));
+      transform: scale(1.1) rotate(-3deg);
+      filter: drop-shadow(0 0 60px var(--accent1)) drop-shadow(0 15px 30px rgba(255, 215, 0, 0.5)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.3));
       border-color: var(--accent2);
+      box-shadow: 0 0 100px rgba(255, 215, 0, 0.4), 0 12px 40px rgba(0, 0, 0, 0.2);
     }
 
     .logo-glow {
@@ -115,19 +119,27 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, var(--accent1) 0%, var(--accent2) 60%, transparent 100%);
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent1) 0%, var(--accent2) 40%, transparent 70%);
       border-radius: 50%;
-      filter: blur(35px);
-      opacity: 0.3;
-      z-index: -1;
+      filter: blur(40px);
+      opacity: 0.4;
+      z-index: 1;
       animation: pulse 3s ease-in-out infinite alternate;
     }
 
     @keyframes pulse {
-      0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.95); }
-      100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.05); }
+      0% { 
+        opacity: 0.3; 
+        transform: translate(-50%, -50%) scale(0.95);
+        filter: blur(40px);
+      }
+      100% { 
+        opacity: 0.5; 
+        transform: translate(-50%, -50%) scale(1.05);
+        filter: blur(35px);
+      }
     }
 
     .hero-title {
@@ -179,12 +191,12 @@
       box-shadow: 0 12px 36px rgba(13,40,71,0.18);
       border: 2px solid #ffd700;
       padding: 2.8rem 2.2rem 2.2rem 2.2rem;
-      color: #fff;
+      color: #ffffff;
       transition: all 0.3s cubic-bezier(.4,0,.2,1);
     }
 
     .form-label {
-      color: var(--accent1);
+      color: #ffd700;
       font-size: 1rem;
       font-weight: 600;
       letter-spacing: 0.5px;
@@ -197,7 +209,7 @@
       background: rgba(255,255,255,0.13);
       border: 2px solid #4a90e2;
       border-radius: 12px;
-      color: #fff;
+      color: #ffffff;
       padding: 0.75rem 1rem;
       font-weight: 500;
       transition: border-color 0.3s, background 0.3s;
@@ -207,10 +219,11 @@
       background: rgba(255,255,255,0.18);
       box-shadow: 0 0 0 3px rgba(255,215,0,0.18);
       outline: none;
+      color: #ffffff;
     }
     .form-control::placeholder {
-      color: var(--text-muted);
-      opacity: 0.8;
+      color: #e9ecef;
+      opacity: 0.9;
     }
 
     .btn-primary, .btn-success, .btn-secondary {
@@ -275,7 +288,7 @@
       box-shadow: var(--shadow-md);
     }
     .btn-link {
-      color: var(--accent1) !important;
+      color: #ffd700 !important;
       font-size: 0.95rem;
       padding: 0;
       font-weight: 600;
@@ -283,9 +296,9 @@
       transition: var(--transition);
     }
     .btn-link:hover {
-      color: var(--text-light) !important;
+      color: #ffffff !important;
       text-decoration: underline;
-      text-decoration-color: var(--accent1);
+      text-decoration-color: #ffd700;
       text-underline-offset: 3px;
     }
 
@@ -343,17 +356,17 @@
     }
 
     .text-danger {
-      color: var(--danger) !important;
+      color: #ff6b6b !important;
       font-weight: 600;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
     .text-success {
-      color: var(--success) !important;
+      color: #51cf66 !important;
       font-weight: 600;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
     .text-muted {
-      color: var(--text-muted) !important;
+      color: #e9ecef !important;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     }
 
@@ -403,22 +416,24 @@
       transition: all 0.3s ease;
     }
     .form-control:hover {
-      border-color: var(--accent1);
+      border-color: #ffd700;
       background: rgba(255,255,255,0.15);
+      color: #ffffff;
     }
     
     .feature-card h6 {
-      color: var(--text-light);
+      color: #ffffff;
       font-weight: 600;
       margin-bottom: 0.75rem;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
     
     .feature-card p {
-      color: var(--text-secondary);
+      color: #f8f9fa;
       margin-bottom: 0;
-      opacity: 0.9;
+      opacity: 0.95;
       line-height: 1.4;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
 
     /* Toggle password styling */
@@ -428,13 +443,13 @@
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
-      color: var(--accent1);
+      color: #ffd700;
       font-size: 1.2rem;
       transition: var(--transition);
       z-index: 10;
     }
     .toggle-password:hover {
-      color: var(--text-light);
+      color: #ffffff;
       transform: translateY(-50%) scale(1.1);
     }
 
@@ -475,12 +490,15 @@
         margin: 0 8px;
       }
       .school-logo {
-        width: 100px;
-        height: 100px;
+        width: 140px;
+        height: 140px;
+        border: 4px solid var(--accent1) !important;
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.3), 0 4px 20px rgba(0, 0, 0, 0.15) !important;
       }
       .logo-glow {
-        width: 120px;
-        height: 120px;
+        width: 180px;
+        height: 180px;
+        opacity: 0.3;
       }
       .hero-title {
         font-size: 1.5rem;
@@ -528,7 +546,7 @@
       <div class="logo-glow"></div>
       <div class="logos-container">
         <img src="logoaba.png" alt="Logo da Escola" class="institutional-logo">
-        <img src="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" alt="Logo do SIGEB" class="school-logo" style="width: 180px; height: 180px; box-shadow: 0 0 48px 0 var(--accent2), 0 4px 24px #0003; border: 5px solid #fff;">
+        <img src="SISTEMA DE GERENCIAMENTO DE BIBLIOTECA.png" alt="Logo do SIGEB" class="school-logo" style="width: 220px; height: 220px; box-shadow: 0 0 80px rgba(255, 215, 0, 0.4), 0 8px 40px rgba(0, 0, 0, 0.2); border: 8px solid var(--accent1); background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); filter: drop-shadow(0 0 50px var(--accent1)) brightness(1.05);">
         <img src="logoaba.png" alt="Logo da Escola" class="institutional-logo">
       </div>
       <h1 class="hero-title" style="font-size:3.2rem; margin-top:0.7rem; margin-bottom:0.3rem; background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 4px 24px var(--accent2),0 2px 10px rgba(0,0,0,0.12);letter-spacing:3px;">SIGEB</h1>
@@ -540,11 +558,11 @@
     <div class="main-content" style="max-width: 430px; margin-bottom: 1.2rem;">
       <div id="login-container" style="display:block;">
         <form id="loginForm">
-          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Login</h5>
+          <h5 class="mb-2" style="color:#ffffff;font-size:1.1rem;text-shadow:1px 1px 2px rgba(0,0,0,0.5);">Login</h5>
           <div class="mb-2">
             <label for="loginEmail" class="form-label">E-mail ou Usuário</label>
             <input type="text" class="form-control form-control-sm" id="loginEmail" required autocomplete="username" placeholder="Digite seu e-mail ou nome de usuário">
-            <small class="text-muted" style="font-size:0.8rem;">Você pode usar seu e-mail ou nome de usuário para fazer login</small>
+            <small class="text-muted" style="font-size:0.8rem;color:#e9ecef;">Você pode usar seu e-mail ou nome de usuário para fazer login</small>
           </div>
           <div class="mb-2 position-relative">
             <label for="loginPassword" class="form-label">Senha</label>
@@ -585,7 +603,7 @@
       </div>
       <div id="register-container" style="display:none;">
         <form id="registerForm">
-          <h5 class="mb-2" style="color:#fff;font-size:1.1rem;">Cadastro</h5>
+          <h5 class="mb-2" style="color:#ffffff;font-size:1.1rem;text-shadow:1px 1px 2px rgba(0,0,0,0.5);">Cadastro</h5>
           <div class="mb-2">
             <label for="registerEmail" class="form-label">E-mail</label>
             <input type="email" class="form-control form-control-sm" id="registerEmail" required autocomplete="username">
@@ -597,7 +615,7 @@
             <div class="mb-2">
               <label for="registerUsuario" class="form-label">Nome de Usuário</label>
               <input type="text" class="form-control form-control-sm" id="registerUsuario" required placeholder="Ex: joao123">
-              <small class="text-muted" style="font-size:0.85rem;">Usado para fazer login (sem espaços)</small>
+              <small class="text-muted" style="font-size:0.85rem;color:#e9ecef;">Usado para fazer login (sem espaços)</small>
             </div>
             <div class="mb-2 position-relative">
               <label for="registerPassword" class="form-label">Senha</label>
@@ -605,7 +623,7 @@
               <span class="toggle-password" toggle="#registerPassword" style="top: 38px;">
                 <i class="bx bx-show"></i>
               </span>
-              <small class="text-muted" style="font-size:0.85rem;">Mínimo 6 caracteres</small>
+              <small class="text-muted" style="font-size:0.85rem;color:#e9ecef;">Mínimo 6 caracteres</small>
             </div>
             <div class="mb-2 position-relative">
               <label for="confirmPassword" class="form-label">Confirme a Senha</label>
@@ -646,7 +664,7 @@
   <footer>
     <div>
       Sistema licenciado para: <strong>Escola Estadual Professor Álvaro Brandão de Andrade</strong><br>
-      Desenvolvido por: Parceria Pedagógica Curso Técnico em Desenvolvimento de Sistemas<br>
+      Desenvolvido por: Curso Técnico em Desenvolvimento de Sistemas<br>
       © 2025 SIGEB - Todos os direitos reservados
     </div>
   </footer>
