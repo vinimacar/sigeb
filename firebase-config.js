@@ -16,7 +16,8 @@ firebase.initializeApp(firebaseConfig);
 // Exportar serviços do Firebase para uso em outros arquivos
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
+// Remover a linha do storage até que o módulo seja importado
+// const storage = firebase.storage();
 const database = firebase.database();
 
 // Configurações adicionais
