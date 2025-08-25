@@ -488,7 +488,21 @@
             document.getElementById('btnSalvarUsuario').addEventListener('click', function() {
                 const form = document.getElementById('formNovoUsuario');
                 if (form.checkValidity()) {
-                    alert('Usuário cadastrado com sucesso!');
+                    // Coletar dados do usuário
+                    const usuario = {
+                        nome: document.getElementById('nome').value,
+                        email: document.getElementById('email').value,
+                        telefone: document.getElementById('telefone').value,
+                        dataNascimento: document.getElementById('dataNascimento').value,
+                        documento: document.getElementById('documento').value,
+                        categoria: document.getElementById('categoria').value,
+                        endereco: document.getElementById('endereco').value,
+                        cidade: document.getElementById('cidade').value,
+                        estado: document.getElementById('estado').value,
+                        cep: document.getElementById('cep').value
+                    };
+                    // Exibir ficha timbrada
+                    gerarFichaTimbrada(usuario);
                     const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
                     modal.hide();
                     form.reset();
@@ -496,6 +510,88 @@
                     form.reportValidity();
                 }
             });
+
+            // Função para gerar ficha timbrada
+            function gerarFichaTimbrada(usuario) {
+                // Cria modal se não existir
+                let modalFicha = document.getElementById('fichaUsuarioModal');
+                if (!modalFicha) {
+                    const modalHtml = `
+                    <div class="modal fade" id="fichaUsuarioModal" tabindex="-1" aria-labelledby="fichaUsuarioModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="fichaUsuarioModalLabel">Ficha de Cadastro do Usuário</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body" id="fichaUsuarioBody">
+                                    <!-- Conteúdo da ficha será inserido aqui -->
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    <button type="button" class="btn btn-primary" id="btnImprimirFicha">Imprimir</button>
+                                    <button type="button" class="btn btn-outline-success" id="btnSalvarFichaPDF">Arquivar (PDF)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    modalFicha = document.getElementById('fichaUsuarioModal');
+                }
+                // Monta o HTML da ficha
+                const fichaBody = document.getElementById('fichaUsuarioBody');
+                fichaBody.innerHTML = `
+                    <div style="text-align:center; margin-bottom: 24px;">
+                        <img src="logobias.png" alt="Logo da Escola" style="height:60px; margin-bottom:8px;"><br>
+                        <span style="font-size:1.5rem; font-weight:bold;">ESCOLA MUNICIPAL MODELO</span><br>
+                        <span style="font-size:1.1rem; color:#555;">Ficha de Cadastro de Usuário da Biblioteca</span>
+                    </div>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr><th>Nome Completo</th><td>${usuario.nome}</td></tr>
+                            <tr><th>Email</th><td>${usuario.email}</td></tr>
+                            <tr><th>Telefone</th><td>${usuario.telefone}</td></tr>
+                            <tr><th>Data de Nascimento</th><td>${usuario.dataNascimento}</td></tr>
+                            <tr><th>Documento</th><td>${usuario.documento}</td></tr>
+                            <tr><th>Categoria</th><td>${usuario.categoria}</td></tr>
+                            <tr><th>Endereço</th><td>${usuario.endereco}</td></tr>
+                            <tr><th>Cidade</th><td>${usuario.cidade}</td></tr>
+                            <tr><th>Estado</th><td>${usuario.estado}</td></tr>
+                            <tr><th>CEP</th><td>${usuario.cep}</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top:32px; text-align:right; color:#888; font-size:0.95rem;">
+                        Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
+                    </div>
+                `;
+                // Exibe o modal
+                const fichaModal = new bootstrap.Modal(modalFicha);
+                fichaModal.show();
+
+                // Imprimir ficha
+                document.getElementById('btnImprimirFicha').onclick = function() {
+                    const fichaHtml = fichaBody.innerHTML;
+                    const win = window.open('', '', 'width=800,height=900');
+                    win.document.write('<html><head><title>Ficha de Usuário</title>');
+                    win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
+                    win.document.write('</head><body>' + fichaHtml + '</body></html>');
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 500);
+                };
+
+                // Arquivar (baixar PDF) - usando print-to-pdf do navegador
+                document.getElementById('btnSalvarFichaPDF').onclick = function() {
+                    const fichaHtml = fichaBody.innerHTML;
+                    const win = window.open('', '', 'width=800,height=900');
+                    win.document.write('<html><head><title>Ficha de Usuário</title>');
+                    win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
+                    win.document.write('</head><body>' + fichaHtml + '</body></html>');
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 500);
+                };
+            }
 
             // Configurar botão de importar usuários
             document.getElementById('btnImportarUsuarios').addEventListener('click', function() {
