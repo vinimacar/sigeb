@@ -792,12 +792,79 @@
             }
         }
         // Funções para manipulação de usuários (mantidas para compatibilidade)
-        window.visualizarUsuario = function(id) { console.log("Visualizar usuário:", id); };
-        window.editarUsuario = function(id) { console.log("Editar usuário:", id); };
-        window.verEmprestimosUsuario = function(id) { console.log("Ver empréstimos do usuário:", id); };
-        window.bloquearUsuario = function(id) { console.log("Bloquear usuário:", id); };
-        window.desbloquearUsuario = function(id) { console.log("Desbloquear usuário:", id); };
-        window.excluirUsuario = function(id) { console.log("Excluir usuário:", id); };
+        window.visualizarUsuario = function(id) {
+            const usuario = (window._usuariosCache || []).find(u => u._id === id);
+            if (!usuario) return alert('Usuário não encontrado!');
+            let info = `<b>Nome:</b> ${usuario.nome || ''}<br>`;
+            info += `<b>Email:</b> ${usuario.email || ''}<br>`;
+            info += `<b>Categoria:</b> ${usuario.categoria || ''}<br>`;
+            info += `<b>Status:</b> ${usuario.status || 'Ativo'}<br>`;
+            info += `<b>Telefone:</b> ${usuario.telefone || ''}<br>`;
+            info += `<b>Documento:</b> ${usuario.documento || ''}<br>`;
+            info += `<b>Endereço:</b> ${usuario.endereco || ''}, ${usuario.cidade || ''} - ${usuario.estado || ''} (${usuario.cep || ''})<br>`;
+            info += `<b>Data de Nascimento:</b> ${usuario.dataNascimento || ''}`;
+            showSimpleModal('Visualizar Usuário', info);
+        };
+        window.editarUsuario = function(id) {
+            alert('Funcionalidade de edição pode ser implementada aqui. ID do usuário: ' + id);
+        };
+        window.verEmprestimosUsuario = function(id) {
+            alert('Funcionalidade de empréstimos pode ser implementada aqui. ID do usuário: ' + id);
+        };
+        window.bloquearUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            const usuario = window._usuariosCache.find(u => u._id === id);
+            if (usuario) {
+                usuario.status = 'Bloqueado';
+                exibirUsuariosPaginados();
+                alert('Usuário bloqueado!');
+            }
+        };
+        window.desbloquearUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            const usuario = window._usuariosCache.find(u => u._id === id);
+            if (usuario) {
+                usuario.status = 'Ativo';
+                exibirUsuariosPaginados();
+                alert('Usuário desbloqueado!');
+            }
+        };
+        window.excluirUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            if (confirm('Tem certeza que deseja excluir este usuário?')) {
+                window._usuariosCache = window._usuariosCache.filter(u => u._id !== id);
+                exibirUsuariosPaginados();
+                alert('Usuário excluído! (A exclusão real do banco deve ser implementada)');
+            }
+        };
+
+        // Modal simples para visualizar informações
+        function showSimpleModal(titulo, conteudo) {
+            let modal = document.getElementById('simpleInfoModal');
+            if (!modal) {
+                const html = `
+                <div class="modal fade" id="simpleInfoModal" tabindex="-1" aria-labelledby="simpleInfoModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="simpleInfoModalLabel"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body" id="simpleInfoModalBody"></div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', html);
+                modal = document.getElementById('simpleInfoModal');
+            }
+            document.getElementById('simpleInfoModalLabel').innerHTML = titulo;
+            document.getElementById('simpleInfoModalBody').innerHTML = conteudo;
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
     </script>
 </body>
 </html>
