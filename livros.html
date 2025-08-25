@@ -442,13 +442,32 @@
                 // Paginação client-side
                 const livrosPorPagina = 10;
                 let livrosFiltrados = window.livrosCache;
+                // Filtro de texto
                 if (filtro && filtro.trim() !== '') {
                     const termo = filtro.trim().toLowerCase();
-                    livrosFiltrados = window.livrosCache.filter(livro =>
+                    livrosFiltrados = livrosFiltrados.filter(livro =>
                         (livro.titulo && livro.titulo.toLowerCase().includes(termo)) ||
                         (livro.autor && livro.autor.toLowerCase().includes(termo)) ||
                         (livro.isbn && livro.isbn.toLowerCase().includes(termo))
                     );
+                }
+                // Filtro de categoria
+                const categoria = document.getElementById('filtroCategoria').value;
+                if (categoria) {
+                    livrosFiltrados = livrosFiltrados.filter(livro => livro.categoria === categoria);
+                }
+                // Filtro de status
+                const status = document.getElementById('filtroStatus').value;
+                if (status) {
+                    if (status === 'disponivel') {
+                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === true);
+                    } else if (status === 'emprestado') {
+                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === false && livro.reservado !== true);
+                    } else if (status === 'reservado') {
+                        livrosFiltrados = livrosFiltrados.filter(livro => livro.reservado === true);
+                    } else if (status === 'indisponivel') {
+                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === false && livro.reservado !== true);
+                    }
                 }
                 // Página atual (default 1)
                 let paginaAtual = window.paginaLivrosAtual || 1;
@@ -542,6 +561,13 @@
 
             // Ativar botão de pesquisa
             document.getElementById('btnPesquisar').addEventListener('click', function() {
+            // Filtros de categoria e status
+            document.getElementById('filtroCategoria').addEventListener('change', function() {
+                exibirLivros(document.getElementById('pesquisaLivro').value);
+            });
+            document.getElementById('filtroStatus').addEventListener('change', function() {
+                exibirLivros(document.getElementById('pesquisaLivro').value);
+            });
                 const termo = document.getElementById('pesquisaLivro').value;
                 exibirLivros(termo);
             });
