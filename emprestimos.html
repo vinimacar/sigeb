@@ -20,41 +20,9 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="icone.png" type="image/png">
     
-    <!-- Firebase -->
-        <script type="module">
-            import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-            import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-            import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-            import { firebaseConfig } from './firebase-config.js';
-        
-            // Inicializar Firebase
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-        </script>
+    <!-- Firebase modular será inicializado no final do arquivo. -->
     
-    <script>
-        // Configuração do Firebase
-        const firebaseConfig = { 
-            apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", 
-            authDomain: "sigeb-ccd3f.firebaseapp.com", 
-            databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com", 
-            projectId: "sigeb-ccd3f", 
-            storageBucket: "sigeb-ccd3f.appspot.com", 
-            messagingSenderId: "209689711066", 
-            appId: "1:209689711066:web:5a99505e60bd34f29b70e3", 
-            measurementId: "G-VJBDW2B7HZ" 
-        };
-        
-        // Inicializar Firebase
-        try {
-            if (!firebase.apps || !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-        } catch (error) {
-            console.error("Erro ao inicializar Firebase:", error);
-        }
-    </script>
+    <!-- Bloco antigo de inicialização do Firebase removido. Usar apenas o modular v9+ acima. -->
 </head>
 <body>
     <!-- Barra de navegação superior -->
@@ -488,149 +456,122 @@
 
     <!-- Bootstrap JS e dependências -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
     <!-- Scripts personalizados -->
     <script src="firebase-config.js" type="module"></script>
     <script src="auth.js" type="module"></script>
-    
-    <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Verificar autenticação
-                onAuthStateChanged(auth, function(user) {
-                    if (user) {
-                        document.getElementById('userName').textContent = user.displayName || user.email;
-                        carregarEmprestimos();
-                    } else {
-                        window.location.href = 'index.html';
-                    }
-                });
-            });
+    <script type="module">
+        import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { firebaseConfig } from './firebase-config.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 
-            // Função para carregar empréstimos do Firestore
-            function carregarEmprestimos() {
-                // Aqui você implementaria a lógica para carregar os empréstimos do Firestore
-                // e preencher a tabela dinamicamente
-            }
-        </script>
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         document.addEventListener('DOMContentLoaded', function() {
             // Verificar autenticação
-            firebase.auth().onAuthStateChanged(function(user) {
+            onAuthStateChanged(auth, function(user) {
                 if (user) {
-                    // Usuário está logado
                     document.getElementById('userName').textContent = user.displayName || user.email;
-                    
-                    // Carregar dados dos empréstimos
                     carregarEmprestimos();
                 } else {
-                    // Usuário não está logado, redirecionar para a página de login
                     window.location.href = 'index.html';
                 }
             });
-            
+
             // Configurar botão de logout
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                firebase.auth().signOut().then(function() {
-                    // Logout bem-sucedido
+                signOut(auth).then(function() {
                     window.location.href = 'index.html';
                 }).catch(function(error) {
-                    // Erro durante o logout
                     console.error('Erro ao fazer logout:', error);
                 });
             });
-            
+
             // Configurar botão de buscar usuário
             document.getElementById('btnBuscarUsuario').addEventListener('click', function() {
                 const usuarioId = document.getElementById('usuarioEmprestimo').value;
                 if (usuarioId) {
-                    // Simulação de busca de usuário
                     document.getElementById('infoUsuario').style.display = 'block';
                 } else {
                     alert('Por favor, digite o ID ou nome do usuário.');
                 }
             });
-            
+
             // Configurar botão de buscar livro
             document.getElementById('btnBuscarLivro').addEventListener('click', function() {
                 const livroId = document.getElementById('livroEmprestimo').value;
                 if (livroId) {
-                    // Simulação de busca de livro
                     document.getElementById('infoLivro').style.display = 'block';
                 } else {
                     alert('Por favor, digite o título, ISBN ou ID do livro.');
                 }
             });
-            
+
             // Configurar botão de buscar empréstimo
             document.getElementById('btnBuscarEmprestimo').addEventListener('click', function() {
                 const emprestimoId = document.getElementById('idEmprestimo').value;
                 if (emprestimoId) {
-                    // Simulação de busca de empréstimo
                     document.getElementById('infoEmprestimo').style.display = 'block';
                 } else {
                     alert('Por favor, digite o ID do empréstimo.');
                 }
             });
-            
+
             // Configurar botão de salvar empréstimo
             document.getElementById('btnSalvarEmprestimo').addEventListener('click', function() {
                 const form = document.getElementById('formNovoEmprestimo');
                 if (form.checkValidity()) {
                     // Aqui você implementaria a lógica para salvar o empréstimo no Firestore
                     alert('Empréstimo registrado com sucesso!');
-                    
+
                     // Fechar o modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('novoEmprestimoModal'));
                     modal.hide();
-                    
+
                     // Limpar o formulário
                     form.reset();
                     document.getElementById('infoUsuario').style.display = 'none';
                     document.getElementById('infoLivro').style.display = 'none';
                 } else {
-                    // Trigger validation
                     form.reportValidity();
                 }
             });
-            
+
             // Configurar botão de confirmar devolução
             document.getElementById('btnConfirmarDevolucao').addEventListener('click', function() {
                 const form = document.getElementById('formDevolucao');
                 if (form.checkValidity()) {
                     // Aqui você implementaria a lógica para registrar a devolução no Firestore
                     alert('Devolução registrada com sucesso!');
-                    
+
                     // Fechar o modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('devolucaoModal'));
                     modal.hide();
-                    
+
                     // Limpar o formulário
                     form.reset();
                     document.getElementById('infoEmprestimo').style.display = 'none';
                 } else {
-                    // Trigger validation
                     form.reportValidity();
                 }
             });
-            
+
             // Definir data atual como padrão para o campo de data de empréstimo
             const hoje = new Date().toISOString().split('T')[0];
             document.getElementById('dataEmprestimo').value = hoje;
-            
+
             // Definir data de devolução padrão (hoje + 14 dias)
             const dataDevol = new Date();
             dataDevol.setDate(dataDevol.getDate() + 14);
             document.getElementById('dataDevolucao').value = dataDevol.toISOString().split('T')[0];
-            
+
             // Definir data atual como padrão para o campo de data de devolução efetiva
             document.getElementById('dataDevolucaoEfetiva').value = hoje;
         });
-        
+
         // Função para carregar empréstimos do Firestore
         function carregarEmprestimos() {
             // Aqui você implementaria a lógica para carregar os empréstimos do Firestore
