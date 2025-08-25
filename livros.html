@@ -399,7 +399,6 @@
                 } else {
                     window.location.href = 'index.html';
                 }
-            });
 
             // Configurar botão de logout
             document.getElementById('logoutBtn').addEventListener('click', function() {
@@ -410,8 +409,11 @@
                 });
             });
 
-            // Variável para armazenar todos os livros carregados
-            let livrosCache = [];
+            // Variável para armazenar todos os livros carregados (declarada globalmente)
+        });
+
+        // Variável global para armazenar todos os livros carregados
+        window.livrosCache = [];
 
             // Função para carregar livros do Firestore
             async function carregarLivros(filtro = '') {
@@ -420,10 +422,10 @@
                 tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Carregando dados...</td></tr>';
                 try {
                     const querySnapshot = await getDocs(collection(db, 'livros'));
-                    livrosCache = [];
+                    window.livrosCache = [];
                     querySnapshot.forEach((doc) => {
                         const livro = doc.data();
-                        livrosCache.push({ id: doc.id, ...livro });
+                        window.livrosCache.push({ id: doc.id, ...livro });
                     });
                     exibirLivros(filtro);
                 } catch (error) {
@@ -437,10 +439,10 @@
             function exibirLivros(filtro = '') {
                 const tabelaLivros = document.getElementById('tabelaLivros');
                 const infoPaginacao = document.getElementById('infoPaginacaoLivros');
-                let livrosFiltrados = livrosCache;
+                let livrosFiltrados = window.livrosCache;
                 if (filtro && filtro.trim() !== '') {
                     const termo = filtro.trim().toLowerCase();
-                    livrosFiltrados = livrosCache.filter(livro =>
+                    livrosFiltrados = window.livrosCache.filter(livro =>
                         (livro.titulo && livro.titulo.toLowerCase().includes(termo)) ||
                         (livro.autor && livro.autor.toLowerCase().includes(termo)) ||
                         (livro.isbn && livro.isbn.toLowerCase().includes(termo))
@@ -525,15 +527,43 @@
             document.getElementById('btnSalvarLivro').addEventListener('click', function() {
                 const form = document.getElementById('formNovoLivro');
                 if (form.checkValidity()) {
-                    alert('Livro cadastrado com sucesso!');
-                    // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
-                    const modalEl = document.getElementById('novoLivroModal');
-                    if (modalEl) {
-                        modalEl.removeAttribute('aria-hidden');
+                    // Detecta se é edição (btnSalvarLivro foi sobrescrito pela função editarLivro)
+                    if (typeof btnSalvarLivro._isEditando === 'undefined' || !btnSalvarLivro._isEditando) {
+                        // Cadastro de novo livro
+                        (async () => {
+                            try {
+                                const addDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).addDoc;
+                                const collectionFn = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).collection;
+                                await addDoc(collectionFn(db, 'livros'), {
+                                    titulo: document.getElementById('titulo').value,
+                                    autor: document.getElementById('autor').value,
+                                    isbn: document.getElementById('isbn').value,
+                                    editora: document.getElementById('editora').value,
+                                    anoPublicacao: document.getElementById('anoPublicacao').value,
+                                    categoria: document.getElementById('categoria').value,
+                                    localizacao: document.getElementById('localizacao').value,
+                                    descricao: document.getElementById('descricao').value,
+                                    quantidade: Number(document.getElementById('quantidade').value),
+                                    disponivel: document.getElementById('status').value === 'disponivel',
+                                    reservado: false
+                                });
+                                alert('Livro cadastrado com sucesso!');
+                                // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
+                                const modalEl = document.getElementById('novoLivroModal');
+                                if (modalEl) {
+                                    modalEl.removeAttribute('aria-hidden');
+                                }
+                                const modal = bootstrap.Modal.getInstance(modalEl);
+                                modal.hide();
+                                form.reset();
+                                carregarLivros();
+                            } catch (e) {
+                                alert('Erro ao cadastrar livro: ' + e.message);
+                            }
+                        })();
+                    } else {
+                        // Edição: já tratada na função editarLivro
                     }
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    modal.hide();
-                    form.reset();
                 } else {
                     form.reportValidity();
                 }
@@ -555,7 +585,7 @@
         window.visualizarLivro = function(id) { console.log("Visualizar livro:", id); };
         // Visualizar Livro
         window.visualizarLivro = function(id) {
-            const livro = livrosCache.find(l => l.id === id);
+            const livro = window.livrosCache.find(l => l.id === id);
             if (!livro) return alert('Livro não encontrado!');
             let info = `Título: ${livro.titulo || ''}\nAutor: ${livro.autor || ''}\nCategoria: ${livro.categoria || ''}\nISBN: ${livro.isbn || ''}\nEditora: ${livro.editora || ''}\nAno: ${livro.anoPublicacao || ''}\nStatus: ${(livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível'))}`;
             alert(info);
@@ -563,7 +593,7 @@
 
         // Editar Livro
         window.editarLivro = function(id) {
-            const livro = livrosCache.find(l => l.id === id);
+            const livro = window.livrosCache.find(l => l.id === id);
             if (!livro) return alert('Livro não encontrado!');
             // Preencher o formulário do modal com os dados do livro
             document.getElementById('titulo').value = livro.titulo || '';
