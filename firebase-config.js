@@ -1,5 +1,5 @@
 // Configuração do Firebase
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
   authDomain: "sigeb-ccd3f.firebaseapp.com",
   databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
@@ -9,10 +9,3 @@ const firebaseConfig = {
   appId: "1:209689711066:web:c115bf3972c7541e9b70e3",
   measurementId: "G-DTF3GZJCDZ"
 };
-
-// Inicializa o Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app();
-}
