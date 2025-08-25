@@ -813,71 +813,52 @@
     <!-- Bootstrap JS e dependências -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
-    <!-- Scripts personalizados -->
-    <script src="firebase-config.js" type="module"></script>
-    <script src="auth.js" type="module"></script>
-    
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+        import { firebaseConfig } from './firebase-config.js';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Verificar autenticação
-            firebase.auth().onAuthStateChanged(function(user) {
+            onAuthStateChanged(auth, function(user) {
                 if (user) {
-                    // Usuário está logado
                     document.getElementById('userName').textContent = user.displayName || user.email;
-                    
-                    // Carregar dados do inventário
                     // carregarDadosInventario();
                 } else {
-                    // Usuário não está logado, redirecionar para a página de login
                     window.location.href = 'index.html';
                 }
             });
-            
-            // Configurar botão de logout
+
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                firebase.auth().signOut().then(function() {
-                    // Logout bem-sucedido
+                signOut(auth).then(function() {
                     window.location.href = 'index.html';
                 }).catch(function(error) {
-                    // Erro durante o logout
                     console.error('Erro ao fazer logout:', error);
                 });
             });
-            
-            // Configurar checkbox "selecionar todos"
+
             document.getElementById('checkTodos').addEventListener('change', function() {
                 const checkboxes = document.querySelectorAll('tbody .form-check-input');
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
             });
-            
-            // Configurar botão de iniciar inventário
+
             document.getElementById('btnConfirmarInventario').addEventListener('click', function() {
                 const form = document.getElementById('formIniciarInventario');
                 if (form.checkValidity()) {
-                    // Aqui você implementaria a lógica para iniciar o inventário
                     alert('Inventário iniciado com sucesso!');
-                    
-                    // Fechar o modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('iniciarInventarioModal'));
                     modal.hide();
-                    
-                    // Atualizar a interface
                     document.querySelector('.h5.mb-0.fw-bold:nth-of-type(2)').textContent = 'Em andamento';
                 } else {
-                    // Trigger validation
                     form.reportValidity();
                 }
             });
         });
-        
+
         // Função para carregar dados do inventário do Firestore
         function carregarDadosInventario() {
             // Aqui você implementaria a lógica para carregar os dados do inventário do Firestore
