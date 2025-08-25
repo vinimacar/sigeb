@@ -553,10 +553,81 @@
         });
         // Funções para manipulação de livros (mantidas para compatibilidade)
         window.visualizarLivro = function(id) { console.log("Visualizar livro:", id); };
-        window.editarLivro = function(id) { console.log("Editar livro:", id); };
+        // Visualizar Livro
+        window.visualizarLivro = function(id) {
+            const livro = livrosCache.find(l => l.id === id);
+            if (!livro) return alert('Livro não encontrado!');
+            let info = `Título: ${livro.titulo || ''}\nAutor: ${livro.autor || ''}\nCategoria: ${livro.categoria || ''}\nISBN: ${livro.isbn || ''}\nEditora: ${livro.editora || ''}\nAno: ${livro.anoPublicacao || ''}\nStatus: ${(livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível'))}`;
+            alert(info);
+        };
+
+        // Editar Livro
+        window.editarLivro = function(id) {
+            const livro = livrosCache.find(l => l.id === id);
+            if (!livro) return alert('Livro não encontrado!');
+            // Preencher o formulário do modal com os dados do livro
+            document.getElementById('titulo').value = livro.titulo || '';
+            document.getElementById('autor').value = livro.autor || '';
+            document.getElementById('isbn').value = livro.isbn || '';
+            document.getElementById('editora').value = livro.editora || '';
+            document.getElementById('anoPublicacao').value = livro.anoPublicacao || '';
+            document.getElementById('categoria').value = livro.categoria || '';
+            document.getElementById('localizacao').value = livro.localizacao || '';
+            document.getElementById('descricao').value = livro.descricao || '';
+            document.getElementById('quantidade').value = livro.quantidade || 1;
+            document.getElementById('status').value = livro.disponivel ? 'disponivel' : 'indisponivel';
+            // Abrir o modal de edição
+            const modal = new bootstrap.Modal(document.getElementById('novoLivroModal'));
+            modal.show();
+            // Ao salvar, atualizar o livro no Firestore
+            const btnSalvar = document.getElementById('btnSalvarLivro');
+            btnSalvar.onclick = async function() {
+                const form = document.getElementById('formNovoLivro');
+                if (form.checkValidity()) {
+                    try {
+                        const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
+                        const updateDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).updateDoc;
+                        await updateDoc(docRef(db, 'livros', id), {
+                            titulo: document.getElementById('titulo').value,
+                            autor: document.getElementById('autor').value,
+                            isbn: document.getElementById('isbn').value,
+                            editora: document.getElementById('editora').value,
+                            anoPublicacao: document.getElementById('anoPublicacao').value,
+                            categoria: document.getElementById('categoria').value,
+                            localizacao: document.getElementById('localizacao').value,
+                            descricao: document.getElementById('descricao').value,
+                            quantidade: Number(document.getElementById('quantidade').value),
+                            disponivel: document.getElementById('status').value === 'disponivel',
+                        });
+                        alert('Livro atualizado com sucesso!');
+                        modal.hide();
+                        carregarLivros();
+                    } catch (e) {
+                        alert('Erro ao atualizar livro: ' + e.message);
+                    }
+                } else {
+                    form.reportValidity();
+                }
+            };
+        };
+
+        // Excluir Livro
+        window.excluirLivro = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir este livro?')) return;
+            try {
+                const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
+                const deleteDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).deleteDoc;
+                await deleteDoc(docRef(db, 'livros', id));
+                alert('Livro excluído com sucesso!');
+                carregarLivros();
+            } catch (e) {
+                alert('Erro ao excluir livro: ' + e.message);
+            }
+        };
+
+        // Mantém as funções de emprestar/cancelar reserva como antes
         window.emprestarLivro = function(id) { console.log("Emprestar livro:", id); };
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
-        window.excluirLivro = function(id) { console.log("Excluir livro:", id); };
     </script>
 </body>
 </html>
