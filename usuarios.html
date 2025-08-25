@@ -22,25 +22,6 @@
     
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
-    
-    <script>
-        // Configuração do Firebase
-        const firebaseConfig = { 
-            apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ", 
-            authDomain: "sigeb-ccd3f.firebaseapp.com", 
-            databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com", 
-            projectId: "sigeb-ccd3f", 
-            storageBucket: "sigeb-ccd3f.appspot.com", 
-            messagingSenderId: "209689711066", 
-            appId: "1:209689711066:web:5a99505e60bd34f29b70e3", 
-            measurementId: "G-VJBDW2B7HZ" 
-        };
-        
-        // Inicializar Firebase
-        if (!firebase.apps || !firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-    </script>
 </head>
 <body>
     <!-- Barra de navegação superior -->
@@ -643,37 +624,36 @@
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
     
-    <!-- Scripts personalizados -->
-    <script src="firebase-config.js" type="module"></script>
-    <script src="auth.js" type="module"></script>
-    
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+        import { firebaseConfig } from './firebase-config.js';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         document.addEventListener('DOMContentLoaded', function() {
             // Verificar autenticação
-            firebase.auth().onAuthStateChanged(function(user) {
+            onAuthStateChanged(auth, function(user) {
                 if (user) {
-                    // Usuário está logado
                     document.getElementById('userName').textContent = user.displayName || user.email;
-                    
-                    // Carregar dados dos usuários
                     carregarUsuarios();
                 } else {
-                    // Usuário não está logado, redirecionar para a página de login
                     window.location.href = 'index.html';
                 }
             });
-            
+
             // Configurar botão de logout
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                firebase.auth().signOut().then(function() {
-                    // Logout bem-sucedido
+                signOut(auth).then(function() {
                     window.location.href = 'index.html';
                 }).catch(function(error) {
-                    // Erro durante o logout
                     console.error('Erro ao fazer logout:', error);
                 });
             });
-            
+
             // Configurar checkbox "selecionar todos"
             document.getElementById('checkTodos').addEventListener('change', function() {
                 const checkboxes = document.querySelectorAll('#tabelaUsuarios .form-check-input');
@@ -681,43 +661,31 @@
                     checkbox.checked = this.checked;
                 });
             });
-            
+
             // Configurar botão de salvar usuário
             document.getElementById('btnSalvarUsuario').addEventListener('click', function() {
                 const form = document.getElementById('formNovoUsuario');
                 if (form.checkValidity()) {
-                    // Verificar se as senhas coincidem
                     const senha = document.getElementById('senha').value;
                     const confirmarSenha = document.getElementById('confirmarSenha').value;
-                    
                     if (senha !== confirmarSenha) {
                         alert('As senhas não coincidem!');
                         return;
                     }
-                    
-                    // Aqui você implementaria a lógica para salvar o usuário no Firestore
                     alert('Usuário cadastrado com sucesso!');
-                    
-                    // Fechar o modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
                     modal.hide();
-                    
-                    // Limpar o formulário
                     form.reset();
                 } else {
-                    // Trigger validation
                     form.reportValidity();
                 }
             });
-            
+
             // Configurar botão de importar usuários
             document.getElementById('btnImportarUsuarios').addEventListener('click', function() {
                 const arquivo = document.getElementById('arquivoImportacao').files[0];
                 if (arquivo) {
-                    // Aqui você implementaria a lógica para processar o arquivo e importar os usuários
                     alert('Importação iniciada. Isso pode levar alguns minutos.');
-                    
-                    // Fechar o modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('importarUsuariosModal'));
                     modal.hide();
                 } else {
@@ -725,21 +693,20 @@
                 }
             });
         });
-        
+
         // Função para carregar usuários do Firestore
-        function carregarUsuarios() {
-            const usuariosRef = firebase.firestore().collection('usuarios');
-            usuariosRef.get().then((snapshot) => {
+        async function carregarUsuarios() {
+            const usuariosRef = collection(db, 'usuarios');
+            try {
+                const snapshot = await getDocs(usuariosRef);
                 const tabelaUsuarios = document.getElementById('tabelaUsuarios');
                 tabelaUsuarios.innerHTML = '';
                 snapshot.forEach((doc) => {
                     const usuario = doc.data();
                     const novaLinha = tabelaUsuarios.insertRow();
-                    
                     // Checkbox
                     let cell = novaLinha.insertCell();
                     cell.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox"></div>`;
-                    
                     // Nome e ID
                     cell = novaLinha.insertCell();
                     const iniciais = usuario.nome ? usuario.nome.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'UN';
@@ -755,15 +722,12 @@
                             </div>
                         </div>
                     `;
-                    
                     // Email
                     cell = novaLinha.insertCell();
                     cell.textContent = usuario.email || 'Email não informado';
-                    
                     // Categoria
                     cell = novaLinha.insertCell();
                     cell.textContent = usuario.categoria || 'Não definida';
-                    
                     // Empréstimos
                     cell = novaLinha.insertCell();
                     const numEmprestimos = usuario.emprestimos ? usuario.emprestimos.length : 0;
@@ -778,19 +742,16 @@
                             </div>
                         </div>
                     `;
-                    
                     // Status
                     cell = novaLinha.insertCell();
                     const statusClass = usuario.status === 'Bloqueado' ? 'bg-warning' : 'bg-success';
                     const statusText = usuario.status || 'Ativo';
                     cell.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
-                    
                     // Ações
                     cell = novaLinha.insertCell();
                     const acaoBloqueio = usuario.status === 'Bloqueado' 
                         ? `<li><a class="dropdown-item text-success" href="#" onclick="desbloquearUsuario('${doc.id}')"><i class="fas fa-check-circle me-2"></i> Desbloquear</a></li>`
                         : `<li><a class="dropdown-item text-warning" href="#" onclick="bloquearUsuario('${doc.id}')"><i class="fas fa-ban me-2"></i> Bloquear</a></li>`;
-                    
                     cell.innerHTML = `
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -807,8 +768,6 @@
                         </div>
                     `;
                 });
-                
-                // Se não houver usuários, exibir mensagem
                 if (snapshot.empty) {
                     const novaLinha = tabelaUsuarios.insertRow();
                     const cell = novaLinha.insertCell();
@@ -816,11 +775,18 @@
                     cell.className = "text-center";
                     cell.innerHTML = "<p class='my-3'>Nenhum usuário cadastrado. Adicione um novo usuário para começar.</p>";
                 }
-            }).catch((error) => {
+            } catch (error) {
                 console.error("Erro ao carregar usuários: ", error);
                 alert("Erro ao carregar usuários. Verifique o console para mais detalhes.");
-            });
+            }
         }
+        // Funções para manipulação de usuários (mantidas para compatibilidade)
+        window.visualizarUsuario = function(id) { console.log("Visualizar usuário:", id); };
+        window.editarUsuario = function(id) { console.log("Editar usuário:", id); };
+        window.verEmprestimosUsuario = function(id) { console.log("Ver empréstimos do usuário:", id); };
+        window.bloquearUsuario = function(id) { console.log("Bloquear usuário:", id); };
+        window.desbloquearUsuario = function(id) { console.log("Desbloquear usuário:", id); };
+        window.excluirUsuario = function(id) { console.log("Excluir usuário:", id); };
     </script>
 </body>
 </html>
