@@ -1,3 +1,4 @@
+
 // Configuração do Firebase
 export const firebaseConfig = {
   apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
