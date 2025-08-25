@@ -524,8 +524,13 @@
                     // Aqui você implementaria a lógica para salvar o empréstimo no Firestore
                     alert('Empréstimo registrado com sucesso!');
 
+                    // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
+                    const modalEl = document.getElementById('novoEmprestimoModal');
+                    if (modalEl) {
+                        modalEl.removeAttribute('aria-hidden');
+                    }
                     // Fechar o modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('novoEmprestimoModal'));
+                    const modal = bootstrap.Modal.getInstance(modalEl);
                     modal.hide();
 
                     // Limpar o formulário
