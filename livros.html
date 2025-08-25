@@ -485,7 +485,12 @@
                 const form = document.getElementById('formNovoLivro');
                 if (form.checkValidity()) {
                     alert('Livro cadastrado com sucesso!');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('novoLivroModal'));
+                    // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
+                    const modalEl = document.getElementById('novoLivroModal');
+                    if (modalEl) {
+                        modalEl.removeAttribute('aria-hidden');
+                    }
+                    const modal = bootstrap.Modal.getInstance(modalEl);
                     modal.hide();
                     form.reset();
                 } else {
