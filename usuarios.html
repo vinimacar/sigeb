@@ -550,7 +550,7 @@
                 }
             });
         // Gera o cartão do leitor em PDF com nome, categoria, logo e código de barras do ID
-        async function gerarCartaoLeitorPDF(usuario) {
+    window.gerarCartaoLeitorPDF = async function(usuario) {
             // Carregar logo como base64
             const logoUrl = 'logobias.png';
             const logoBase64 = await getImageBase64(logoUrl);
