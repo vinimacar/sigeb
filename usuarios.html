@@ -381,10 +381,10 @@
                                 <label for="categoria" class="form-label">Categoria</label>
                                 <select class="form-select" id="categoria" required>
                                     <option value="">Selecione...</option>
-                                    <option value="estudante">Estudante</option>
-                                    <option value="professor">Professor</option>
-                                    <option value="funcionario">Funcionário</option>
-                                    <option value="comunidade">Comunidade</option>
+                                    <option value="Estudante">Estudante</option>
+                                    <option value="Professor">Professor</option>
+                                    <option value="Funcionario">Funcionário</option>
+                                    <option value="Comunidade">Comunidade</option>
                                 </select>
                             </div>
                             <div class="col-md-8">
@@ -594,6 +594,10 @@
             });
         // Gera o cartão do leitor em PDF com nome, categoria, logo e código de barras do ID
     window.gerarCartaoLeitorPDF = async function(usuario) {
+            if (!usuario || !usuario._id || !usuario.nome || !usuario.categoria) {
+                alert('Dados insuficientes para gerar o cartão do leitor.');
+                return;
+            }
             // Carregar logo como base64
             const logoUrl = 'logobias.png';
             const logoBase64 = await getImageBase64(logoUrl);
@@ -901,7 +905,11 @@
         window.imprimirCartaoLeitor = function(id) {
             const usuario = (window._usuariosCache || []).find(u => u._id === id);
             if (!usuario) return alert('Usuário não encontrado!');
-            gerarCartaoLeitorPDF(usuario);
+            if (typeof window.gerarCartaoLeitorPDF !== 'function') {
+                alert('Função de geração do cartão não está disponível.');
+                return;
+            }
+            window.gerarCartaoLeitorPDF(usuario);
         };
             });
             atualizarPaginacao(paginaAtual, totalPaginas, totalUsuarios);
