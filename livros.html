@@ -207,7 +207,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaLivros">
-                                    <!-- Os dados serão carregados do Firebase -->
+                                    <!-- Os dados serão carregados do Firestore -->
                                 </tbody>
 
                                 </tbody>
@@ -216,8 +216,8 @@
                     </div>
                     <div class="card-footer">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="text-muted">Mostrando 1-4 de 1,250 livros</span>
+                            <div id="infoPaginacaoLivros">
+                                <!-- Informação de paginação será preenchida dinamicamente -->
                             </div>
                             <nav aria-label="Paginação">
                                 <ul class="pagination mb-0">
@@ -413,15 +413,19 @@
             // Função para carregar livros do Firestore
             async function carregarLivros() {
                 const tabelaLivros = document.getElementById('tabelaLivros');
+                const infoPaginacao = document.getElementById('infoPaginacaoLivros');
                 tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Carregando dados...</td></tr>';
                 try {
                     const querySnapshot = await getDocs(collection(db, 'livros'));
                     if (querySnapshot.empty) {
                         tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum livro encontrado</td></tr>';
+                        if (infoPaginacao) infoPaginacao.textContent = '';
                         return;
                     }
                     tabelaLivros.innerHTML = '';
+                    let count = 0;
                     querySnapshot.forEach((doc) => {
+                        count++;
                         const livro = doc.data();
                         const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
                         const statusClass = livro.disponivel ? 'bg-success' : (livro.reservado ? 'bg-info' : 'bg-danger');
@@ -466,9 +470,11 @@
                         `;
                         tabelaLivros.innerHTML += row;
                     });
+                    if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${count} livro(s)`;
                 } catch (error) {
                     console.error("Erro ao carregar livros:", error);
                     tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Erro ao carregar dados. Tente novamente.</td></tr>';
+                    if (infoPaginacao) infoPaginacao.textContent = '';
                 }
             }
 
