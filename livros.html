@@ -666,13 +666,70 @@
             // Configurar botão de importar livros
             document.getElementById('btnImportarLivros').addEventListener('click', function() {
                 const arquivo = document.getElementById('arquivoImportacao').files[0];
-                if (arquivo) {
-                    alert('Importação iniciada. Isso pode levar alguns minutos.');
+                if (!arquivo) {
+                    alert('Por favor, selecione um arquivo para importar.');
+                    return;
+                }
+                // Ler o arquivo e importar para o Firestore
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    let data = evt.target.result;
+                    let workbook;
+                    if (arquivo.name.endsWith('.csv')) {
+                        workbook = XLSX.read(data, { type: 'binary', codepage: 65001 });
+                    } else {
+                        workbook = XLSX.read(data, { type: 'binary' });
+                    }
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: '', header: 1 });
+                    if (json.length < 2) {
+                        alert('Arquivo vazio ou sem dados.');
+                        return;
+                    }
+                    // Mapear colunas
+                    const header = json[0].map(h => h.toString().toLowerCase().trim());
+                    const linhas = json.slice(1);
+                    // Função para obter valor de coluna por nome
+                    function getCol(row, colName) {
+                        const idx = header.indexOf(colName);
+                        return idx >= 0 ? row[idx] : '';
+                    }
+                    // Importar para Firestore
+                    const addDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).addDoc;
+                    const collectionFn = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).collection;
+                    let count = 0, erros = 0;
+                    for (let row of linhas) {
+                        // Ignorar linhas totalmente vazias
+                        if (row.every(cell => !cell || cell.toString().trim() === '')) continue;
+                        try {
+                            await addDoc(collectionFn(db, 'livros'), {
+                                titulo: getCol(row, 'título') || getCol(row, 'titulo'),
+                                autor: getCol(row, 'autor'),
+                                isbn: getCol(row, 'isbn'),
+                                editora: getCol(row, 'editora'),
+                                anoPublicacao: getCol(row, 'ano') || getCol(row, 'ano de publicação') || getCol(row, 'ano publicacao'),
+                                categoria: getCol(row, 'categoria'),
+                                quantidade: Number(getCol(row, 'quantidade') || 1),
+                                localizacao: getCol(row, 'localizacao') || getCol(row, 'localização'),
+                                descricao: getCol(row, 'descricao') || getCol(row, 'descrição'),
+                                disponivel: true,
+                                reservado: false
+                            });
+                            count++;
+                        } catch (e) {
+                            erros++;
+                        }
+                    }
+                    alert(`Importação concluída! ${count} livro(s) importado(s)${erros ? `, ${erros} erro(s)` : ''}.`);
                     const modal = bootstrap.Modal.getInstance(document.getElementById('importarLivrosModal'));
                     modal.hide();
-                } else {
-                    alert('Por favor, selecione um arquivo para importar.');
-                }
+                    carregarLivros();
+                };
+                reader.onerror = function() {
+                    alert('Erro ao ler o arquivo.');
+                };
+                reader.readAsBinaryString(arquivo);
             });
 
         // Visualização prévia do arquivo de importação
