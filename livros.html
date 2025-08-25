@@ -440,7 +440,7 @@
                 const tabelaLivros = document.getElementById('tabelaLivros');
                 const infoPaginacao = document.getElementById('infoPaginacaoLivros');
                 // Paginação client-side
-                const livrosPorPagina = 10;
+                const livrosPorPagina = 20;
                 let livrosFiltrados = window.livrosCache;
                 // Filtro de texto
                 if (filtro && filtro.trim() !== '') {
@@ -469,6 +469,14 @@
                         livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === false && livro.reservado !== true);
                     }
                 }
+                // Ordenar alfabeticamente pelo título
+                livrosFiltrados = livrosFiltrados.slice().sort((a, b) => {
+                    const t1 = (a.titulo || '').toLowerCase();
+                    const t2 = (b.titulo || '').toLowerCase();
+                    if (t1 < t2) return -1;
+                    if (t1 > t2) return 1;
+                    return 0;
+                });
                 // Página atual (default 1)
                 let paginaAtual = window.paginaLivrosAtual || 1;
                 const totalPaginas = Math.ceil(livrosFiltrados.length / livrosPorPagina) || 1;
