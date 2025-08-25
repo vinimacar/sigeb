@@ -692,6 +692,9 @@
             document.getElementById('pesquisaUsuario').addEventListener('keyup', function(e) {
                 if (e.key === 'Enter') filtrarUsuarios();
             });
+            // Ativar filtros por Categoria e Status
+            document.getElementById('filtroCategoria').addEventListener('change', filtrarUsuarios);
+            document.getElementById('filtroStatus').addEventListener('change', filtrarUsuarios);
         });
 
         // Função para carregar usuários do Firestore
@@ -796,18 +799,26 @@
         // Filtra usuários pelo campo de pesquisa
         function filtrarUsuarios() {
             const termo = document.getElementById('pesquisaUsuario').value.trim().toLowerCase();
+            const categoria = document.getElementById('filtroCategoria').value;
+            const status = document.getElementById('filtroStatus').value;
             if (!window._usuariosCache) return;
-            if (!termo) {
-                exibirUsuarios(window._usuariosCache);
-                return;
-            }
-            const filtrados = window._usuariosCache.filter(u => {
-                return (
+            let filtrados = window._usuariosCache;
+            // Filtro de texto
+            if (termo) {
+                filtrados = filtrados.filter(u => (
                     (u.nome && u.nome.toLowerCase().includes(termo)) ||
                     (u.email && u.email.toLowerCase().includes(termo)) ||
                     (u._id && u._id.toLowerCase().includes(termo))
-                );
-            });
+                ));
+            }
+            // Filtro de categoria
+            if (categoria) {
+                filtrados = filtrados.filter(u => (u.categoria || '').toLowerCase() === categoria.toLowerCase());
+            }
+            // Filtro de status
+            if (status) {
+                filtrados = filtrados.filter(u => (u.status || 'ativo').toLowerCase() === status.toLowerCase());
+            }
             exibirUsuarios(filtrados);
         }
         // Funções para manipulação de usuários (mantidas para compatibilidade)
