@@ -1,5 +1,5 @@
 // Configuração do Firebase
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCkttFoV_FoPn91ClE7xFiknFvs9pXaCoQ",
   authDomain: "sigeb-ccd3f.firebaseapp.com",
   databaseURL: "https://sigeb-ccd3f-default-rtdb.firebaseio.com",
