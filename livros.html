@@ -439,6 +439,8 @@
             function exibirLivros(filtro = '') {
                 const tabelaLivros = document.getElementById('tabelaLivros');
                 const infoPaginacao = document.getElementById('infoPaginacaoLivros');
+                // Paginação client-side
+                const livrosPorPagina = 10;
                 let livrosFiltrados = window.livrosCache;
                 if (filtro && filtro.trim() !== '') {
                     const termo = filtro.trim().toLowerCase();
@@ -448,13 +450,23 @@
                         (livro.isbn && livro.isbn.toLowerCase().includes(termo))
                     );
                 }
+                // Página atual (default 1)
+                let paginaAtual = window.paginaLivrosAtual || 1;
+                const totalPaginas = Math.ceil(livrosFiltrados.length / livrosPorPagina) || 1;
+                if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+                window.paginaLivrosAtual = paginaAtual;
+                // Slice dos livros para a página
+                const inicio = (paginaAtual - 1) * livrosPorPagina;
+                const fim = inicio + livrosPorPagina;
+                const livrosPagina = livrosFiltrados.slice(inicio, fim);
                 if (livrosFiltrados.length === 0) {
                     tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum livro encontrado</td></tr>';
                     if (infoPaginacao) infoPaginacao.textContent = '';
+                    document.querySelector('.pagination').innerHTML = '';
                     return;
                 }
                 tabelaLivros.innerHTML = '';
-                livrosFiltrados.forEach(livro => {
+                livrosPagina.forEach(livro => {
                     const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
                     const statusClass = livro.disponivel ? 'bg-success' : (livro.reservado ? 'bg-info' : 'bg-danger');
                     const row = `
@@ -499,6 +511,33 @@
                     tabelaLivros.innerHTML += row;
                 });
                 if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
+
+                // Paginação dinâmica
+                const paginacao = document.querySelector('.pagination');
+                if (paginacao) {
+                    let html = '';
+                    html += `<li class="page-item${paginaAtual === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="anterior" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a></li>`;
+                    for (let i = 1; i <= totalPaginas; i++) {
+                        html += `<li class="page-item${i === paginaAtual ? ' active' : ''}"><a class="page-link" href="#" data-pagina="${i}">${i}</a></li>`;
+                    }
+                    html += `<li class="page-item${paginaAtual === totalPaginas ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="proxima" aria-label="Próximo"><span aria-hidden="true">&raquo;</span></a></li>`;
+                    paginacao.innerHTML = html;
+                    // Eventos de clique
+                    paginacao.querySelectorAll('a[data-pagina]').forEach(link => {
+                        link.onclick = function(e) {
+                            e.preventDefault();
+                            let alvo = this.getAttribute('data-pagina');
+                            if (alvo === 'anterior' && paginaAtual > 1) {
+                                window.paginaLivrosAtual = paginaAtual - 1;
+                            } else if (alvo === 'proxima' && paginaAtual < totalPaginas) {
+                                window.paginaLivrosAtual = paginaAtual + 1;
+                            } else if (!isNaN(Number(alvo))) {
+                                window.paginaLivrosAtual = Number(alvo);
+                            }
+                            exibirLivros(filtro);
+                        };
+                    });
+                }
             }
 
             // Ativar botão de pesquisa
