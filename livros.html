@@ -130,7 +130,7 @@
                                     <button class="btn btn-primary" id="btnPesquisar">Pesquisar</button>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <select class="form-select" id="filtroCategoria">
                                     <option value="">Todas as Categorias</option>
                                     <option value="ACADEMICO">Acadêmico</option>
@@ -162,7 +162,12 @@
                                     <option value="TERROR">Terror</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <select class="form-select" id="filtroEditora">
+                                    <option value="">Todas as Editoras</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <select class="form-select" id="filtroStatus">
                                     <option value="">Todos os Status</option>
                                     <option value="disponivel">Disponível</option>
@@ -348,7 +353,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="arquivoImportacao" class="form-label">Selecione o arquivo CSV ou Excel</label>
-                        <input class="form-control" type="file" id="arquivoImportacao" accept=".csv, .xlsx">
+                        <input class="form-control" type="file" id="arquivoImportacao" accept=".csv, .xlsx, .xls">
                     </div>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i> O arquivo deve conter as colunas: Título, Autor, ISBN, Editora, Ano, Categoria, Quantidade.
@@ -370,7 +375,7 @@
     <!-- Rodapé -->
     <footer class="mt-auto py-3">
         <div class="container text-center">
-            <p class="mb-0">© 2025 SIGEB - Sistema de Gerenciamento de Biblioteca. Todos os direitos reservados.</p>
+            <p class="mb-0">© 2023 SIGEB - Sistema de Gerenciamento de Biblioteca. Todos os direitos reservados.</p>
         </div>
     </footer>
 
@@ -423,10 +428,20 @@
                 try {
                     const querySnapshot = await getDocs(collection(db, 'livros'));
                     window.livrosCache = [];
+                    let editorasSet = new Set();
                     querySnapshot.forEach((doc) => {
                         const livro = doc.data();
                         window.livrosCache.push({ id: doc.id, ...livro });
+                        if (livro.editora && livro.editora.trim() !== '') {
+                            editorasSet.add(livro.editora.trim());
+                        }
                     });
+                    // Preencher filtro de editoras
+                    const filtroEditora = document.getElementById('filtroEditora');
+                    if (filtroEditora) {
+                        const editoras = Array.from(editorasSet).sort((a, b) => a.localeCompare(b));
+                        filtroEditora.innerHTML = '<option value="">Todas as Editoras</option>' + editoras.map(e => `<option value="${e}">${e}</option>`).join('');
+                    }
                     exibirLivros(filtro);
                 } catch (error) {
                     console.error("Erro ao carregar livros:", error);
@@ -455,6 +470,11 @@
                 const categoria = document.getElementById('filtroCategoria').value;
                 if (categoria) {
                     livrosFiltrados = livrosFiltrados.filter(livro => livro.categoria === categoria);
+                }
+                // Filtro de editora
+                const editora = document.getElementById('filtroEditora').value;
+                if (editora) {
+                    livrosFiltrados = livrosFiltrados.filter(livro => (livro.editora || '') === editora);
                 }
                 // Filtro de status
                 const status = document.getElementById('filtroStatus').value;
@@ -569,8 +589,11 @@
 
             // Ativar botão de pesquisa
             document.getElementById('btnPesquisar').addEventListener('click', function() {
-            // Filtros de categoria e status
+            // Filtros de categoria, editora e status
             document.getElementById('filtroCategoria').addEventListener('change', function() {
+                exibirLivros(document.getElementById('pesquisaLivro').value);
+            });
+            document.getElementById('filtroEditora').addEventListener('change', function() {
                 exibirLivros(document.getElementById('pesquisaLivro').value);
             });
             document.getElementById('filtroStatus').addEventListener('change', function() {
