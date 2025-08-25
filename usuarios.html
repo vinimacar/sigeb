@@ -522,6 +522,10 @@
         });
 
         // Função para carregar usuários do Firestore
+        // Variáveis de paginação
+        let paginaAtual = 1;
+        const usuariosPorPagina = 10;
+
         async function carregarUsuarios() {
             const usuariosRef = collection(db, 'usuarios');
             try {
@@ -533,7 +537,8 @@
                     const usuario = doc.data();
                     window._usuariosCache.push({ ...usuario, _id: doc.id });
                 });
-                exibirUsuarios(window._usuariosCache);
+                paginaAtual = 1;
+                exibirUsuariosPaginados();
             } catch (error) {
                 console.error("Erro ao carregar usuários: ", error);
                 alert("Erro ao carregar usuários. Verifique o console para mais detalhes.");
@@ -541,18 +546,26 @@
         }
 
         // Exibe usuários na tabela
-        function exibirUsuarios(lista) {
+        function exibirUsuariosPaginados(listaFiltrada) {
             const tabelaUsuarios = document.getElementById('tabelaUsuarios');
+            let lista = listaFiltrada || window._usuariosCache || [];
+            const totalUsuarios = lista.length;
+            const totalPaginas = Math.ceil(totalUsuarios / usuariosPorPagina) || 1;
+            if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+            const inicio = (paginaAtual - 1) * usuariosPorPagina;
+            const fim = inicio + usuariosPorPagina;
+            const usuariosPagina = lista.slice(inicio, fim);
             tabelaUsuarios.innerHTML = '';
-            if (!lista || lista.length === 0) {
+            if (!usuariosPagina || usuariosPagina.length === 0) {
                 const novaLinha = tabelaUsuarios.insertRow();
                 const cell = novaLinha.insertCell();
                 cell.colSpan = 7;
                 cell.className = "text-center";
                 cell.innerHTML = "<p class='my-3'>Nenhum usuário cadastrado. Adicione um novo usuário para começar.</p>";
+                atualizarPaginacao(1, 1, 0);
                 return;
             }
-            lista.forEach(usuario => {
+            usuariosPagina.forEach(usuario => {
                 const novaLinha = tabelaUsuarios.insertRow();
                 // Checkbox
                 let cell = novaLinha.insertCell();
@@ -587,7 +600,7 @@
                     <div class="d-flex align-items-center">
                         <span class="me-2">${numEmprestimos}</span>
                         <div class="progress flex-grow-1" style="height: 5px;">
-                            <div class="${barColor}" role="progressbar" style="width: ${porcentagem}%;" 
+                            <div class="${barColor}" role="progressbar" style="width: ${porcentagem}%"; 
                                 aria-valuenow="${porcentagem}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
@@ -618,6 +631,7 @@
                     </div>
                 `;
             });
+            atualizarPaginacao(paginaAtual, totalPaginas, totalUsuarios);
         }
 
         // Filtra usuários pelo campo de pesquisa
@@ -643,7 +657,43 @@
             if (status) {
                 filtrados = filtrados.filter(u => (u.status || 'ativo').toLowerCase() === status.toLowerCase());
             }
-            exibirUsuarios(filtrados);
+            paginaAtual = 1;
+            exibirUsuariosPaginados(filtrados);
+        }
+
+        // Atualiza a paginação na interface
+        function atualizarPaginacao(pagina, totalPaginas, totalUsuarios) {
+            const paginacao = document.querySelector('.pagination');
+            if (!paginacao) return;
+            paginacao.innerHTML = '';
+            // Botão anterior
+            const liAnterior = document.createElement('li');
+            liAnterior.className = 'page-item' + (pagina <= 1 ? ' disabled' : '');
+            liAnterior.innerHTML = `<a class="page-link" href="#" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a>`;
+            liAnterior.onclick = function(e) { e.preventDefault(); if (pagina > 1) { paginaAtual--; exibirUsuariosPaginados(); } };
+            paginacao.appendChild(liAnterior);
+            // Números das páginas
+            for (let i = 1; i <= totalPaginas; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === pagina ? ' active' : '');
+                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                li.onclick = function(e) { e.preventDefault(); paginaAtual = i; exibirUsuariosPaginados(); };
+                paginacao.appendChild(li);
+            }
+            // Botão próximo
+            const liProximo = document.createElement('li');
+            liProximo.className = 'page-item' + (pagina >= totalPaginas ? ' disabled' : '');
+            liProximo.innerHTML = `<a class="page-link" href="#" aria-label="Próximo"><span aria-hidden="true">&raquo;</span></a>`;
+            liProximo.onclick = function(e) { e.preventDefault(); if (pagina < totalPaginas) { paginaAtual++; exibirUsuariosPaginados(); } };
+            paginacao.appendChild(liProximo);
+
+            // Atualiza texto de "Mostrando X-Y de Z usuários"
+            const texto = document.querySelector('.card-footer .text-muted');
+            if (texto) {
+                const inicio = totalUsuarios === 0 ? 0 : ((pagina - 1) * usuariosPorPagina + 1);
+                const fim = Math.min(pagina * usuariosPorPagina, totalUsuarios);
+                texto.textContent = `Mostrando ${inicio}-${fim} de ${totalUsuarios} usuários`;
+            }
         }
         // Funções para manipulação de usuários (mantidas para compatibilidade)
         window.visualizarUsuario = function(id) { console.log("Visualizar usuário:", id); };
