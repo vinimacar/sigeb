@@ -821,12 +821,19 @@
                             <li><a class="dropdown-item" href="#" onclick="visualizarUsuario('${usuario._id}')"><i class="fas fa-eye me-2"></i> Visualizar</a></li>
                             <li><a class="dropdown-item" href="#" onclick="editarUsuario('${usuario._id}')"><i class="fas fa-edit me-2"></i> Editar</a></li>
                             <li><a class="dropdown-item" href="#" onclick="verEmprestimosUsuario('${usuario._id}')"><i class="fas fa-book me-2"></i> Empréstimos</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="imprimirCartaoLeitor('${usuario._id}')"><i class="fas fa-id-card me-2"></i> Imprimir Cartão de Leitor</a></li>
                             <li><hr class="dropdown-divider"></li>
                             ${acaoBloqueio}
                             <li><a class="dropdown-item text-danger" href="#" onclick="excluirUsuario('${usuario._id}')"><i class="fas fa-trash-alt me-2"></i> Excluir</a></li>
                         </ul>
                     </div>
                 `;
+        // Imprimir Cartão de Leitor pelo menu Ações
+        window.imprimirCartaoLeitor = function(id) {
+            const usuario = (window._usuariosCache || []).find(u => u._id === id);
+            if (!usuario) return alert('Usuário não encontrado!');
+            gerarCartaoLeitorPDF(usuario);
+        };
             });
             atualizarPaginacao(paginaAtual, totalPaginas, totalUsuarios);
         }
