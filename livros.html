@@ -459,9 +459,9 @@
                 if (filtro && filtro.trim() !== '') {
                     const termo = filtro.trim().toLowerCase();
                     livrosFiltrados = livrosFiltrados.filter(livro =>
-                        (livro.titulo && livro.titulo.toLowerCase().includes(termo)) ||
-                        (livro.autor && livro.autor.toLowerCase().includes(termo)) ||
-                        (livro.isbn && livro.isbn.toLowerCase().includes(termo))
+                        (livro.titulo && String(livro.titulo).toLowerCase().includes(termo)) ||
+                        (livro.autor && String(livro.autor).toLowerCase().includes(termo)) ||
+                        (livro.isbn && String(livro.isbn).toLowerCase().includes(termo))
                     );
                 }
                 // Filtro de categoria
