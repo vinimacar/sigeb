@@ -355,6 +355,7 @@
                                                 const data = await resp.json();
                                                 if (!data.erro) {
                                                     document.getElementById('endereco').value = data.logradouro || '';
+                                                    document.getElementById('bairro').value = data.bairro || '';
                                                     document.getElementById('cidade').value = data.localidade || '';
                                                     document.getElementById('estado').value = data.uf || '';
                                                 }
@@ -386,9 +387,17 @@
                                     <option value="comunidade">Comunidade</option>
                                 </select>
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-8">
                                 <label for="endereco" class="form-label">Endereço</label>
                                 <input type="text" class="form-control" id="endereco">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="numero" class="form-label">Número</label>
+                                <input type="text" class="form-control" id="numero">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="bairro" class="form-label">Bairro</label>
+                                <input type="text" class="form-control" id="bairro">
                             </div>
                             <div class="col-md-4">
                                 <label for="cidade" class="form-label">Cidade</label>
@@ -553,6 +562,8 @@
                         documento: document.getElementById('documento').value,
                         categoria: document.getElementById('categoria').value,
                         endereco: document.getElementById('endereco').value,
+                        numero: document.getElementById('numero').value,
+                        bairro: document.getElementById('bairro').value,
                         cidade: document.getElementById('cidade').value,
                         estado: document.getElementById('estado').value,
                         cep: document.getElementById('cep').value
@@ -1018,9 +1029,17 @@
                                                                 <option value="Comunidade">Comunidade</option>
                                                             </select>
                                                         </div>
-                                                        <div class="col-md-12">
+                                                        <div class="col-md-8">
                                                             <label for="editarEndereco" class="form-label">Endereço</label>
                                                             <input type="text" class="form-control" id="editarEndereco">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label for="editarNumero" class="form-label">Número</label>
+                                                            <input type="text" class="form-control" id="editarNumero">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label for="editarBairro" class="form-label">Bairro</label>
+                                                            <input type="text" class="form-control" id="editarBairro">
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label for="editarCidade" class="form-label">Cidade</label>
@@ -1084,6 +1103,8 @@
                         document.getElementById('editarDocumento').value = usuario.documento || '';
                         document.getElementById('editarCategoria').value = usuario.categoria || '';
                         document.getElementById('editarEndereco').value = usuario.endereco || '';
+                        document.getElementById('editarNumero').value = usuario.numero || '';
+                        document.getElementById('editarBairro').value = usuario.bairro || '';
                         document.getElementById('editarCidade').value = usuario.cidade || '';
                         document.getElementById('editarEstado').value = usuario.estado || '';
                         document.getElementById('editarCep').value = usuario.cep || '';
@@ -1098,6 +1119,8 @@
                                 documento: document.getElementById('editarDocumento').value,
                                 categoria: document.getElementById('editarCategoria').value,
                                 endereco: document.getElementById('editarEndereco').value,
+                                numero: document.getElementById('editarNumero').value,
+                                bairro: document.getElementById('editarBairro').value,
                                 cidade: document.getElementById('editarCidade').value,
                                 estado: document.getElementById('editarEstado').value,
                                 cep: document.getElementById('editarCep').value
