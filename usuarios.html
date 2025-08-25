@@ -555,12 +555,10 @@
                                 <input type="text" class="form-control" id="cep">
                             </div>
                             <div class="col-md-6">
-                                <label for="senha" class="form-label">Senha</label>
-                                <input type="password" class="form-control" id="senha" required>
+                                <!-- Campo de senha removido -->
                             </div>
                             <div class="col-md-6">
-                                <label for="confirmarSenha" class="form-label">Confirmar Senha</label>
-                                <input type="password" class="form-control" id="confirmarSenha" required>
+                                <!-- Campo de confirmar senha removido -->
                             </div>
                             <div class="col-md-12">
                                 <div class="form-check">
@@ -666,12 +664,6 @@
             document.getElementById('btnSalvarUsuario').addEventListener('click', function() {
                 const form = document.getElementById('formNovoUsuario');
                 if (form.checkValidity()) {
-                    const senha = document.getElementById('senha').value;
-                    const confirmarSenha = document.getElementById('confirmarSenha').value;
-                    if (senha !== confirmarSenha) {
-                        alert('As senhas não coincidem!');
-                        return;
-                    }
                     alert('Usuário cadastrado com sucesso!');
                     const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
                     modal.hide();
