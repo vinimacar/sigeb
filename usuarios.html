@@ -316,6 +316,10 @@
                                 <input type="tel" class="form-control" id="telefone">
                             </div>
                             <div class="col-md-6">
+                                <label for="whatsapp" class="form-label">WhatsApp</label>
+                                <input type="tel" class="form-control" id="whatsapp" placeholder="(99) 99999-9999">
+                            </div>
+                            <div class="col-md-6">
                                 <label for="dataNascimento" class="form-label">Data de Nascimento</label>
                                 <input type="date" class="form-control" id="dataNascimento">
                             </div>
@@ -496,6 +500,7 @@
                         nome: document.getElementById('nome').value,
                         email: document.getElementById('email').value,
                         telefone: document.getElementById('telefone').value,
+                        whatsapp: document.getElementById('whatsapp').value,
                         dataNascimento: document.getElementById('dataNascimento').value,
                         documento: document.getElementById('documento').value,
                         categoria: document.getElementById('categoria').value,
@@ -538,36 +543,53 @@
             // Criar PDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [54, 86] }); // Tamanho cartão padrão
-            // Fundo
-            doc.setFillColor(245, 245, 245);
+            // Fundo geral
+            doc.setFillColor(245, 247, 252);
             doc.rect(0, 0, 86, 54, 'F');
-            // Logo
-            doc.addImage(logoBase64, 'PNG', 5, 4, 18, 18);
-            // Título
+            // Faixa azul superior
+            doc.setFillColor(33, 86, 180);
+            doc.rect(0, 0, 86, 15, 'F');
+            // Logo centralizada na faixa
+            doc.addImage(logoBase64, 'PNG', 4, 2.5, 13, 13);
+            // Nome da escola na faixa
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text('Cartão do Leitor', 43, 12, { align: 'center' });
+            doc.setFontSize(8.5);
+            doc.setTextColor(255,255,255);
+            doc.text('Escola Estadual Governador Bias Fortes', 43, 7.5, { align: 'center' });
+            // Título cartão
+            doc.setFontSize(11);
+            doc.text('Cartão do Leitor', 43, 14, { align: 'center' });
+            // Área branca para dados
+            doc.setFillColor(255,255,255);
+            doc.roundedRect(4, 17, 78, 18, 2, 2, 'F');
             // Nome
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text('Nome:', 28, 22);
+            doc.setFontSize(8.5);
+            doc.setTextColor(33, 86, 180);
+            doc.text('Nome:', 8, 24);
             doc.setFont('helvetica', 'bold');
-            doc.text(usuario.nome, 43, 22, { align: 'left', maxWidth: 40 });
+            doc.setFontSize(10.5);
+            doc.setTextColor(40,40,40);
+            doc.text(usuario.nome, 25, 24);
             // Categoria
             doc.setFont('helvetica', 'normal');
-            doc.text('Categoria:', 28, 28);
+            doc.setFontSize(8.5);
+            doc.setTextColor(33, 86, 180);
+            doc.text('Categoria:', 8, 31);
             doc.setFont('helvetica', 'bold');
-            doc.text(usuario.categoria, 43, 28, { align: 'left', maxWidth: 40 });
+            doc.setFontSize(10.5);
+            doc.setTextColor(40,40,40);
+            doc.text(usuario.categoria, 30, 31);
+            // Área código de barras
+            doc.setFillColor(240,242,247);
+            doc.roundedRect(4, 37, 78, 12, 2, 2, 'F');
             // Código de barras
-            doc.addImage(barcodeBase64, 'PNG', 28, 34, 30, 12);
+            doc.addImage(barcodeBase64, 'PNG', 23, 39, 40, 9);
             // ID abaixo do código de barras
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.text(usuario._id, 43, 48, { align: 'center' });
-            // Escola
             doc.setFontSize(7);
             doc.setTextColor(100);
-            doc.text('Escola Estadual Governador Bias Fortes', 43, 52, { align: 'center' });
+            doc.text(usuario._id, 43, 50, { align: 'center' });
             // Baixar PDF
             doc.save(`cartao-leitor-${usuario.nome.replace(/\s+/g, '_')}.pdf`);
         }
