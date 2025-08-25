@@ -656,23 +656,12 @@
         };
 
         // Mantém as funções de emprestar/cancelar reserva como antes
-        window.emprestarLivro = async function(id) {
+        window.emprestarLivro = function(id) {
             const livro = window.livrosCache.find(l => l.id === id);
             if (!livro) return alert('Livro não encontrado!');
             if (!livro.disponivel) return alert('Este livro não está disponível para empréstimo.');
-            if (!confirm('Confirmar empréstimo do livro: ' + (livro.titulo || '') + '?')) return;
-            try {
-                const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
-                const updateDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).updateDoc;
-                await updateDoc(docRef(db, 'livros', id), {
-                    disponivel: false,
-                    reservado: false
-                });
-                alert('Livro emprestado com sucesso!');
-                carregarLivros();
-            } catch (e) {
-                alert('Erro ao emprestar livro: ' + e.message);
-            }
+            // Redireciona para a página de empréstimos, passando o id do livro
+            window.location.href = `emprestimos.html?livroId=${encodeURIComponent(id)}`;
         };
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
     </script>
