@@ -805,12 +805,183 @@
             info += `<b>Data de Nascimento:</b> ${usuario.dataNascimento || ''}`;
             showSimpleModal('Visualizar Usuário', info);
         };
-        window.editarUsuario = function(id) {
-            alert('Funcionalidade de edição pode ser implementada aqui. ID do usuário: ' + id);
-        };
-        window.verEmprestimosUsuario = function(id) {
-            alert('Funcionalidade de empréstimos pode ser implementada aqui. ID do usuário: ' + id);
-        };
+                // Modal de edição de usuário
+                window.editarUsuario = function(id) {
+                        const usuario = (window._usuariosCache || []).find(u => u._id === id);
+                        if (!usuario) return alert('Usuário não encontrado!');
+                        let modal = document.getElementById('editarUsuarioModal');
+                        if (!modal) {
+                                const html = `
+                                <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="editarUsuarioModalLabel">Editar Usuário</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form id="formEditarUsuario">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label for="editarNome" class="form-label">Nome Completo</label>
+                                                            <input type="text" class="form-control" id="editarNome" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarEmail" class="form-label">Email</label>
+                                                            <input type="email" class="form-control" id="editarEmail" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarTelefone" class="form-label">Telefone</label>
+                                                            <input type="tel" class="form-control" id="editarTelefone">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarDataNascimento" class="form-label">Data de Nascimento</label>
+                                                            <input type="date" class="form-control" id="editarDataNascimento">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarDocumento" class="form-label">Documento (CPF/RG)</label>
+                                                            <input type="text" class="form-control" id="editarDocumento">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarCategoria" class="form-label">Categoria</label>
+                                                            <select class="form-select" id="editarCategoria" required>
+                                                                <option value="">Selecione...</option>
+                                                                <option value="estudante">Estudante</option>
+                                                                <option value="professor">Professor</option>
+                                                                <option value="funcionario">Funcionário</option>
+                                                                <option value="comunidade">Comunidade</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <label for="editarEndereco" class="form-label">Endereço</label>
+                                                            <input type="text" class="form-control" id="editarEndereco">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarCidade" class="form-label">Cidade</label>
+                                                            <input type="text" class="form-control" id="editarCidade">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarEstado" class="form-label">Estado</label>
+                                                            <select class="form-select" id="editarEstado">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="AC">Acre</option>
+                                                                <option value="AL">Alagoas</option>
+                                                                <option value="AP">Amapá</option>
+                                                                <option value="AM">Amazonas</option>
+                                                                <option value="BA">Bahia</option>
+                                                                <option value="CE">Ceará</option>
+                                                                <option value="DF">Distrito Federal</option>
+                                                                <option value="ES">Espírito Santo</option>
+                                                                <option value="GO">Goiás</option>
+                                                                <option value="MA">Maranhão</option>
+                                                                <option value="MT">Mato Grosso</option>
+                                                                <option value="MS">Mato Grosso do Sul</option>
+                                                                <option value="MG">Minas Gerais</option>
+                                                                <option value="PA">Pará</option>
+                                                                <option value="PB">Paraíba</option>
+                                                                <option value="PR">Paraná</option>
+                                                                <option value="PE">Pernambuco</option>
+                                                                <option value="PI">Piauí</option>
+                                                                <option value="RJ">Rio de Janeiro</option>
+                                                                <option value="RN">Rio Grande do Norte</option>
+                                                                <option value="RS">Rio Grande do Sul</option>
+                                                                <option value="RO">Rondônia</option>
+                                                                <option value="RR">Roraima</option>
+                                                                <option value="SC">Santa Catarina</option>
+                                                                <option value="SP">São Paulo</option>
+                                                                <option value="SE">Sergipe</option>
+                                                                <option value="TO">Tocantins</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarCep" class="form-label">CEP</label>
+                                                            <input type="text" class="form-control" id="editarCep">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-primary" id="btnSalvarEdicaoUsuario">Salvar Alterações</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                document.body.insertAdjacentHTML('beforeend', html);
+                                modal = document.getElementById('editarUsuarioModal');
+                        }
+                        // Preencher campos
+                        document.getElementById('editarNome').value = usuario.nome || '';
+                        document.getElementById('editarEmail').value = usuario.email || '';
+                        document.getElementById('editarTelefone').value = usuario.telefone || '';
+                        document.getElementById('editarDataNascimento').value = usuario.dataNascimento || '';
+                        document.getElementById('editarDocumento').value = usuario.documento || '';
+                        document.getElementById('editarCategoria').value = usuario.categoria || '';
+                        document.getElementById('editarEndereco').value = usuario.endereco || '';
+                        document.getElementById('editarCidade').value = usuario.cidade || '';
+                        document.getElementById('editarEstado').value = usuario.estado || '';
+                        document.getElementById('editarCep').value = usuario.cep || '';
+                        // Salvar alterações (apenas na UI)
+                        document.getElementById('btnSalvarEdicaoUsuario').onclick = function() {
+                                usuario.nome = document.getElementById('editarNome').value;
+                                usuario.email = document.getElementById('editarEmail').value;
+                                usuario.telefone = document.getElementById('editarTelefone').value;
+                                usuario.dataNascimento = document.getElementById('editarDataNascimento').value;
+                                usuario.documento = document.getElementById('editarDocumento').value;
+                                usuario.categoria = document.getElementById('editarCategoria').value;
+                                usuario.endereco = document.getElementById('editarEndereco').value;
+                                usuario.cidade = document.getElementById('editarCidade').value;
+                                usuario.estado = document.getElementById('editarEstado').value;
+                                usuario.cep = document.getElementById('editarCep').value;
+                                exibirUsuariosPaginados();
+                                const modalInst = bootstrap.Modal.getInstance(document.getElementById('editarUsuarioModal'));
+                                modalInst.hide();
+                                alert('Usuário atualizado! (Alteração apenas na interface, não salva no banco)');
+                        };
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+                };
+
+                // Modal de empréstimos do usuário
+                window.verEmprestimosUsuario = function(id) {
+                        const usuario = (window._usuariosCache || []).find(u => u._id === id);
+                        if (!usuario) return alert('Usuário não encontrado!');
+                        let modal = document.getElementById('emprestimosUsuarioModal');
+                        if (!modal) {
+                                const html = `
+                                <div class="modal fade" id="emprestimosUsuarioModal" tabindex="-1" aria-labelledby="emprestimosUsuarioModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="emprestimosUsuarioModalLabel">Empréstimos do Usuário</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                            </div>
+                                            <div class="modal-body" id="emprestimosUsuarioBody"></div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                document.body.insertAdjacentHTML('beforeend', html);
+                                modal = document.getElementById('emprestimosUsuarioModal');
+                        }
+                        // Montar lista de empréstimos
+                        const body = document.getElementById('emprestimosUsuarioBody');
+                        const emprestimos = usuario.emprestimos || [];
+                        if (emprestimos.length === 0) {
+                                body.innerHTML = `<p class='text-center my-3'>Nenhum empréstimo registrado para este usuário.</p>`;
+                        } else {
+                                let html = `<table class='table table-bordered'><thead><tr><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr></thead><tbody>`;
+                                emprestimos.forEach(e => {
+                                        html += `<tr><td>${e.livro || '-'}</td><td>${e.dataEmprestimo || '-'}</td><td>${e.dataDevolucao || '-'}</td><td>${e.status || '-'}</td></tr>`;
+                                });
+                                html += `</tbody></table>`;
+                                body.innerHTML = html;
+                        }
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+                };
         window.bloquearUsuario = function(id) {
             if (!window._usuariosCache) return;
             const usuario = window._usuariosCache.find(u => u._id === id);
