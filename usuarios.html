@@ -442,14 +442,16 @@
 
     <!-- Bootstrap JS e dependências -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- jsPDF para geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- JsBarcode para gerar código de barras -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
-    
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
-        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+    import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
         import { firebaseConfig } from './firebase-config.js';
 
         const app = initializeApp(firebaseConfig);
@@ -485,7 +487,8 @@
             });
 
             // Configurar botão de salvar usuário
-            document.getElementById('btnSalvarUsuario').addEventListener('click', function() {
+
+            document.getElementById('btnSalvarUsuario').addEventListener('click', async function() {
                 const form = document.getElementById('formNovoUsuario');
                 if (form.checkValidity()) {
                     // Coletar dados do usuário
@@ -501,15 +504,91 @@
                         estado: document.getElementById('estado').value,
                         cep: document.getElementById('cep').value
                     };
-                    // Exibir ficha timbrada
-                    gerarFichaTimbrada(usuario);
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
-                    modal.hide();
-                    form.reset();
+                    try {
+                        // Salvar usuário no Firestore
+                        const { addDoc, collection } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+                        const usuariosRef = collection(db, 'usuarios');
+                        const docRef = await addDoc(usuariosRef, usuario);
+                        usuario._id = docRef.id;
+                        // Exibir ficha timbrada
+                        gerarFichaTimbrada(usuario);
+                        // Gerar cartão do leitor em PDF
+                        gerarCartaoLeitorPDF(usuario);
+                        // Atualizar lista
+                        await carregarUsuarios();
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
+                        modal.hide();
+                        form.reset();
+                    } catch (error) {
+                        alert('Erro ao salvar usuário: ' + (error.message || error));
+                    }
                 } else {
                     form.reportValidity();
                 }
             });
+        // Gera o cartão do leitor em PDF com nome, categoria, logo e código de barras do ID
+        async function gerarCartaoLeitorPDF(usuario) {
+            // Carregar logo como base64
+            const logoUrl = 'logobias.png';
+            const logoBase64 = await getImageBase64(logoUrl);
+            // Gerar código de barras em canvas
+            const barcodeCanvas = document.createElement('canvas');
+            JsBarcode(barcodeCanvas, usuario._id, { format: 'CODE128', width: 2, height: 40, displayValue: false });
+            const barcodeBase64 = barcodeCanvas.toDataURL('image/png');
+            // Criar PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [54, 86] }); // Tamanho cartão padrão
+            // Fundo
+            doc.setFillColor(245, 245, 245);
+            doc.rect(0, 0, 86, 54, 'F');
+            // Logo
+            doc.addImage(logoBase64, 'PNG', 5, 4, 18, 18);
+            // Título
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('Cartão do Leitor', 43, 12, { align: 'center' });
+            // Nome
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text('Nome:', 28, 22);
+            doc.setFont('helvetica', 'bold');
+            doc.text(usuario.nome, 43, 22, { align: 'left', maxWidth: 40 });
+            // Categoria
+            doc.setFont('helvetica', 'normal');
+            doc.text('Categoria:', 28, 28);
+            doc.setFont('helvetica', 'bold');
+            doc.text(usuario.categoria, 43, 28, { align: 'left', maxWidth: 40 });
+            // Código de barras
+            doc.addImage(barcodeBase64, 'PNG', 28, 34, 30, 12);
+            // ID abaixo do código de barras
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(usuario._id, 43, 48, { align: 'center' });
+            // Escola
+            doc.setFontSize(7);
+            doc.setTextColor(100);
+            doc.text('Escola Estadual Governador Bias Fortes', 43, 52, { align: 'center' });
+            // Baixar PDF
+            doc.save(`cartao-leitor-${usuario.nome.replace(/\s+/g, '_')}.pdf`);
+        }
+
+        // Utilitário para converter imagem em base64
+        function getImageBase64(url) {
+            return new Promise((resolve, reject) => {
+                const img = new window.Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = function() { reject('Erro ao carregar logo'); };
+                img.src = url;
+            });
+        }
 
             // Função para gerar ficha timbrada
             function gerarFichaTimbrada(usuario) {
@@ -921,22 +1000,33 @@
                         document.getElementById('editarCidade').value = usuario.cidade || '';
                         document.getElementById('editarEstado').value = usuario.estado || '';
                         document.getElementById('editarCep').value = usuario.cep || '';
-                        // Salvar alterações (apenas na UI)
-                        document.getElementById('btnSalvarEdicaoUsuario').onclick = function() {
-                                usuario.nome = document.getElementById('editarNome').value;
-                                usuario.email = document.getElementById('editarEmail').value;
-                                usuario.telefone = document.getElementById('editarTelefone').value;
-                                usuario.dataNascimento = document.getElementById('editarDataNascimento').value;
-                                usuario.documento = document.getElementById('editarDocumento').value;
-                                usuario.categoria = document.getElementById('editarCategoria').value;
-                                usuario.endereco = document.getElementById('editarEndereco').value;
-                                usuario.cidade = document.getElementById('editarCidade').value;
-                                usuario.estado = document.getElementById('editarEstado').value;
-                                usuario.cep = document.getElementById('editarCep').value;
+                        // Salvar alterações no Firestore
+                        document.getElementById('btnSalvarEdicaoUsuario').onclick = async function() {
+                            // Coletar dados do formulário
+                            const dadosAtualizados = {
+                                nome: document.getElementById('editarNome').value,
+                                email: document.getElementById('editarEmail').value,
+                                telefone: document.getElementById('editarTelefone').value,
+                                dataNascimento: document.getElementById('editarDataNascimento').value,
+                                documento: document.getElementById('editarDocumento').value,
+                                categoria: document.getElementById('editarCategoria').value,
+                                endereco: document.getElementById('editarEndereco').value,
+                                cidade: document.getElementById('editarCidade').value,
+                                estado: document.getElementById('editarEstado').value,
+                                cep: document.getElementById('editarCep').value
+                            };
+                            try {
+                                const usuarioRef = doc(db, 'usuarios', usuario._id);
+                                await updateDoc(usuarioRef, dadosAtualizados);
+                                // Atualizar cache local
+                                Object.assign(usuario, dadosAtualizados);
                                 exibirUsuariosPaginados();
                                 const modalInst = bootstrap.Modal.getInstance(document.getElementById('editarUsuarioModal'));
                                 modalInst.hide();
-                                alert('Usuário atualizado! (Alteração apenas na interface, não salva no banco)');
+                                alert('Usuário atualizado com sucesso!');
+                            } catch (error) {
+                                alert('Erro ao atualizar usuário: ' + (error.message || error));
+                            }
                         };
                         const bsModal = new bootstrap.Modal(modal);
                         bsModal.show();
