@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEB - Administração</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="icone.png" type="image/png">
+</head>
+<body>
+    <!-- Barra de navegação superior -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logobias.png" alt="SIGEB Logo" class="me-2">
+                <span>SIGEB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="livros.html"><i class="fas fa-book"></i> Livros</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="emprestimos.html"><i class="fas fa-exchange-alt"></i> Empréstimos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="usuarios.html"><i class="fas fa-users"></i> Usuários</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventario.html"><i class="fas fa-boxes"></i> Inventário</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="admin.html"><i class="fas fa-shield-alt"></i> Administração</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> <span id="userName">Administrador</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo principal -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Sidebar de navegação (visível apenas em telas maiores) -->
+            <div class="col-lg-3 col-xl-2 d-none d-lg-block">
+                <div class="card shadow">
+                    <div class="card-header">
+                        <h5 class="mb-0">Menu</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="dashboard.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-home me-2"></i> Dashboard
+                            </a>
+                            <a href="livros.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-book me-2"></i> Livros
+                            </a>
+                            <a href="emprestimos.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-exchange-alt me-2"></i> Empréstimos
+                            </a>
+                            <a href="usuarios.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-users me-2"></i> Usuários
+                            </a>
+                            <a href="relatorios.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-bar me-2"></i> Relatórios
+                            </a>
+                            <a href="inventario.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-boxes me-2"></i> Inventário
+                            </a>
+                            <a href="admin.html" class="list-group-item list-group-item-action active">
+                                <i class="fas fa-shield-alt me-2"></i> Administração
+                            </a>
+                            <a href="configuracoes.html" class="list-group-item list-group-item-action">
+                                <i class="fas fa-cog me-2"></i> Configurações
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Conteúdo da página -->
+            <div class="col-12 col-lg-9 col-xl-10">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h2 class="mb-0">Administração do Sistema</h2>
+                        <p class="text-muted">Gerencie usuários, permissões e logs do sistema</p>
+                    </div>
+                </div>
+                
+                <!-- Abas de Administração -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="adminTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab" aria-controls="usuarios" aria-selected="true">Usuários do Sistema</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="permissoes-tab" data-bs-toggle="tab" data-bs-target="#permissoes" type="button" role="tab" aria-controls="permissoes" aria-selected="false">Permissões</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">Logs do Sistema</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="manutencao-tab" data-bs-toggle="tab" data-bs-target="#manutencao" type="button" role="tab" aria-controls="manutencao" aria-selected="false">Manutenção</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="adminTabsContent">
+                            <!-- Aba de Usuários do Sistema -->
+                            <div class="tab-pane fade show active" id="usuarios" role="tabpanel" aria-labelledby="usuarios-tab">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div class="d-flex">
+                                        <div class="input-group me-2" style="width: 300px;">
+                                            <input type="text" class="form-control" placeholder="Buscar usuário...">
+                                            <button class="btn btn-outline-secondary" type="button">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                        <select class="form-select me-2" style="width: 150px;">
+                                            <option value="">Todos os perfis</option>
+                                            <option value="admin">Administrador</option>
+                                            <option value="bibliotecario">Bibliotecário</option>
+                                            <option value="auxiliar">Auxiliar</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#novoUsuarioModal">
+                                        <i class="fas fa-plus me-1"></i> Novo Usuário
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>E-mail</th>
+                                                <th>Perfil</th>
+                                                <th>Status</th>
+                                                <th>Último Acesso</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="Avatar">
+                                                        <div>
+                                                            <div class="fw-bold">João Silva</div>
+                                                            <small class="text-muted">Desde 10/01/2022</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>joao.silva@exemplo.com</td>
+                                                <td><span class="badge bg-danger">Administrador</span></td>
+                                                <td><span class="badge bg-success">Ativo</span></td>
+                                                <td>Hoje, 10:45</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-danger">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="Avatar">
+                                                        <div>
+                                                            <div class="fw-bold">Maria Oliveira</div>
+                                                            <small class="text-muted">Desde 15/03/2022</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>maria.oliveira@exemplo.com</td>
+                                                <td><span class="badge bg-primary">Bibliotecário</span></td>
+                                                <td><span class="badge bg-success">Ativo</span></td>
+                                                <td>Ontem, 16:30</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-outline-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-danger">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="Avatar">
+                                                        <div>
+                                                            <div class="fw-bold">Carlos Santos</div>
+                                                            <small class="text-muted">Desde 05/05/2022</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>carlos.santos@exemplo.com</td>
+                                                <td><span class="badge bg-info">Auxiliar</span></td>
+                                                <td><span class="badge bg-warning text-dark">Inativo</span></td>
+                                                <td>10/05/2023, 09:15</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-outline-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-danger">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <nav aria-label="Paginação de usuários">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                                        </li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">Próximo</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            
+                            <!-- Aba de Permissões -->
+                            <div class="tab-pane fade" id="permissoes" role="tabpanel" aria-labelledby="permissoes-tab">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">Perfis de Acesso</h5>
+                                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#novoPerfilModal">
+                                                    <i class="fas fa-plus me-1"></i> Novo Perfil
+                                                </button>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="list-group">
+                                                    <a href="#" class="list-group-item list-group-item-action active" aria-current="true" data-perfil="admin">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <h6 class="mb-1">Administrador</h6>
+                                                            <small>3 usuários</small>
+                                                        </div>
+                                                        <p class="mb-1">Acesso completo a todas as funcionalidades do sistema.</p>
+                                                    </a>
+                                                    <a href="#" class="list-group-item list-group-item-action" data-perfil="bibliotecario">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <h6 class="mb-1">Bibliotecário</h6>
+                                                            <small>5 usuários</small>
+                                                        </div>
+                                                        <p class="mb-1">Gerenciamento de livros, empréstimos e usuários da biblioteca.</p>
+                                                    </a>
+                                                    <a href="#" class="list-group-item list-group-item-action" data-perfil="auxiliar">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <h6 class="mb-1">Auxiliar</h6>
+                                                            <small>8 usuários</small>
+                                                        </div>
+                                                        <p class="mb-1">Registro de empréstimos e devoluções, consulta de acervo.</p>
+                                                    </a>
+                                                    <a href="#" class="list-group-item list-group-item-action" data-perfil="consulta">
+                                                        <div class="d-flex w-100 justify-content-between">
+                                                            <h6 class="mb-1">Consulta</h6>
+                                                            <small>12 usuários</small>
+                                                        </div>
+                                                        <p class="mb-1">Apenas visualização de informações, sem permissão para alterações.</p>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Permissões do Perfil: <span id="perfilSelecionado">Administrador</span></h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Módulo</th>
+                                                                <th class="text-center">Visualizar</th>
+                                                                <th class="text-center">Criar</th>
+                                                                <th class="text-center">Editar</th>
+                                                                <th class="text-center">Excluir</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Dashboard</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked disabled></td>
+                                                                <td class="text-center">-</td>
+                                                                <td class="text-center">-</td>
+                                                                <td class="text-center">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Livros</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Empréstimos</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Usuários</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Relatórios</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Inventário</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Administração</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Configurações</td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                                <td class="text-center"><input type="checkbox" class="form-check-input" checked></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="d-flex justify-content-end mt-3">
+                                                    <button class="btn btn-primary">Salvar Alterações</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Aba de Logs do Sistema -->
+                            <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                                <div class="row mb-4">
+                                    <div class="col-md-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Filtros</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <form class="row g-3">
+                                                    <div class="col-md-3">
+                                                        <label for="tipoLog" class="form-label">Tipo de Log</label>
+                                                        <select id="tipoLog" class="form-select">
+                                                            <option value="">Todos</option>
+                                                            <option value="acesso">Acesso</option>
+                                                            <option value="operacao">Operação</option>
+                                                            <option value="erro">Erro</option>
+                                                            <option value="seguranca">Segurança</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="usuarioLog" class="form-label">Usuário</label>
+                                                        <select id="usuarioLog" class="form-select">
+                                                            <option value="">Todos</option>
+                                                            <option value="1">João Silva</option>
+                                                            <option value="2">Maria Oliveira</option>
+                                                            <option value="3">Carlos Santos</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="dataInicio" class="form-label">Data Início</label>
+                                                        <input type="date" class="form-control" id="dataInicio">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="dataFim" class="form-label">Data Fim</label>
+                                                        <input type="date" class="form-control" id="dataFim">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                                                        <button type="button" class="btn btn-outline-secondary">Limpar</button>
+                                                        <button type="button" class="btn btn-outline-success float-end">
+                                                            <i class="fas fa-file-excel me-1"></i> Exportar
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data/Hora</th>
+                                                <th>Tipo</th>
+                                                <th>Usuário</th>
+                                                <th>IP</th>
+                                                <th>Ação</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>15/05/2023 10:45:32</td>
+                                                <td><span class="badge bg-primary">Acesso</span></td>
+                                                <td>João Silva</td>
+                                                <td>192.168.1.100</td>
+                                                <td>Login</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>15/05/2023 10:50:15</td>
+                                                <td><span class="badge bg-success">Operação</span></td>
+                                                <td>João Silva</td>
+                                                <td>192.168.1.100</td>
+                                                <td>Cadastro de Livro</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>15/05/2023 11:15:07</td>
+                                                <td><span class="badge bg-danger">Erro</span></td>
+                                                <td>Maria Oliveira</td>
+                                                <td>192.168.1.101</td>
+                                                <td>Falha ao Gerar Relatório</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>15/05/2023 11:30:22</td>
+                                                <td><span class="badge bg-warning text-dark">Segurança</span></td>
+                                                <td>Sistema</td>
+                                                <td>192.168.1.200</td>
+                                                <td>Tentativa de Acesso Não Autorizado</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>15/05/2023 12:05:45</td>
+                                                <td><span class="badge bg-success">Operação</span></td>
+                                                <td>Carlos Santos</td>
+                                                <td>192.168.1.102</td>
+                                                <td>Registro de Empréstimo</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>15/05/2023 14:20:10</td>
+                                                <td><span class="badge bg-primary">Acesso</span></td>
+                                                <td>Maria Oliveira</td>
+                                                <td>192.168.1.101</td>
+                                                <td>Logout</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalhesLogModal">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <nav aria-label="Paginação de logs">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                                        </li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">Próximo</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            
+                            <!-- Aba de Manutenção -->
+                            <div class="tab-pane fade" id="manutencao" role="tabpanel" aria-labelledby="manutencao-tab">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Status do Sistema</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-4">
+                                                    <h6>Recursos do Servidor</h6>
+                                                    <div class="mb-3">
+                                                        <label class="form-label d-flex justify-content-between">
+                                                            <span>CPU</span>
+                                                            <span>35%</span>
+                                                        </label>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 35%;" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label d-flex justify-content-between">
+                                                            <span>Memória</span>
+                                                            <span>65%</span>
+                                                        </label>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label d-flex justify-content-between">
+                                                            <span>Disco</span>
+                                                            <span>45%</span>
+                                                        </label>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-4">
+                                                    <h6>Serviços</h6>
+                                                    <ul class="list-group">
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <span>Banco de Dados</span>
+                                                            <span class="badge bg-success rounded-pill">Online</span>
+                                                        </li>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <span>Servidor Web</span>
+                                                            <span class="badge bg-success rounded-pill">Online</span>
+                                                        </li>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <span>Serviço de E-mail</span>
+                                                            <span class="badge bg-success rounded-pill">Online</span>
+                                                        </li>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <span>Backup Automático</span>
+                                                            <span class="badge bg-success rounded-pill">Online</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                
+                                                <div>
+                                                    <h6>Informações do Sistema</h6>
+                                                    <table class="table table-sm">
+                                                        <tbody>
+                                                            <tr>
+                                                                <th>Versão do Sistema</th>
+                                                                <td>2.5.3</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Última Atualização</th>
+                                                                <td>10/05/2023</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Tempo de Atividade</th>
+                                                                <td>15 dias, 7 horas</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Banco de Dados</th>
+                                                                <td>MySQL 8.0.28</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Manutenção do Banco de Dados</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-outline-primary">
+                                                        <i class="fas fa-sync me-2"></i> Otimizar Tabelas
+                                                    </button>
+                                                    <button class="btn btn-outline-primary">
+                                                        <i class="fas fa-check-circle me-2"></i> Verificar Integridade
+                                                    </button>
+                                                    <button class="btn btn-outline-primary">
+                                                        <i class="fas fa-broom me-2"></i> Limpar Dados Temporários
+                                                    </button>
+                                                    <button class="btn btn-outline-primary">
+                                                        <i class="fas fa-trash-alt me-2"></i> Limpar Logs Antigos
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Modo de Manutenção</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <p>Ative o modo de manutenção para realizar atualizações ou manutenções no sistema. Durante este período, apenas administradores poderão acessar o sistema.</p>
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="modoManutencaoSwitch">
+                                                    <label class="form-check-label" for="modoManutencaoSwitch">Ativar Modo de Manutenção</label>
+                                                </div>
+                                                <div id="configManutencao" class="d-none">
+                                                    <div class="mb-3">
+                                                        <label for="mensagemManutencao" class="form-label">Mensagem para Usuários</label>
+                                                        <textarea class="form-control" id="mensagemManutencao" rows="3">O sistema está em manutenção programada. Por favor, tente novamente mais tarde.</textarea>
+                                                    </div>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label for="inicioManutencao" class="form-label">Início</label>
+                                                            <input type="datetime-local" class="form-control" id="inicioManutencao">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="fimManutencao" class="form-label">Fim Previsto</label>
+                                                            <input type="datetime-local" class="form-control" id="fimManutencao">
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-grid gap-2 mt-3">
+                                                        <button class="btn btn-danger">Iniciar Manutenção</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Atualização do Sistema</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i> Uma nova versão (2.6.0) está disponível para instalação.
+                                                </div>
+                                                <div class="mb-3">
+                                                    <h6>Notas da Versão 2.6.0</h6>
+                                                    <ul>
+                                                        <li>Melhorias na interface do usuário</li>
+                                                        <li>Correção de bugs no módulo de relatórios</li>
+                                                        <li>Novo recurso de exportação em formato CSV</li>
+                                                        <li>Otimização de desempenho</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-primary">
+                                                        <i class="fas fa-download me-2"></i> Baixar e Instalar Atualização
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Novo Usuário -->
+    <div class="modal fade" id="novoUsuarioModal" tabindex="-1" aria-labelledby="novoUsuarioModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="novoUsuarioModalLabel">Cadastrar Novo Usuário do Sistema</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNovoUsuario">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="nomeCompleto" class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="nomeCompleto" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="emailUsuario" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="emailUsuario" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="senhaUsuario" class="form-label">Senha</label>
+                                <input type="password" class="form-control" id="senhaUsuario" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirmarSenhaUsuario" class="form-label">Confirmar Senha</label>
+                                <input type="password" class="form-control" id="confirmarSenhaUsuario" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="perfilUsuario" class="form-label">Perfil</label>
+                                <select class="form-select" id="perfilUsuario" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="bibliotecario">Bibliotecário</option>
+                                    <option value="auxiliar">Auxiliar</option>
+                                    <option value="consulta">Consulta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="statusUsuario" class="form-label">Status</label>
+                                <select class="form-select" id="statusUsuario" required>
+                                    <option value="ativo" selected>Ativo</option>
+                                    <option value="inativo">Inativo</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="observacoesUsuario" class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacoesUsuario" rows="3"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enviarCredenciais">
+                                    <label class="form-check-label" for="enviarCredenciais">
+                                        Enviar credenciais por e-mail
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Cadastrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Editar Usuário -->
+    <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editarUsuarioModalLabel">Editar Usuário do Sistema</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarUsuario">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="editNomeCompleto" class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="editNomeCompleto" value="João Silva" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editEmailUsuario" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="editEmailUsuario" value="joao.silva@exemplo.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editPerfilUsuario" class="form-label">Perfil</label>
+                                <select class="form-select" id="editPerfilUsuario" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="admin" selected>Administrador</option>
+                                    <option value="bibliotecario">Bibliotecário</option>
+                                    <option value="auxiliar">Auxiliar</option>
+                                    <option value="consulta">Consulta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editStatusUsuario" class="form-label">Status</label>
+                                <select class="form-select" id="editStatusUsuario" required>
+                                    <option value="ativo" selected>Ativo</option>
+                                    <option value="inativo">Inativo</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="editObservacoesUsuario" class="form-label">Observações</label>
+                                <textarea class="form-control" id="editObservacoesUsuario" rows="3">Administrador principal do sistema.</textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="resetarSenha">
+                                    <label class="form-check-label" for="resetarSenha">
+                                        Resetar senha e enviar nova por e-mail
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Novo Perfil -->
+    <div class="modal fade" id="novoPerfilModal" tabindex="-1" aria-labelledby="novoPerfilModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="novoPerfilModalLabel">Criar Novo Perfil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNovoPerfil">
+                        <div class="mb-3">
+                            <label for="nomePerfil" class="form-label">Nome do Perfil</label>
+                            <input type="text" class="form-control" id="nomePerfil" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricaoPerfil" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricaoPerfil" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Perfil Base (Copiar permissões de)</label>
+                            <select class="form-select" id="perfilBase">
+                                <option value="">Nenhum (Começar do zero)</option>
+                                <option value="admin">Administrador</option>
+                                <option value="bibliotecario">Bibliotecário</option>
+                                <option value="auxiliar">Auxiliar</option>
+                                <option value="consulta">Consulta</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Criar e Configurar Permissões</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Log -->
+    <div class="modal fade" id="detalhesLogModal" tabindex="-1" aria-labelledby="detalhesLogModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detalhesLogModalLabel">Detalhes do Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Data/Hora:</strong> 15/05/2023 10:45:32</p>
+                            <p><strong>Tipo:</strong> <span class="badge bg-primary">Acesso</span></p>
+                            <p><strong>Usuário:</strong> João Silva</p>
+                            <p><strong>IP:</strong> 192.168.1.100</p>
+                            <p><strong>Ação:</strong> Login</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Navegador:</strong> Chrome 113.0.5672.93</p>
+                            <p><strong>Sistema Operacional:</strong> Windows 10</p>
+                            <p><strong>Dispositivo:</strong> Desktop</p>
+                            <p><strong>Localização:</strong> São Paulo, Brasil</p>
+                            <p><strong>Status:</strong> <span class="badge bg-success">Sucesso</span></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Detalhes Adicionais</h6>
+                        <div class="bg-light p-3 rounded">
+                            <pre class="mb-0">{"user_id": 1, "session_id": "a1b2c3d4e5f6", "auth_method": "password", "timestamp": 1684152332, "status": "success"}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="mt-auto py-3">
+        <div class="container text-center">
+            <p class="mb-0">© 2023 SIGEB - Sistema de Gerenciamento de Biblioteca. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS e dependências -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar autenticação
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // Usuário está logado
+                    document.getElementById('userName').textContent = user.displayName || user.email;
+                } else {
+                    // Usuário não está logado, redirecionar para a página de login
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // Configurar botão de logout
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                firebase.auth().signOut().then(function() {
+                    // Logout bem-sucedido
+                    window.location.href = 'index.html';
+                }).catch(function(error) {
+                    // Erro durante o logout
+                    console.error('Erro ao fazer logout:', error);
+                });
+            });
+            
+            // Configurar seleção de perfil na aba de permissões
+            document.querySelectorAll('.list-group-item[data-perfil]').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remover classe active de todos os itens
+                    document.querySelectorAll('.list-group-item[data-perfil]').forEach(function(el) {
+                        el.classList.remove('active');
+                    });
+                    
+                    // Adicionar classe active ao item clicado
+                    this.classList.add('active');
+                    
+                    // Atualizar o perfil selecionado
+                    const perfil = this.getAttribute('data-perfil');
+                    document.getElementById('perfilSelecionado').textContent = this.querySelector('h6').textContent;
+                    
+                    // Aqui você carregaria as permissões do perfil selecionado
+                    // carregarPermissoesPerfil(perfil);
+                });
+            });
+            
+            // Configurar switch de modo de manutenção
+            document.getElementById('modoManutencaoSwitch').addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('configManutencao').classList.remove('d-none');
+                } else {
+                    document.getElementById('configManutencao').classList.add('d-none');
+                }
+            });
+        });
+        
+        // Função para carregar permissões do perfil
+        function carregarPermissoesPerfil(perfil) {
+            // Aqui você implementaria a lógica para carregar as permissões do perfil selecionado
+            // e atualizar os checkboxes na tabela de permissões
+        }
+    </script>
+</body>
+</html>
