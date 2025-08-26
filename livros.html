@@ -394,7 +394,8 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+    const db = getFirestore(app);
+    window.db = db;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Validação e busca automática de ISBN
@@ -1009,7 +1010,8 @@
     document.querySelector('.btn-group .btn-outline-secondary:nth-child(2)').addEventListener('click', async function() {
         // Importa dinamicamente getDocs e collection
         const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
-        const querySnapshot = await getDocs(collection(db, 'livros'));
+        const dbRef = typeof db !== 'undefined' ? db : window.db;
+        const querySnapshot = await getDocs(collection(dbRef, 'livros'));
         // Cabeçalho CSV com todos os campos relevantes
         let csv = 'Título,Autor,Categoria,ISBN,Editora,Ano,Localização,Descrição,Quantidade,Status,Reservado\n';
         querySnapshot.forEach((docSnap) => {
