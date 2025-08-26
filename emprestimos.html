@@ -1,6 +1,147 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <style>
+    .autocomplete-suggestions {
+        position: absolute;
+        z-index: 9999;
+        background: #fff;
+        border: 1px solid #ccc;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .autocomplete-suggestion {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+    .autocomplete-suggestion:hover {
+        background: #f0f0f0;
+    }
+    </style>
+    // Função utilitária para criar dropdown de sugestões
+    function criarDropdownSugestoes(input, suggestions, onSelect) {
+        let dropdown = input.parentNode.querySelector('.autocomplete-suggestions');
+        if (dropdown) dropdown.remove();
+        if (!suggestions.length) return;
+        dropdown = document.createElement('div');
+        dropdown.className = 'autocomplete-suggestions';
+        suggestions.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-suggestion';
+            div.textContent = item.label;
+            div.onclick = () => {
+                onSelect(item);
+                dropdown.remove();
+            };
+            dropdown.appendChild(div);
+        });
+        input.parentNode.appendChild(dropdown);
+    }
+
+    // Busca dinâmica de usuários
+    document.getElementById('usuarioEmprestimo').addEventListener('input', async function() {
+        const termo = this.value.trim().toLowerCase();
+        if (termo.length < 2) {
+            criarDropdownSugestoes(this, [], () => {});
+            return;
+        }
+        const { getDocs, collection, query, where, limit } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+        const dbRef = typeof db !== 'undefined' ? db : window.db;
+        // Busca por nome ou ID
+        const usuariosRef = collection(dbRef, 'usuarios');
+        let resultados = [];
+        // Busca por nome
+        const qNome = query(usuariosRef, where('nome', '>=', termo), where('nome', '<=', termo + '\uf8ff'), limit(5));
+        const snapNome = await getDocs(qNome);
+        snapNome.forEach(doc => {
+            const u = doc.data();
+            resultados.push({
+                id: doc.id,
+                label: `${u.nome} (ID: ${doc.id})`,
+                nome: u.nome,
+                categoria: u.categoria,
+                email: u.email
+            });
+        });
+        // Busca por ID se não achou nada
+        if (!resultados.length) {
+            const qId = query(usuariosRef, where('_id', '==', termo));
+            const snapId = await getDocs(qId);
+            snapId.forEach(doc => {
+                const u = doc.data();
+                resultados.push({
+                    id: doc.id,
+                    label: `${u.nome} (ID: ${doc.id})`,
+                    nome: u.nome,
+                    categoria: u.categoria,
+                    email: u.email
+                });
+            });
+        }
+        criarDropdownSugestoes(this, resultados, (usuario) => {
+            this.value = usuario.nome;
+            // Preencher card
+            document.getElementById('infoUsuario').style.display = 'block';
+            document.querySelector('#infoUsuario h5').textContent = usuario.nome;
+            document.querySelector('#infoUsuario p.mb-0.text-muted').innerHTML = `ID: ${usuario.id} | Categoria: ${usuario.categoria || ''}`;
+            document.querySelectorAll('#infoUsuario p.mb-0.text-muted')[1].textContent = `Email: ${usuario.email || ''}`;
+        });
+    });
+
+    // Busca dinâmica de livros
+    document.getElementById('livroEmprestimo').addEventListener('input', async function() {
+        const termo = this.value.trim().toLowerCase();
+        if (termo.length < 2) {
+            criarDropdownSugestoes(this, [], () => {});
+            return;
+        }
+        const { getDocs, collection, query, where, limit } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+        const dbRef = typeof db !== 'undefined' ? db : window.db;
+        const livrosRef = collection(dbRef, 'livros');
+        let resultados = [];
+        // Busca por título
+        const qTitulo = query(livrosRef, where('titulo', '>=', termo), where('titulo', '<=', termo + '\uf8ff'), limit(5));
+        const snapTitulo = await getDocs(qTitulo);
+        snapTitulo.forEach(doc => {
+            const l = doc.data();
+            resultados.push({
+                id: doc.id,
+                label: `${l.titulo} (ISBN: ${l.isbn || 'N/A'})`,
+                titulo: l.titulo,
+                autor: l.autor,
+                editora: l.editora,
+                isbn: l.isbn,
+                status: l.disponivel ? 'Disponível' : 'Indisponível'
+            });
+        });
+        // Busca por ISBN se não achou nada
+        if (!resultados.length) {
+            const qIsbn = query(livrosRef, where('isbn', '==', termo));
+            const snapIsbn = await getDocs(qIsbn);
+            snapIsbn.forEach(doc => {
+                const l = doc.data();
+                resultados.push({
+                    id: doc.id,
+                    label: `${l.titulo} (ISBN: ${l.isbn || 'N/A'})`,
+                    titulo: l.titulo,
+                    autor: l.autor,
+                    editora: l.editora,
+                    isbn: l.isbn,
+                    status: l.disponivel ? 'Disponível' : 'Indisponível'
+                });
+            });
+        }
+        criarDropdownSugestoes(this, resultados, (livro) => {
+            this.value = livro.titulo;
+            // Preencher card
+            document.getElementById('infoLivro').style.display = 'block';
+            document.querySelector('#infoLivro h5').textContent = livro.titulo;
+            document.querySelector('#infoLivro p.mb-0.text-muted').innerHTML = `Autor: ${livro.autor || ''} | Editora: ${livro.editora || ''}`;
+            document.querySelectorAll('#infoLivro p.mb-0.text-muted')[1].innerHTML = `ISBN: ${livro.isbn || ''} | Status: <span class='badge bg-${livro.status === 'Disponível' ? 'success' : 'danger'}'>${livro.status}</span>`;
+        });
+    });
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIGEB - Empréstimos</title>
