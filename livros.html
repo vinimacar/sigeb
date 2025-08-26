@@ -437,8 +437,12 @@
                             const btnSalvar = document.getElementById('btnSalvarLivro');
                             btnSalvar.disabled = false;
                             btnSalvar._isEditando = true;
-                            // Ao salvar, atualizar o livro existente
-                            btnSalvar.onclick = async function() {
+                            // Remove event listeners antigos
+                            btnSalvar.replaceWith(btnSalvar.cloneNode(true));
+                            const btnSalvarNovo = document.getElementById('btnSalvarLivro');
+                            btnSalvarNovo._isEditando = true;
+                            btnSalvarNovo.disabled = false;
+                            btnSalvarNovo.onclick = async function() {
                                 const form = document.getElementById('formNovoLivro');
                                 if (form.checkValidity()) {
                                     try {
@@ -460,6 +464,8 @@
                                         const modal = bootstrap.Modal.getInstance(document.getElementById('novoLivroModal'));
                                         modal.hide();
                                         window.carregarLivros();
+                                        // Limpa modo edição
+                                        btnSalvarNovo._isEditando = false;
                                     } catch (e) {
                                         alert('Erro ao atualizar livro: ' + e.message);
                                     }
@@ -777,6 +783,8 @@
                         })();
                     } else {
                         // Edição: já tratada na função editarLivro
+                        // Após salvar edição, limpa flag
+                        btnSalvarLivro._isEditando = false;
                     }
                 } else {
                     form.reportValidity();
