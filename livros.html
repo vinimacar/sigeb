@@ -943,9 +943,12 @@
             // Abrir o modal de edição
             const modal = new bootstrap.Modal(document.getElementById('novoLivroModal'));
             modal.show();
-            // Ao salvar, atualizar o livro no Firestore
-            const btnSalvar = document.getElementById('btnSalvarLivro');
-            btnSalvar.onclick = async function() {
+            // Substituir o botão Salvar para modo edição
+            const btnSalvarAntigo = document.getElementById('btnSalvarLivro');
+            const btnSalvarNovo = btnSalvarAntigo.cloneNode(true);
+            btnSalvarAntigo.parentNode.replaceChild(btnSalvarNovo, btnSalvarAntigo);
+            btnSalvarNovo._isEditando = true;
+            btnSalvarNovo.onclick = async function() {
                 const form = document.getElementById('formNovoLivro');
                 if (form.checkValidity()) {
                     try {
@@ -966,6 +969,8 @@
                         alert('Livro atualizado com sucesso!');
                         modal.hide();
                         window.carregarLivros();
+                        // Restaurar botão Salvar para modo padrão
+                        btnSalvarNovo._isEditando = false;
                     } catch (e) {
                         alert('Erro ao atualizar livro: ' + e.message);
                     }
