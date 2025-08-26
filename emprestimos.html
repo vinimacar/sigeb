@@ -811,21 +811,17 @@
                 // Montar linhas
                 for (const docSnap of querySnapshot.docs) {
                     const emp = docSnap.data();
-                    // Nome do usuário
                     let usuarioNome = emp.usuarioNome;
                     if (!usuarioNome && emp.usuarioId && usuariosMap[emp.usuarioId]) {
                         usuarioNome = usuariosMap[emp.usuarioId].nome;
                     }
-                    // Nome do livro
                     let livroTitulo = emp.livroTitulo;
                     if (!livroTitulo && emp.livroId && livrosMap[emp.livroId]) {
                         livroTitulo = livrosMap[emp.livroId].titulo;
                     }
-                    // Datas formatadas
                     const dataEmprestimo = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate() : (emp.dataEmprestimo instanceof Timestamp ? emp.dataEmprestimo.toDate() : null);
                     const dataDevolucao = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate() : (emp.dataDevolucao instanceof Timestamp ? emp.dataDevolucao.toDate() : null);
                     const formatarData = d => d ? d.toLocaleDateString('pt-BR') : '-';
-                    // Status badge
                     let badge = '<span class="badge bg-secondary">Desconhecido</span>';
                     if (emp.status === 'em_andamento') badge = '<span class="badge bg-primary">Em Andamento</span>';
                     else if (emp.status === 'atrasado') badge = '<span class="badge bg-warning text-dark">Atrasado</span>';
@@ -839,13 +835,93 @@
                     html += `<td>${formatarData(dataDevolucao)}</td>`;
                     html += `<td>${badge}</td>`;
                     html += `<td>`;
-                    html += `<button class='btn btn-sm btn-outline-success me-1' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-info me-1' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-danger' title='Excluir'><i class='fas fa-trash'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${docSnap.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${docSnap.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${docSnap.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
                     html += `</td>`;
                     html += `</tr>`;
                 }
                 tabela.innerHTML = html;
+
+                // Ativar listeners dos botões de ação
+                tabela.querySelectorAll('.btn-devolver').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        // Buscar dados do empréstimo
+                        const { getDoc, doc: docFn, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        const emprestimoDoc = await getDoc(docFn(db, 'emprestimos', id));
+                        if (!emprestimoDoc.exists()) {
+                            alert('Empréstimo não encontrado.');
+                            return;
+                        }
+                        const emp = emprestimoDoc.data();
+                        // Buscar nome do usuário e livro se necessário
+                        let usuarioNome = emp.usuarioNome;
+                        let livroTitulo = emp.livroTitulo;
+                        if (!usuarioNome && emp.usuarioId) {
+                            const usuarioDoc = await getDoc(docFn(db, 'usuarios', emp.usuarioId));
+                            if (usuarioDoc.exists()) usuarioNome = usuarioDoc.data().nome;
+                        }
+                        if (!livroTitulo && emp.livroId) {
+                            const livroDoc = await getDoc(docFn(db, 'livros', emp.livroId));
+                            if (livroDoc.exists()) livroTitulo = livroDoc.data().titulo;
+                        }
+                        // Preencher modal de devolução
+                        document.getElementById('idEmprestimo').value = id;
+                        document.getElementById('infoEmprestimo').style.display = 'block';
+                        // Preencher campos de detalhes
+                        const dataEmprestimo = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate() : (emp.dataEmprestimo instanceof Timestamp ? emp.dataEmprestimo.toDate() : null);
+                        const dataDevolucao = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate() : (emp.dataDevolucao instanceof Timestamp ? emp.dataDevolucao.toDate() : null);
+                        // Preencher detalhes do empréstimo
+                        const infoDiv = document.querySelector('#infoEmprestimo .card-body .row');
+                        if (infoDiv) {
+                            infoDiv.innerHTML = `
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Usuário:</strong> ${usuarioNome || emp.usuarioId || '-'}</p>
+                                    <p class="mb-1"><strong>Livro:</strong> ${livroTitulo || emp.livroId || '-'}</p>
+                                    <p class="mb-1"><strong>Data Empréstimo:</strong> ${dataEmprestimo ? dataEmprestimo.toLocaleDateString('pt-BR') : '-'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Data Devolução:</strong> ${dataDevolucao ? dataDevolucao.toLocaleDateString('pt-BR') : '-'}</p>
+                                    <p class="mb-1"><strong>Status:</strong> <span class="badge bg-success">${emp.status === 'em_andamento' ? 'Em Andamento' : (emp.status || '-')}</span></p>
+                                    <p class="mb-1"><strong>Atraso:</strong> 0 dias</p>
+                                </div>
+                            `;
+                        }
+                        // Seta data de devolução efetiva para hoje
+                        const hoje = new Date().toISOString().split('T')[0];
+                        document.getElementById('dataDevolucaoEfetiva').value = hoje;
+                        // Limpa campos de condição e observações
+                        document.getElementById('condicaoLivro').value = '';
+                        document.getElementById('observacoesDevolucao').value = '';
+                        // Abre o modal de devolução
+                        const devolucaoModal = new bootstrap.Modal(document.getElementById('devolucaoModal'));
+                        devolucaoModal.show();
+                    });
+                });
+                tabela.querySelectorAll('.btn-renovar').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        // Aqui pode implementar lógica de renovação
+                        alert('Ação: Renovar empréstimo ' + id);
+                    });
+                });
+                tabela.querySelectorAll('.btn-excluir').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        if (confirm('Tem certeza que deseja excluir este empréstimo?')) {
+                            try {
+                                const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                                await deleteDoc(doc(db, 'emprestimos', id));
+                                alert('Empréstimo excluído com sucesso!');
+                                carregarEmprestimos();
+                            } catch (e) {
+                                alert('Erro ao excluir empréstimo.');
+                                console.error(e);
+                            }
+                        }
+                    });
+                });
             } catch (e) {
                 tabela.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erro ao carregar empréstimos.</td></tr>';
                 console.error('Erro ao carregar empréstimos:', e);
