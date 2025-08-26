@@ -785,9 +785,49 @@
         });
 
         // Função para carregar empréstimos do Firestore
-        function carregarEmprestimos() {
-            // Aqui você implementaria a lógica para carregar os empréstimos do Firestore
-            // e preencher a tabela dinamicamente
+        async function carregarEmprestimos() {
+            const tabela = document.getElementById('tabelaEmprestimos');
+            tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Carregando...</td></tr>';
+            try {
+                const { collection, getDocs, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                const emprestimosRef = collection(db, 'emprestimos');
+                const querySnapshot = await getDocs(emprestimosRef);
+                if (querySnapshot.empty) {
+                    tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Nenhum empréstimo encontrado.</td></tr>';
+                    return;
+                }
+                let html = '';
+                querySnapshot.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    // Datas formatadas
+                    const dataEmprestimo = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate() : (emp.dataEmprestimo instanceof Timestamp ? emp.dataEmprestimo.toDate() : null);
+                    const dataDevolucao = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate() : (emp.dataDevolucao instanceof Timestamp ? emp.dataDevolucao.toDate() : null);
+                    const formatarData = d => d ? d.toLocaleDateString('pt-BR') : '-';
+                    // Status badge
+                    let badge = '<span class="badge bg-secondary">Desconhecido</span>';
+                    if (emp.status === 'em_andamento') badge = '<span class="badge bg-primary">Em Andamento</span>';
+                    else if (emp.status === 'atrasado') badge = '<span class="badge bg-warning text-dark">Atrasado</span>';
+                    else if (emp.status === 'devolvido') badge = '<span class="badge bg-success">Devolvido</span>';
+                    else if (emp.status === 'renovado') badge = '<span class="badge bg-info text-dark">Renovado</span>';
+                    html += `<tr>`;
+                    html += `<td>${docSnap.id}</td>`;
+                    html += `<td>${emp.usuarioNome || emp.usuarioId || '-'}</td>`;
+                    html += `<td>${emp.livroTitulo || emp.livroId || '-'}</td>`;
+                    html += `<td>${formatarData(dataEmprestimo)}</td>`;
+                    html += `<td>${formatarData(dataDevolucao)}</td>`;
+                    html += `<td>${badge}</td>`;
+                    html += `<td>`;
+                    html += `<button class='btn btn-sm btn-outline-success me-1' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-info me-1' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-danger' title='Excluir'><i class='fas fa-trash'></i></button>`;
+                    html += `</td>`;
+                    html += `</tr>`;
+                });
+                tabela.innerHTML = html;
+            } catch (e) {
+                tabela.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erro ao carregar empréstimos.</td></tr>';
+                console.error('Erro ao carregar empréstimos:', e);
+            }
         }
     </script>
 </body>
