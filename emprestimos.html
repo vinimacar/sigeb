@@ -441,7 +441,7 @@
     <!-- Scripts personalizados -->
     <script type="module">
         import { onAuthStateChanged, signOut, getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-        import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
         import { firebaseConfig } from './firebase-config.js';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 
@@ -942,6 +942,23 @@
                 console.error('Erro ao carregar empréstimos:', e);
             }
         }
+    </script>
+
+    <script type="module">
+    // Função utilitária para buscar todos os usuários do Firestore, usando o db já inicializado
+    async function buscarTodosUsuarios() {
+        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+        const usuariosRef = collection(db, 'usuarios');
+        const querySnapshot = await getDocs(usuariosRef);
+        const usuarios = [];
+        querySnapshot.forEach((doc) => {
+            usuarios.push({ id: doc.id, ...doc.data() });
+        });
+        console.log('Usuários encontrados:', usuarios);
+        return usuarios;
+    }
+    // Exemplo de uso: descomente para testar
+    // buscarTodosUsuarios();
     </script>
 </body>
 </html>
