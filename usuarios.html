@@ -1258,6 +1258,36 @@
     </script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
+            // Atualiza os cards de estatísticas rápidas
+            async function atualizarCardsEstatisticas() {
+                const usuariosRef = collection(db, 'usuarios');
+                try {
+                    const snapshot = await getDocs(usuariosRef);
+                    let total = 0, ativos = 0, bloqueados = 0, novosMes = 0;
+                    const mesAtual = new Date().getMonth();
+                    const anoAtual = new Date().getFullYear();
+                    snapshot.forEach(doc => {
+                        total++;
+                        const u = doc.data();
+                        if ((u.status || '').toLowerCase() === 'bloqueado') bloqueados++;
+                        else ativos++;
+                        if (u.dataCadastro) {
+                            const d = new Date(u.dataCadastro);
+                            if (d.getMonth() === mesAtual && d.getFullYear() === anoAtual) novosMes++;
+                        }
+                    });
+                    document.getElementById('cardTotalUsuarios').textContent = total;
+                    document.getElementById('cardUsuariosAtivos').textContent = ativos;
+                    document.getElementById('cardBloqueados').textContent = bloqueados;
+                    document.getElementById('cardNovosMes').textContent = novosMes;
+                } catch (e) {
+                    document.getElementById('cardTotalUsuarios').textContent = '-';
+                    document.getElementById('cardUsuariosAtivos').textContent = '-';
+                    document.getElementById('cardBloqueados').textContent = '-';
+                    document.getElementById('cardNovosMes').textContent = '-';
+                }
+            }
+            atualizarCardsEstatisticas();
     // Máscara para o campo CEP
     const cepInput = document.getElementById('cep');
     if (cepInput) {
