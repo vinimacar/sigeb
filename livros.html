@@ -185,7 +185,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Acervo de Livros</h5>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnImprimirPDF">
                                 <i class="fas fa-print me-1"></i> Imprimir
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary">
@@ -931,6 +931,42 @@
             window.location.href = `emprestimos.html?livroId=${encodeURIComponent(id)}`;
         };
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
+</script>
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+    // Função para gerar PDF do acervo de livros
+    document.getElementById('btnImprimirPDF').addEventListener('click', function() {
+        const doc = new window.jspdf.jsPDF();
+        let y = 20;
+        doc.setFontSize(16);
+        doc.text('Acervo de Livros', 105, y, { align: 'center' });
+        y += 10;
+        doc.setFontSize(10);
+        // Cabeçalho da tabela
+        doc.text('Título', 10, y);
+        doc.text('Autor', 60, y);
+        doc.text('Categoria', 110, y);
+        doc.text('ISBN', 150, y);
+        y += 7;
+        // Pega as linhas da tabela
+        const linhas = document.querySelectorAll('#tabelaLivros tr');
+        linhas.forEach(linha => {
+            const colunas = linha.querySelectorAll('td');
+            if (colunas.length > 0) {
+                doc.text(colunas[1].innerText, 10, y, { maxWidth: 48 });
+                doc.text(colunas[2].innerText, 60, y, { maxWidth: 48 });
+                doc.text(colunas[3].innerText, 110, y, { maxWidth: 38 });
+                doc.text(colunas[4].innerText, 150, y, { maxWidth: 30 });
+                y += 7;
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+        });
+        doc.save('acervo_livros.pdf');
+    });
     </script>
 </body>
 </html>
