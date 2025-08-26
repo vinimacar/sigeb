@@ -191,6 +191,7 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary">
                                 <i class="fas fa-file-export me-1"></i> Exportar
                             </button>
+                            </button>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -932,6 +933,33 @@
         };
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
 </script>
+    <script>
+    // Função para exportar a tabela de livros em CSV
+    document.querySelector('.btn-group .btn-outline-secondary:nth-child(2)').addEventListener('click', function() {
+        // Pega os dados da tabela
+        const linhas = document.querySelectorAll('#tabelaLivros tr');
+        let csv = 'Título,Autor,Categoria,ISBN,Status\n';
+        linhas.forEach(linha => {
+            const colunas = linha.querySelectorAll('td');
+            if (colunas.length > 0) {
+                const titulo = '"' + (colunas[1].innerText || '').replace(/"/g, '""') + '"';
+                const autor = '"' + (colunas[2].innerText || '').replace(/"/g, '""') + '"';
+                const categoria = '"' + (colunas[3].innerText || '').replace(/"/g, '""') + '"';
+                const isbn = '"' + (colunas[4].innerText || '').replace(/"/g, '""') + '"';
+                const status = '"' + (colunas[5].innerText || '').replace(/"/g, '""') + '"';
+                csv += [titulo, autor, categoria, isbn, status].join(',') + '\n';
+            }
+        });
+        // Cria e baixa o arquivo CSV
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'acervo_livros.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    </script>
     <!-- jsPDF CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
