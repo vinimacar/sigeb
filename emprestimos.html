@@ -450,6 +450,21 @@
         const db = getFirestore(app);
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Ativar botão Novo Empréstimo para limpar modal ao abrir
+            document.querySelector('[data-bs-target="#novoEmprestimoModal"]').addEventListener('click', function() {
+                // Limpar formulário
+                const form = document.getElementById('formNovoEmprestimo');
+                if (form) form.reset();
+                // Esconder infoUsuario e infoLivro
+                document.getElementById('infoUsuario').style.display = 'none';
+                document.getElementById('infoLivro').style.display = 'none';
+                // Definir datas padrão
+                const hoje = new Date().toISOString().split('T')[0];
+                document.getElementById('dataEmprestimo').value = hoje;
+                const dataDevol = new Date();
+                dataDevol.setDate(dataDevol.getDate() + 14);
+                document.getElementById('dataDevolucao').value = dataDevol.toISOString().split('T')[0];
+            });
             // Verificar autenticação
             onAuthStateChanged(auth, function(user) {
                 if (user) {
