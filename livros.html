@@ -1019,15 +1019,15 @@
             const status = livro.disponivel ? 'Disponível' : 'Indisponível';
             const reservado = livro.reservado ? 'Sim' : 'Não';
             const linha = [
-                '"' + (livro.titulo || '').replace(/"/g, '""') + '"',
-                '"' + (livro.autor || '').replace(/"/g, '""') + '"',
-                '"' + (livro.categoria || '').replace(/"/g, '""') + '"',
-                '"' + (livro.isbn || '').replace(/"/g, '""') + '"',
-                '"' + (livro.editora || '').replace(/"/g, '""') + '"',
-                '"' + (livro.anoPublicacao || '') + '"',
-                '"' + (livro.localizacao || '').replace(/"/g, '""') + '"',
-                '"' + (livro.descricao || '').replace(/"/g, '""') + '"',
-                '"' + (livro.quantidade != null ? livro.quantidade : '') + '"',
+                '"' + String(livro.titulo ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.autor ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.categoria ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.isbn ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.editora ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.anoPublicacao ?? '') + '"',
+                '"' + String(livro.localizacao ?? '').replace(/"/g, '""') + '"',
+                '"' + String(livro.descricao ?? '').replace(/"/g, '""') + '"',
+                '"' + (livro.quantidade != null ? String(livro.quantidade) : '') + '"',
                 '"' + status + '"',
                 '"' + reservado + '"'
             ];
