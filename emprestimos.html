@@ -525,7 +525,6 @@
                     return;
                 }
 
-                // Buscar usuário e livro no Firestore
                 const usuarioInput = document.getElementById('usuarioEmprestimo').value.trim();
                 const livroInput = document.getElementById('livroEmprestimo').value.trim();
                 if (!usuarioInput || !livroInput) {
@@ -535,24 +534,37 @@
 
                 // Importar funções Firestore
                 const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                // Garantir que db está acessível
+                if (!db) {
+                    alert('Erro: conexão com o banco de dados não inicializada.');
+                    return;
+                }
 
                 // Buscar usuário (por ID ou nome)
                 let usuarioEncontrado = null;
-                // Tenta buscar por ID
                 try {
+                    // Tenta buscar por ID
                     const usuarioDoc = await getDoc(doc(db, 'usuarios', usuarioInput));
                     if (usuarioDoc.exists()) {
                         usuarioEncontrado = { id: usuarioDoc.id, ...usuarioDoc.data() };
+                        console.log('Usuário encontrado por ID:', usuarioEncontrado);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Erro ao buscar usuário por ID:', e);
+                }
                 // Se não achou por ID, tenta por nome
                 if (!usuarioEncontrado) {
-                    const usuariosRef = collection(db, 'usuarios');
-                    const q = query(usuariosRef, where('nome', '==', usuarioInput));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const docSnap = querySnapshot.docs[0];
-                        usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    try {
+                        const usuariosRef = collection(db, 'usuarios');
+                        const q = query(usuariosRef, where('nome', '==', usuarioInput));
+                        const querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                            console.log('Usuário encontrado por nome:', usuarioEncontrado);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao buscar usuário por nome:', e);
                     }
                 }
                 if (!usuarioEncontrado) {
@@ -562,31 +574,44 @@
 
                 // Buscar livro (por ID, título ou ISBN)
                 let livroEncontrado = null;
-                // Tenta buscar por ID
                 try {
+                    // Tenta buscar por ID
                     const livroDoc = await getDoc(doc(db, 'livros', livroInput));
                     if (livroDoc.exists()) {
                         livroEncontrado = { id: livroDoc.id, ...livroDoc.data() };
+                        console.log('Livro encontrado por ID:', livroEncontrado);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('Erro ao buscar livro por ID:', e);
+                }
                 // Se não achou por ID, tenta por título
                 if (!livroEncontrado) {
-                    const livrosRef = collection(db, 'livros');
-                    let q = query(livrosRef, where('titulo', '==', livroInput));
-                    let querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const docSnap = querySnapshot.docs[0];
-                        livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    try {
+                        const livrosRef = collection(db, 'livros');
+                        let q = query(livrosRef, where('titulo', '==', livroInput));
+                        let querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                            console.log('Livro encontrado por título:', livroEncontrado);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao buscar livro por título:', e);
                     }
                 }
                 // Se não achou por título, tenta por ISBN
                 if (!livroEncontrado) {
-                    const livrosRef = collection(db, 'livros');
-                    let q = query(livrosRef, where('isbn', '==', livroInput));
-                    let querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const docSnap = querySnapshot.docs[0];
-                        livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    try {
+                        const livrosRef = collection(db, 'livros');
+                        let q = query(livrosRef, where('isbn', '==', livroInput));
+                        let querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                            console.log('Livro encontrado por ISBN:', livroEncontrado);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao buscar livro por ISBN:', e);
                     }
                 }
                 if (!livroEncontrado) {
@@ -594,8 +619,33 @@
                     return;
                 }
 
-                // Aqui você implementaria a lógica para salvar o empréstimo no Firestore
-                alert('Empréstimo registrado com sucesso!\nUsuário: ' + usuarioEncontrado.nome + '\nLivro: ' + livroEncontrado.titulo);
+                // Salvar o empréstimo no Firestore
+                try {
+                    const { addDoc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    const emprestimosRef = collection(db, 'emprestimos');
+                    // Pega os campos do formulário
+                    const dataEmprestimo = document.getElementById('dataEmprestimo').value;
+                    const dataDevolucao = document.getElementById('dataDevolucao').value;
+                    const observacoes = document.getElementById('observacoes').value;
+                    // Monta o objeto do empréstimo
+                    const novoEmprestimo = {
+                        usuarioId: usuarioEncontrado.id,
+                        usuarioNome: usuarioEncontrado.nome,
+                        livroId: livroEncontrado.id,
+                        livroTitulo: livroEncontrado.titulo,
+                        dataEmprestimo: dataEmprestimo ? Timestamp.fromDate(new Date(dataEmprestimo)) : Timestamp.now(),
+                        dataDevolucao: dataDevolucao ? Timestamp.fromDate(new Date(dataDevolucao)) : null,
+                        observacoes: observacoes || '',
+                        status: 'em_andamento',
+                        criadoEm: Timestamp.now()
+                    };
+                    await addDoc(emprestimosRef, novoEmprestimo);
+                    alert('Empréstimo registrado com sucesso!\nUsuário: ' + usuarioEncontrado.nome + '\nLivro: ' + livroEncontrado.titulo);
+                } catch (e) {
+                    console.error('Erro ao salvar empréstimo:', e);
+                    alert('Erro ao registrar o empréstimo. Tente novamente.');
+                    return;
+                }
 
                 // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
                 const modalEl = document.getElementById('novoEmprestimoModal');
