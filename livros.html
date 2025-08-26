@@ -483,7 +483,7 @@
         window.livrosCache = [];
 
             // Função para carregar livros do Firestore
-            async function carregarLivros(filtro = '') {
+            window.carregarLivros = async function carregarLivros(filtro = '') {
                 const tabelaLivros = document.getElementById('tabelaLivros');
                 const infoPaginacao = document.getElementById('infoPaginacaoLivros');
                 tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Carregando dados...</td></tr>';
@@ -899,7 +899,7 @@
                         });
                         alert('Livro atualizado com sucesso!');
                         modal.hide();
-                        carregarLivros();
+                        window.carregarLivros();
                     } catch (e) {
                         alert('Erro ao atualizar livro: ' + e.message);
                     }
@@ -973,13 +973,12 @@
     <!-- jsPDF CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module">
-    // Função para gerar PDF do acervo de livros (buscando todo o acervo do Firestore)
+    // Função para gerar PDF do acervo de livros (buscando todo o acervo do Firestore e organizando em tabela)
     import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
     document.getElementById('btnImprimirPDF').addEventListener('click', async function() {
         const doc = new window.jspdf.jsPDF({ orientation: 'landscape' });
-        // Nome da escola e logo
         const nomeEscola = 'ESCOLA MUNICIPAL EXEMPLO'; // Personalize aqui ou busque dinamicamente
-        const logoUrl = 'logobias.png'; // Caminho do logo
+        const logoUrl = 'logobias.png';
         // Adiciona logo
         const img = new Image();
         img.src = logoUrl;
@@ -991,28 +990,39 @@
         // Título
         doc.setFontSize(14);
         doc.text('Acervo de Livros', 150, 30, { align: 'center' });
-        let y = 40;
-        doc.setFontSize(10);
         // Cabeçalho da tabela
-        doc.text('Título', 10, y);
-        doc.text('Autor', 70, y);
-        doc.text('Categoria', 130, y);
-        doc.text('ISBN', 170, y);
-        doc.text('Status', 210, y);
+        let y = 45;
+        doc.setFontSize(10);
+        doc.setFillColor(220, 220, 220);
+        doc.rect(10, y - 5, 277, 8, 'F');
+        doc.text('Título', 12, y);
+        doc.text('Autor', 62, y);
+        doc.text('Categoria', 112, y);
+        doc.text('ISBN', 142, y);
+        doc.text('Editora', 172, y);
+        doc.text('Ano', 202, y);
+        doc.text('Localização', 222, y);
+        doc.text('Qtd.', 252, y);
+        doc.text('Status', 262, y);
+        doc.text('Reservado', 277, y);
         y += 7;
-        // Buscar todos os livros do Firestore usando a variável global db
+        // Buscar todos os livros do Firestore
         const querySnapshot = await getDocs(collection(db, 'livros'));
-        let count = 0;
         querySnapshot.forEach((docSnap) => {
             const livro = docSnap.data();
-            const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
-            doc.text(String(livro.titulo || ''), 10, y, { maxWidth: 58 });
-            doc.text(String(livro.autor || ''), 70, y, { maxWidth: 58 });
-            doc.text(String(livro.categoria || ''), 130, y, { maxWidth: 38 });
-            doc.text(String(livro.isbn || ''), 170, y, { maxWidth: 38 });
-            doc.text(status, 210, y, { maxWidth: 28 });
+            const status = livro.disponivel ? 'Disponível' : 'Indisponível';
+            const reservado = livro.reservado ? 'Sim' : 'Não';
+            doc.text(String(livro.titulo || ''), 12, y, { maxWidth: 48 });
+            doc.text(String(livro.autor || ''), 62, y, { maxWidth: 48 });
+            doc.text(String(livro.categoria || ''), 112, y, { maxWidth: 28 });
+            doc.text(String(livro.isbn || ''), 142, y, { maxWidth: 28 });
+            doc.text(String(livro.editora || ''), 172, y, { maxWidth: 28 });
+            doc.text(String(livro.anoPublicacao || ''), 202, y, { maxWidth: 16 });
+            doc.text(String(livro.localizacao || ''), 222, y, { maxWidth: 24 });
+            doc.text(String(livro.quantidade != null ? livro.quantidade : ''), 252, y, { maxWidth: 8 });
+            doc.text(status, 262, y, { maxWidth: 12 });
+            doc.text(reservado, 277, y, { maxWidth: 12 });
             y += 7;
-            count++;
             if (y > 190) {
                 doc.addPage();
                 y = 20;
