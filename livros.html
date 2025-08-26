@@ -415,11 +415,67 @@
                     const q = query(col(db, 'livros'), where('isbn', '==', isbn));
                     const snap = await getDocs(q);
                     if (!snap.empty) {
-                        isbnFeedback.textContent = 'Já existe um livro cadastrado com este ISBN!';
+                        const docFound = snap.docs[0];
+                        isbnFeedback.innerHTML = 'Já existe um livro cadastrado com este ISBN! <button id="btnEditarIsbnExistente" class="btn btn-sm btn-warning ms-2">Editar registro</button>';
+                        // Desabilita o botão de salvar
+                        document.getElementById('btnSalvarLivro').disabled = true;
+                        // Evento para editar registro existente
+                        document.getElementById('btnEditarIsbnExistente').onclick = function() {
+                            // Preencher o formulário com os dados do livro encontrado
+                            const livro = docFound.data();
+                            document.getElementById('titulo').value = livro.titulo || '';
+                            document.getElementById('autor').value = livro.autor || '';
+                            document.getElementById('isbn').value = livro.isbn || '';
+                            document.getElementById('editora').value = livro.editora || '';
+                            document.getElementById('anoPublicacao').value = livro.anoPublicacao || '';
+                            document.getElementById('categoria').value = livro.categoria || '';
+                            document.getElementById('localizacao').value = livro.localizacao || '';
+                            document.getElementById('descricao').value = livro.descricao || '';
+                            document.getElementById('quantidade').value = livro.quantidade || 1;
+                            document.getElementById('status').value = livro.disponivel ? 'disponivel' : 'indisponivel';
+                            // Habilita o botão de salvar e marca como edição
+                            const btnSalvar = document.getElementById('btnSalvarLivro');
+                            btnSalvar.disabled = false;
+                            btnSalvar._isEditando = true;
+                            // Ao salvar, atualizar o livro existente
+                            btnSalvar.onclick = async function() {
+                                const form = document.getElementById('formNovoLivro');
+                                if (form.checkValidity()) {
+                                    try {
+                                        const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
+                                        const updateDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).updateDoc;
+                                        await updateDoc(docRef(db, 'livros', docFound.id), {
+                                            titulo: document.getElementById('titulo').value,
+                                            autor: document.getElementById('autor').value,
+                                            isbn: document.getElementById('isbn').value,
+                                            editora: document.getElementById('editora').value,
+                                            anoPublicacao: document.getElementById('anoPublicacao').value,
+                                            categoria: document.getElementById('categoria').value,
+                                            localizacao: document.getElementById('localizacao').value,
+                                            descricao: document.getElementById('descricao').value,
+                                            quantidade: Number(document.getElementById('quantidade').value),
+                                            disponivel: document.getElementById('status').value === 'disponivel',
+                                        });
+                                        alert('Livro atualizado com sucesso!');
+                                        const modal = bootstrap.Modal.getInstance(document.getElementById('novoLivroModal'));
+                                        modal.hide();
+                                        window.carregarLivros();
+                                    } catch (e) {
+                                        alert('Erro ao atualizar livro: ' + e.message);
+                                    }
+                                } else {
+                                    form.reportValidity();
+                                }
+                            };
+                        };
                         return;
+                    } else {
+                        // Se não existe duplicidade, habilita o botão de salvar normalmente
+                        document.getElementById('btnSalvarLivro').disabled = false;
                     }
                 } catch (e) {
                     isbnFeedback.textContent = 'Erro ao verificar ISBN.';
+                    document.getElementById('btnSalvarLivro').disabled = false;
                     return;
                 }
                 // Buscar dados na OpenLibrary
