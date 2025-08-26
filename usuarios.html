@@ -910,7 +910,6 @@
                     <button class="btn btn-sm btn-outline-success me-1" title="Editar" onclick="editarUsuario('${usuario._id}')"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-outline-info me-1" title="Empréstimos" onclick="verEmprestimosUsuario('${usuario._id}')"><i class="fas fa-book"></i></button>
                     <button class="btn btn-sm btn-outline-secondary me-1" title="Cartão de Leitor" onclick="imprimirCartaoLeitor('${usuario._id}')"><i class="fas fa-id-card"></i></button>
-                    <button class="btn btn-sm btn-outline-dark me-1" title="Sobre Componentes" onclick="mostrarSobreComponentes()"><i class="fas fa-info-circle"></i></button>
                     ${usuario.status === 'Bloqueado' 
                         ? `<button class='btn btn-sm btn-outline-success me-1' title='Desbloquear' onclick='desbloquearUsuario("${usuario._id}")'><i class='fas fa-check-circle'></i></button>`
                         : `<button class='btn btn-sm btn-outline-warning me-1' title='Bloquear' onclick='bloquearUsuario("${usuario._id}")'><i class='fas fa-ban'></i></button>`}
