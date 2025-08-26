@@ -22,6 +22,17 @@
     
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
+    <!-- CSS para garantir que o dropdown do menu Ações sempre apareça para cima -->
+    <style>
+    .dropdown-menu {
+        top: auto !important;
+        bottom: 100% !important;
+        transform: translateY(-0.5rem) !important;
+    }
+    .dropdown {
+        position: relative;
+    }
+    </style>
 </head>
 <body>
     <!-- Barra de navegação superior -->
@@ -886,7 +897,7 @@
                     ? `<li><a class="dropdown-item text-success" href="#" onclick="desbloquearUsuario('${usuario._id}')"><i class="fas fa-check-circle me-2"></i> Desbloquear</a></li>`
                     : `<li><a class="dropdown-item text-warning" href="#" onclick="bloquearUsuario('${usuario._id}')"><i class="fas fa-ban me-2"></i> Bloquear</a></li>`;
                 cell.innerHTML = `
-                    <div class="dropdown">
+                    <div class="dropdown dropup">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Ações
                         </button>
