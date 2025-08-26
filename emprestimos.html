@@ -312,17 +312,8 @@
                             
                             <div class="col-md-12 mb-3" id="infoUsuario" style="display: none;">
                                 <div class="card">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-primary me-3">
-                                                <span>JD</span>
-                                            </div>
-                                            <div>
-                                                <h5 class="mb-1">João da Silva</h5>
-                                                <p class="mb-0 text-muted">ID: USR123 | Categoria: Estudante</p>
-                                                <p class="mb-0 text-muted">Email: joao.silva@email.com</p>
-                                            </div>
-                                        </div>
+                                    <div class="card-body" id="infoUsuarioDados">
+                                        <!-- Dados reais do usuário serão preenchidos via JS -->
                                     </div>
                                 </div>
                             </div>
@@ -338,17 +329,8 @@
                             
                             <div class="col-md-12 mb-3" id="infoLivro" style="display: none;">
                                 <div class="card">
-                                    <div class="card-body">
-                                        <div class="d-flex">
-                                            <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
-                                                <i class="fas fa-book text-primary fa-2x"></i>
-                                            </div>
-                                            <div>
-                                                <h5 class="mb-1">Dom Casmurro</h5>
-                                                <p class="mb-0 text-muted">Autor: Machado de Assis | Editora: Moderna</p>
-                                                <p class="mb-0 text-muted">ISBN: 9788520937822 | Status: <span class="badge bg-success">Disponível</span></p>
-                                            </div>
-                                        </div>
+                                    <div class="card-body" id="infoLivroDados">
+                                        <!-- Dados reais do livro serão preenchidos via JS -->
                                     </div>
                                 </div>
                             </div>
@@ -489,22 +471,105 @@
 
             // Configurar botão de buscar usuário
             document.getElementById('btnBuscarUsuario').addEventListener('click', function() {
-                const usuarioId = document.getElementById('usuarioEmprestimo').value;
-                if (usuarioId) {
-                    document.getElementById('infoUsuario').style.display = 'block';
-                } else {
+                const usuarioId = document.getElementById('usuarioEmprestimo').value.trim();
+                if (!usuarioId) {
                     alert('Por favor, digite o ID ou nome do usuário.');
+                    return;
                 }
+                // Buscar usuário no Firestore
+                (async () => {
+                    const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    let usuarioEncontrado = null;
+                    try {
+                        const usuarioDoc = await getDoc(doc(db, 'usuarios', usuarioId));
+                        if (usuarioDoc.exists()) {
+                            usuarioEncontrado = { id: usuarioDoc.id, ...usuarioDoc.data() };
+                        }
+                    } catch (e) {}
+                    if (!usuarioEncontrado) {
+                        const usuariosRef = collection(db, 'usuarios');
+                        const q = query(usuariosRef, where('nome', '==', usuarioId));
+                        const querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                        }
+                    }
+                    if (usuarioEncontrado) {
+                        document.getElementById('infoUsuario').style.display = 'block';
+                        let html = `<div class='d-flex align-items-center'>`;
+                        html += `<div class='avatar-circle bg-primary me-3'><span>${(usuarioEncontrado.nome||'')[0] || '?'}</span></div>`;
+                        html += `<div>`;
+                        html += `<h5 class='mb-1'>${usuarioEncontrado.nome || ''}</h5>`;
+                        html += `<p class='mb-0 text-muted'>ID: ${usuarioEncontrado.id}`;
+                        if (usuarioEncontrado.categoria) html += ` | Categoria: ${usuarioEncontrado.categoria}`;
+                        html += `</p>`;
+                        if (usuarioEncontrado.email) html += `<p class='mb-0 text-muted'>Email: ${usuarioEncontrado.email}</p>`;
+                        html += `</div></div>`;
+                        document.getElementById('infoUsuarioDados').innerHTML = html;
+                    } else {
+                        document.getElementById('infoUsuario').style.display = 'none';
+                        alert('Usuário não encontrado no banco de dados.');
+                    }
+                })();
             });
 
             // Configurar botão de buscar livro
             document.getElementById('btnBuscarLivro').addEventListener('click', function() {
-                const livroId = document.getElementById('livroEmprestimo').value;
-                if (livroId) {
-                    document.getElementById('infoLivro').style.display = 'block';
-                } else {
+                const livroId = document.getElementById('livroEmprestimo').value.trim();
+                if (!livroId) {
                     alert('Por favor, digite o título, ISBN ou ID do livro.');
+                    return;
                 }
+                // Buscar livro no Firestore
+                (async () => {
+                    const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    let livroEncontrado = null;
+                    try {
+                        const livroDoc = await getDoc(doc(db, 'livros', livroId));
+                        if (livroDoc.exists()) {
+                            livroEncontrado = { id: livroDoc.id, ...livroDoc.data() };
+                        }
+                    } catch (e) {}
+                    if (!livroEncontrado) {
+                        const livrosRef = collection(db, 'livros');
+                        let q = query(livrosRef, where('titulo', '==', livroId));
+                        let querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                        }
+                    }
+                    if (!livroEncontrado) {
+                        const livrosRef = collection(db, 'livros');
+                        let q = query(livrosRef, where('isbn', '==', livroId));
+                        let querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const docSnap = querySnapshot.docs[0];
+                            livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                        }
+                    }
+                    if (livroEncontrado) {
+                        document.getElementById('infoLivro').style.display = 'block';
+                        let html = `<div class='d-flex'>`;
+                        html += `<div class='bg-primary bg-opacity-10 p-3 rounded me-3'><i class='fas fa-book text-primary fa-2x'></i></div>`;
+                        html += `<div>`;
+                        html += `<h5 class='mb-1'>${livroEncontrado.titulo || ''}</h5>`;
+                        if (livroEncontrado.autor || livroEncontrado.editora) html += `<p class='mb-0 text-muted'>`;
+                        if (livroEncontrado.autor) html += `Autor: ${livroEncontrado.autor}`;
+                        if (livroEncontrado.autor && livroEncontrado.editora) html += ' | ';
+                        if (livroEncontrado.editora) html += `Editora: ${livroEncontrado.editora}`;
+                        if (livroEncontrado.autor || livroEncontrado.editora) html += `</p>`;
+                        html += `<p class='mb-0 text-muted'>ISBN: ${livroEncontrado.isbn || ''}`;
+                        if (livroEncontrado.status) html += ` | Status: <span class='badge bg-success'>${livroEncontrado.status}</span>`;
+                        html += `</p>`;
+                        html += `</div></div>`;
+                        document.getElementById('infoLivroDados').innerHTML = html;
+                    } else {
+                        document.getElementById('infoLivro').style.display = 'none';
+                        alert('Livro não encontrado no banco de dados.');
+                    }
+                })();
             });
 
             // Configurar botão de buscar empréstimo
