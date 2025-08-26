@@ -1315,12 +1315,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
                             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
                         ]);
-                        // Buscar usuários do Firestore
-                        const { getFirestore, collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-                        const db = getFirestore();
-                        const usuariosRef = collection(db, 'usuarios');
+                        // Buscar usuários do Firestore usando a instância global db
+                        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        const usuariosRef = collection(window.db || db, 'usuarios');
                         const querySnapshot = await getDocs(usuariosRef);
-                        const usuarios = querySnapshot.docs.map(doc => doc.data());
+                        const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         // Montar dados da tabela
                         const columns = [
                             { header: 'Nome', dataKey: 'nome' },
