@@ -476,23 +476,41 @@
                     alert('Por favor, digite o ID ou nome do usuário.');
                     return;
                 }
-                // Buscar usuário no Firestore
+                // Buscar usuário no Firestore (ID, nome insensitive, email)
                 (async () => {
-                    const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    const { collection, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                     let usuarioEncontrado = null;
+                    // 1. Buscar por ID
                     try {
                         const usuarioDoc = await getDoc(doc(db, 'usuarios', usuarioId));
                         if (usuarioDoc.exists()) {
                             usuarioEncontrado = { id: usuarioDoc.id, ...usuarioDoc.data() };
                         }
                     } catch (e) {}
+                    // 2. Buscar por nome insensitive
                     if (!usuarioEncontrado) {
                         const usuariosRef = collection(db, 'usuarios');
-                        const q = query(usuariosRef, where('nome', '==', usuarioId));
-                        const querySnapshot = await getDocs(q);
-                        if (!querySnapshot.empty) {
-                            const docSnap = querySnapshot.docs[0];
-                            usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                        const querySnapshot = await getDocs(usuariosRef);
+                        const normalizar = s => (s||'').toLowerCase().normalize('NFD').replace(/\s+/g,'').replace(/[\u0300-\u036f]/g,"");
+                        const usuarioBusca = normalizar(usuarioId);
+                        for (const docSnap of querySnapshot.docs) {
+                            const nomeDb = normalizar(docSnap.data().nome);
+                            if (nomeDb === usuarioBusca) {
+                                usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                                break;
+                            }
+                        }
+                    }
+                    // 3. Buscar por email
+                    if (!usuarioEncontrado) {
+                        const usuariosRef = collection(db, 'usuarios');
+                        const querySnapshot = await getDocs(usuariosRef);
+                        const usuarioBusca = usuarioId.toLowerCase();
+                        for (const docSnap of querySnapshot.docs) {
+                            if ((docSnap.data().email||'').toLowerCase() === usuarioBusca) {
+                                usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                                break;
+                            }
                         }
                     }
                     if (usuarioEncontrado) {
