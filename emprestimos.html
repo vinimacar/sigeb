@@ -478,19 +478,21 @@
                 }
                 // Buscar usuário no Firestore (ID, nome insensitive, email)
                 (async () => {
-                    const { collection, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                     let usuarioEncontrado = null;
+                    // Importar apenas uma vez no escopo global
+                    const { collection, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    // Buscar todos os usuários
+                    const usuariosRef = collection(db, 'usuarios');
+                    const querySnapshot = await getDocs(usuariosRef);
                     // 1. Buscar por ID
-                    try {
-                        const usuarioDoc = await getDoc(doc(db, 'usuarios', usuarioId));
-                        if (usuarioDoc.exists()) {
-                            usuarioEncontrado = { id: usuarioDoc.id, ...usuarioDoc.data() };
+                    for (const docSnap of querySnapshot.docs) {
+                        if (docSnap.id === usuarioId) {
+                            usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                            break;
                         }
-                    } catch (e) {}
+                    }
                     // 2. Buscar por nome insensitive
                     if (!usuarioEncontrado) {
-                        const usuariosRef = collection(db, 'usuarios');
-                        const querySnapshot = await getDocs(usuariosRef);
                         const normalizar = s => (s||'').toLowerCase().normalize('NFD').replace(/\s+/g,'').replace(/[\u0300-\u036f]/g,"");
                         const usuarioBusca = normalizar(usuarioId);
                         for (const docSnap of querySnapshot.docs) {
@@ -503,8 +505,6 @@
                     }
                     // 3. Buscar por email
                     if (!usuarioEncontrado) {
-                        const usuariosRef = collection(db, 'usuarios');
-                        const querySnapshot = await getDocs(usuariosRef);
                         const usuarioBusca = usuarioId.toLowerCase();
                         for (const docSnap of querySnapshot.docs) {
                             if ((docSnap.data().email||'').toLowerCase() === usuarioBusca) {
@@ -539,32 +539,39 @@
                     alert('Por favor, digite o título, ISBN ou ID do livro.');
                     return;
                 }
-                // Buscar livro no Firestore
+                // Buscar livro no Firestore (ID, título insensitive, ISBN)
                 (async () => {
-                    const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                     let livroEncontrado = null;
-                    try {
-                        const livroDoc = await getDoc(doc(db, 'livros', livroId));
-                        if (livroDoc.exists()) {
-                            livroEncontrado = { id: livroDoc.id, ...livroDoc.data() };
-                        }
-                    } catch (e) {}
-                    if (!livroEncontrado) {
-                        const livrosRef = collection(db, 'livros');
-                        let q = query(livrosRef, where('titulo', '==', livroId));
-                        let querySnapshot = await getDocs(q);
-                        if (!querySnapshot.empty) {
-                            const docSnap = querySnapshot.docs[0];
+                    const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    const livrosRef = collection(db, 'livros');
+                    const querySnapshot = await getDocs(livrosRef);
+                    // 1. Buscar por ID
+                    for (const docSnap of querySnapshot.docs) {
+                        if (docSnap.id === livroId) {
                             livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                            break;
                         }
                     }
+                    // 2. Buscar por título insensitive
                     if (!livroEncontrado) {
-                        const livrosRef = collection(db, 'livros');
-                        let q = query(livrosRef, where('isbn', '==', livroId));
-                        let querySnapshot = await getDocs(q);
-                        if (!querySnapshot.empty) {
-                            const docSnap = querySnapshot.docs[0];
-                            livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                        const normalizar = s => (s||'').toLowerCase().normalize('NFD').replace(/\s+/g,'').replace(/[\u0300-\u036f]/g,"");
+                        const livroBusca = normalizar(livroId);
+                        for (const docSnap of querySnapshot.docs) {
+                            const tituloDb = normalizar(docSnap.data().titulo);
+                            if (tituloDb === livroBusca) {
+                                livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                                break;
+                            }
+                        }
+                    }
+                    // 3. Buscar por ISBN
+                    if (!livroEncontrado) {
+                        const livroBusca = livroId.replace(/[-\s]/g,"");
+                        for (const docSnap of querySnapshot.docs) {
+                            if ((docSnap.data().isbn||'').replace(/[-\s]/g,"") === livroBusca) {
+                                livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                                break;
+                            }
                         }
                     }
                     if (livroEncontrado) {
