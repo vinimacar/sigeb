@@ -789,7 +789,7 @@
             const tabela = document.getElementById('tabelaEmprestimos');
             tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Carregando...</td></tr>';
             try {
-                const { collection, getDocs, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                const { collection, getDocs, getDoc, doc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                 const emprestimosRef = collection(db, 'emprestimos');
                 const querySnapshot = await getDocs(emprestimosRef);
                 if (querySnapshot.empty) {
@@ -797,8 +797,30 @@
                     return;
                 }
                 let html = '';
-                querySnapshot.forEach(docSnap => {
+                // Buscar todos os usuários e livros em cache para evitar múltiplas queries
+                const usuariosRef = collection(db, 'usuarios');
+                const livrosRef = collection(db, 'livros');
+                const [usuariosSnap, livrosSnap] = await Promise.all([
+                    getDocs(usuariosRef),
+                    getDocs(livrosRef)
+                ]);
+                const usuariosMap = {};
+                usuariosSnap.forEach(u => { usuariosMap[u.id] = u.data(); });
+                const livrosMap = {};
+                livrosSnap.forEach(l => { livrosMap[l.id] = l.data(); });
+                // Montar linhas
+                for (const docSnap of querySnapshot.docs) {
                     const emp = docSnap.data();
+                    // Nome do usuário
+                    let usuarioNome = emp.usuarioNome;
+                    if (!usuarioNome && emp.usuarioId && usuariosMap[emp.usuarioId]) {
+                        usuarioNome = usuariosMap[emp.usuarioId].nome;
+                    }
+                    // Nome do livro
+                    let livroTitulo = emp.livroTitulo;
+                    if (!livroTitulo && emp.livroId && livrosMap[emp.livroId]) {
+                        livroTitulo = livrosMap[emp.livroId].titulo;
+                    }
                     // Datas formatadas
                     const dataEmprestimo = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate() : (emp.dataEmprestimo instanceof Timestamp ? emp.dataEmprestimo.toDate() : null);
                     const dataDevolucao = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate() : (emp.dataDevolucao instanceof Timestamp ? emp.dataDevolucao.toDate() : null);
@@ -811,8 +833,8 @@
                     else if (emp.status === 'renovado') badge = '<span class="badge bg-info text-dark">Renovado</span>';
                     html += `<tr>`;
                     html += `<td>${docSnap.id}</td>`;
-                    html += `<td>${emp.usuarioNome || emp.usuarioId || '-'}</td>`;
-                    html += `<td>${emp.livroTitulo || emp.livroId || '-'}</td>`;
+                    html += `<td>${usuarioNome || emp.usuarioId || '-'}</td>`;
+                    html += `<td>${livroTitulo || emp.livroId || '-'}</td>`;
                     html += `<td>${formatarData(dataEmprestimo)}</td>`;
                     html += `<td>${formatarData(dataDevolucao)}</td>`;
                     html += `<td>${badge}</td>`;
@@ -822,7 +844,7 @@
                     html += `<button class='btn btn-sm btn-outline-danger' title='Excluir'><i class='fas fa-trash'></i></button>`;
                     html += `</td>`;
                     html += `</tr>`;
-                });
+                }
                 tabela.innerHTML = html;
             } catch (e) {
                 tabela.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erro ao carregar empréstimos.</td></tr>';
