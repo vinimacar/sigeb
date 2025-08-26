@@ -208,6 +208,7 @@
                                         <th>Autor</th>
                                         <th>Categoria</th>
                                         <th>ISBN</th>
+                                        <th>Quantidade</th>
                                         <th>Status</th>
                                         <th>Ações</th>
                                     </tr>
@@ -661,6 +662,7 @@
                             <td>${livro.autor || 'Autor não informado'}</td>
                             <td>${livro.categoria || 'Categoria não informada'}</td>
                             <td>${livro.isbn || 'ISBN não informado'}</td>
+                            <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
                             <td><span class="badge ${statusClass}">${status}</span></td>
                             <td>
                                 <div class="dropdown">
