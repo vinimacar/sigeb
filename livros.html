@@ -934,21 +934,31 @@
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
 </script>
     <script>
-    // Função para exportar a tabela de livros em CSV
-    document.querySelector('.btn-group .btn-outline-secondary:nth-child(2)').addEventListener('click', function() {
-        // Pega os dados da tabela
-        const linhas = document.querySelectorAll('#tabelaLivros tr');
-        let csv = 'Título,Autor,Categoria,ISBN,Status\n';
-        linhas.forEach(linha => {
-            const colunas = linha.querySelectorAll('td');
-            if (colunas.length > 0) {
-                const titulo = '"' + (colunas[1].innerText || '').replace(/"/g, '""') + '"';
-                const autor = '"' + (colunas[2].innerText || '').replace(/"/g, '""') + '"';
-                const categoria = '"' + (colunas[3].innerText || '').replace(/"/g, '""') + '"';
-                const isbn = '"' + (colunas[4].innerText || '').replace(/"/g, '""') + '"';
-                const status = '"' + (colunas[5].innerText || '').replace(/"/g, '""') + '"';
-                csv += [titulo, autor, categoria, isbn, status].join(',') + '\n';
-            }
+    // Função para exportar TODO o acervo de livros do Firestore em CSV
+    document.querySelector('.btn-group .btn-outline-secondary:nth-child(2)').addEventListener('click', async function() {
+        // Importa dinamicamente getDocs e collection
+        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+        const querySnapshot = await getDocs(collection(db, 'livros'));
+        // Cabeçalho CSV com todos os campos relevantes
+        let csv = 'Título,Autor,Categoria,ISBN,Editora,Ano,Localização,Descrição,Quantidade,Status,Reservado\n';
+        querySnapshot.forEach((docSnap) => {
+            const livro = docSnap.data();
+            const status = livro.disponivel ? 'Disponível' : 'Indisponível';
+            const reservado = livro.reservado ? 'Sim' : 'Não';
+            const linha = [
+                '"' + (livro.titulo || '').replace(/"/g, '""') + '"',
+                '"' + (livro.autor || '').replace(/"/g, '""') + '"',
+                '"' + (livro.categoria || '').replace(/"/g, '""') + '"',
+                '"' + (livro.isbn || '').replace(/"/g, '""') + '"',
+                '"' + (livro.editora || '').replace(/"/g, '""') + '"',
+                '"' + (livro.anoPublicacao || '') + '"',
+                '"' + (livro.localizacao || '').replace(/"/g, '""') + '"',
+                '"' + (livro.descricao || '').replace(/"/g, '""') + '"',
+                '"' + (livro.quantidade != null ? livro.quantidade : '') + '"',
+                '"' + status + '"',
+                '"' + reservado + '"'
+            ];
+            csv += linha.join(',') + '\n';
         });
         // Cria e baixa o arquivo CSV
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -962,35 +972,50 @@
     </script>
     <!-- jsPDF CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-    // Função para gerar PDF do acervo de livros
-    document.getElementById('btnImprimirPDF').addEventListener('click', function() {
-        const doc = new window.jspdf.jsPDF();
-        let y = 20;
-        doc.setFontSize(16);
-        doc.text('Acervo de Livros', 105, y, { align: 'center' });
-        y += 10;
+    <script type="module">
+    // Função para gerar PDF do acervo de livros (buscando todo o acervo do Firestore)
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+    document.getElementById('btnImprimirPDF').addEventListener('click', async function() {
+        const doc = new window.jspdf.jsPDF({ orientation: 'landscape' });
+        // Nome da escola e logo
+        const nomeEscola = 'ESCOLA MUNICIPAL EXEMPLO'; // Personalize aqui ou busque dinamicamente
+        const logoUrl = 'logobias.png'; // Caminho do logo
+        // Adiciona logo
+        const img = new Image();
+        img.src = logoUrl;
+        await new Promise(resolve => { img.onload = resolve; });
+        doc.addImage(img, 'PNG', 10, 5, 30, 18);
+        // Nome da escola
+        doc.setFontSize(18);
+        doc.text(nomeEscola, 150, 18, { align: 'center' });
+        // Título
+        doc.setFontSize(14);
+        doc.text('Acervo de Livros', 150, 30, { align: 'center' });
+        let y = 40;
         doc.setFontSize(10);
         // Cabeçalho da tabela
         doc.text('Título', 10, y);
-        doc.text('Autor', 60, y);
-        doc.text('Categoria', 110, y);
-        doc.text('ISBN', 150, y);
+        doc.text('Autor', 70, y);
+        doc.text('Categoria', 130, y);
+        doc.text('ISBN', 170, y);
+        doc.text('Status', 210, y);
         y += 7;
-        // Pega as linhas da tabela
-        const linhas = document.querySelectorAll('#tabelaLivros tr');
-        linhas.forEach(linha => {
-            const colunas = linha.querySelectorAll('td');
-            if (colunas.length > 0) {
-                doc.text(colunas[1].innerText, 10, y, { maxWidth: 48 });
-                doc.text(colunas[2].innerText, 60, y, { maxWidth: 48 });
-                doc.text(colunas[3].innerText, 110, y, { maxWidth: 38 });
-                doc.text(colunas[4].innerText, 150, y, { maxWidth: 30 });
-                y += 7;
-                if (y > 270) {
-                    doc.addPage();
-                    y = 20;
-                }
+        // Buscar todos os livros do Firestore usando a variável global db
+        const querySnapshot = await getDocs(collection(db, 'livros'));
+        let count = 0;
+        querySnapshot.forEach((docSnap) => {
+            const livro = docSnap.data();
+            const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
+            doc.text(String(livro.titulo || ''), 10, y, { maxWidth: 58 });
+            doc.text(String(livro.autor || ''), 70, y, { maxWidth: 58 });
+            doc.text(String(livro.categoria || ''), 130, y, { maxWidth: 38 });
+            doc.text(String(livro.isbn || ''), 170, y, { maxWidth: 38 });
+            doc.text(status, 210, y, { maxWidth: 28 });
+            y += 7;
+            count++;
+            if (y > 190) {
+                doc.addPage();
+                y = 20;
             }
         });
         doc.save('acervo_livros.pdf');
