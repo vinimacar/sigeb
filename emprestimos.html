@@ -518,28 +518,98 @@
             });
 
             // Configurar botão de salvar empréstimo
-            document.getElementById('btnSalvarEmprestimo').addEventListener('click', function() {
+            document.getElementById('btnSalvarEmprestimo').addEventListener('click', async function() {
                 const form = document.getElementById('formNovoEmprestimo');
-                if (form.checkValidity()) {
-                    // Aqui você implementaria a lógica para salvar o empréstimo no Firestore
-                    alert('Empréstimo registrado com sucesso!');
-
-                    // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
-                    const modalEl = document.getElementById('novoEmprestimoModal');
-                    if (modalEl) {
-                        modalEl.removeAttribute('aria-hidden');
-                    }
-                    // Fechar o modal
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    modal.hide();
-
-                    // Limpar o formulário
-                    form.reset();
-                    document.getElementById('infoUsuario').style.display = 'none';
-                    document.getElementById('infoLivro').style.display = 'none';
-                } else {
+                if (!form.checkValidity()) {
                     form.reportValidity();
+                    return;
                 }
+
+                // Buscar usuário e livro no Firestore
+                const usuarioInput = document.getElementById('usuarioEmprestimo').value.trim();
+                const livroInput = document.getElementById('livroEmprestimo').value.trim();
+                if (!usuarioInput || !livroInput) {
+                    alert('Preencha os campos de usuário e livro.');
+                    return;
+                }
+
+                // Importar funções Firestore
+                const { collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+
+                // Buscar usuário (por ID ou nome)
+                let usuarioEncontrado = null;
+                // Tenta buscar por ID
+                try {
+                    const usuarioDoc = await getDoc(doc(db, 'usuarios', usuarioInput));
+                    if (usuarioDoc.exists()) {
+                        usuarioEncontrado = { id: usuarioDoc.id, ...usuarioDoc.data() };
+                    }
+                } catch (e) {}
+                // Se não achou por ID, tenta por nome
+                if (!usuarioEncontrado) {
+                    const usuariosRef = collection(db, 'usuarios');
+                    const q = query(usuariosRef, where('nome', '==', usuarioInput));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const docSnap = querySnapshot.docs[0];
+                        usuarioEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    }
+                }
+                if (!usuarioEncontrado) {
+                    alert('Usuário não encontrado no banco de dados.');
+                    return;
+                }
+
+                // Buscar livro (por ID, título ou ISBN)
+                let livroEncontrado = null;
+                // Tenta buscar por ID
+                try {
+                    const livroDoc = await getDoc(doc(db, 'livros', livroInput));
+                    if (livroDoc.exists()) {
+                        livroEncontrado = { id: livroDoc.id, ...livroDoc.data() };
+                    }
+                } catch (e) {}
+                // Se não achou por ID, tenta por título
+                if (!livroEncontrado) {
+                    const livrosRef = collection(db, 'livros');
+                    let q = query(livrosRef, where('titulo', '==', livroInput));
+                    let querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const docSnap = querySnapshot.docs[0];
+                        livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    }
+                }
+                // Se não achou por título, tenta por ISBN
+                if (!livroEncontrado) {
+                    const livrosRef = collection(db, 'livros');
+                    let q = query(livrosRef, where('isbn', '==', livroInput));
+                    let querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const docSnap = querySnapshot.docs[0];
+                        livroEncontrado = { id: docSnap.id, ...docSnap.data() };
+                    }
+                }
+                if (!livroEncontrado) {
+                    alert('Livro não encontrado no banco de dados.');
+                    return;
+                }
+
+                // Aqui você implementaria a lógica para salvar o empréstimo no Firestore
+                alert('Empréstimo registrado com sucesso!\nUsuário: ' + usuarioEncontrado.nome + '\nLivro: ' + livroEncontrado.titulo);
+
+                // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
+                const modalEl = document.getElementById('novoEmprestimoModal');
+                if (modalEl) {
+                    modalEl.removeAttribute('aria-hidden');
+                }
+                // Fechar o modal
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                // Limpar o formulário
+                form.reset();
+                document.getElementById('infoUsuario').style.display = 'none';
+                document.getElementById('infoLivro').style.display = 'none';
             });
 
             // Configurar botão de confirmar devolução
