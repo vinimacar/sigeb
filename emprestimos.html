@@ -687,6 +687,13 @@
                         html += `<p class='mb-0 text-muted'>ISBN: ${livroEncontrado.isbn || ''}`;
                         if (livroEncontrado.status) html += ` | Status: <span class='badge bg-success'>${livroEncontrado.status}</span>`;
                         html += `</p>`;
+                        // Mostrar quantidade disponível, se existir
+                        let qtd = livroEncontrado.quantidadeDisponivel;
+                        if (qtd === undefined && livroEncontrado.disponiveis !== undefined) qtd = livroEncontrado.disponiveis;
+                        if (qtd === undefined && livroEncontrado.estoque !== undefined) qtd = livroEncontrado.estoque;
+                        if (qtd !== undefined) {
+                            html += `<p class='mb-0 text-muted'>Disponíveis: <strong>${qtd}</strong></p>`;
+                        }
                         html += `</div></div>`;
                         document.getElementById('infoLivroDados').innerHTML = html;
                     } else {
@@ -888,6 +895,39 @@
                 const { collection, getDocs, getDoc, doc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                 const emprestimosRef = collection(db, 'emprestimos');
                 const querySnapshot = await getDocs(emprestimosRef);
+                // --- Estatísticas rápidas ---
+                let totalAtivos = 0;
+                let totalAtrasados = 0;
+                let totalDevolvidosMes = 0;
+                let totalRenovados = 0;
+                const agora = new Date();
+                const mesAtual = agora.getMonth();
+                const anoAtual = agora.getFullYear();
+                querySnapshot.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    if (emp.status === 'em_andamento' || emp.status === 'renovado') totalAtivos++;
+                    if (emp.status === 'atrasado') totalAtrasados++;
+                    if (emp.status === 'renovado') totalRenovados++;
+                    if (emp.status === 'devolvido') {
+                        let dataDevolucao = emp.dataDevolucao;
+                        if (dataDevolucao && dataDevolucao.toDate) dataDevolucao = dataDevolucao.toDate();
+                        else if (dataDevolucao instanceof Timestamp) dataDevolucao = dataDevolucao.toDate();
+                        else dataDevolucao = null;
+                        if (dataDevolucao && dataDevolucao.getMonth() === mesAtual && dataDevolucao.getFullYear() === anoAtual) {
+                            totalDevolvidosMes++;
+                        }
+                    }
+                });
+                // Atualizar cards
+                const cardAtivos = document.querySelector('.card .fa-book-reader')?.closest('.card')?.querySelector('.h5');
+                if (cardAtivos) cardAtivos.textContent = totalAtivos;
+                const cardAtrasados = document.querySelector('.card .fa-exclamation-triangle')?.closest('.card')?.querySelector('.h5');
+                if (cardAtrasados) cardAtrasados.textContent = totalAtrasados;
+                const cardDevolvidos = document.querySelector('.card .fa-check-circle')?.closest('.card')?.querySelector('.h5');
+                if (cardDevolvidos) cardDevolvidos.textContent = totalDevolvidosMes;
+                const cardRenovados = document.querySelector('.card .fa-sync-alt')?.closest('.card')?.querySelector('.h5');
+                if (cardRenovados) cardRenovados.textContent = totalRenovados;
+
                 if (querySnapshot.empty) {
                     tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Nenhum empréstimo encontrado.</td></tr>';
                     atualizarPaginacao(1, 1, 0);
@@ -962,6 +1002,7 @@
                     html += `<td>${formatarData(dataDevolucao)}</td>`;
                     html += `<td>${badge}</td>`;
                     html += `<td>`;
+                    html += `<button class='btn btn-sm btn-outline-primary me-1 btn-editar' data-id='${emp.id}' title='Editar'><i class='fas fa-pencil-alt'></i></button>`;
                     html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${emp.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
                     html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${emp.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
                     html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${emp.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
@@ -971,6 +1012,12 @@
                 tabela.innerHTML = html;
 
                 // Ativar listeners dos botões de ação
+                tabela.querySelectorAll('.btn-editar').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        alert('Ação: Editar empréstimo ' + id + ' (implementar modal de edição)');
+                    });
+                });
                 tabela.querySelectorAll('.btn-devolver').forEach(btn => {
                     btn.addEventListener('click', async function() {
                         const id = this.getAttribute('data-id');
