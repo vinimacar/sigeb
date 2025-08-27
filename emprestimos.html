@@ -246,7 +246,6 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
                                         <th>Usuário</th>
                                         <th>Livro</th>
                                         <th>Data Empréstimo</th>
@@ -891,9 +890,41 @@
                 const querySnapshot = await getDocs(emprestimosRef);
                 if (querySnapshot.empty) {
                     tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Nenhum empréstimo encontrado.</td></tr>';
+                    atualizarPaginacao(1, 1, 0);
                     return;
                 }
-                let html = '';
+                // Paginação e filtro
+                let emprestimos = [];
+                querySnapshot.forEach(docSnap => {
+                    emprestimos.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                // FILTRO DE PESQUISA
+                const termoPesquisa = (document.getElementById('pesquisaEmprestimo')?.value || '').trim().toLowerCase();
+                if (termoPesquisa.length > 0) {
+                    emprestimos = emprestimos.filter(emp => {
+                        // Busca por usuário, livro, id
+                        const usuario = (emp.usuarioNome || '').toLowerCase();
+                        const livro = (emp.livroTitulo || '').toLowerCase();
+                        const id = (emp.id || '').toLowerCase();
+                        return usuario.includes(termoPesquisa) || livro.includes(termoPesquisa) || id.includes(termoPesquisa);
+                    });
+                }
+                // Ordenar por data de lançamento (criadoEm) decrescente (mais recente primeiro)
+                emprestimos.sort((a, b) => {
+                    const aData = a.criadoEm && a.criadoEm.toDate ? a.criadoEm.toDate() : (a.criadoEm instanceof Timestamp ? a.criadoEm.toDate() : new Date(0));
+                    const bData = b.criadoEm && b.criadoEm.toDate ? b.criadoEm.toDate() : (b.criadoEm instanceof Timestamp ? b.criadoEm.toDate() : new Date(0));
+                    return bData - aData;
+                });
+                const itensPorPagina = 10;
+                let paginaAtual = window.paginaEmprestimosAtual || 1;
+                const totalPaginas = Math.ceil(emprestimos.length / itensPorPagina);
+                if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+                if (paginaAtual < 1) paginaAtual = 1;
+                window.paginaEmprestimosAtual = paginaAtual;
+                const inicio = (paginaAtual - 1) * itensPorPagina;
+                const fim = inicio + itensPorPagina;
+                const emprestimosPagina = emprestimos.slice(inicio, fim);
+
                 // Buscar todos os usuários e livros em cache para evitar múltiplas queries
                 const usuariosRef = collection(db, 'usuarios');
                 const livrosRef = collection(db, 'livros');
@@ -906,8 +937,8 @@
                 const livrosMap = {};
                 livrosSnap.forEach(l => { livrosMap[l.id] = l.data(); });
                 // Montar linhas
-                for (const docSnap of querySnapshot.docs) {
-                    const emp = docSnap.data();
+                let html = '';
+                for (const emp of emprestimosPagina) {
                     let usuarioNome = emp.usuarioNome;
                     if (!usuarioNome && emp.usuarioId && usuariosMap[emp.usuarioId]) {
                         usuarioNome = usuariosMap[emp.usuarioId].nome;
@@ -925,16 +956,15 @@
                     else if (emp.status === 'devolvido') badge = '<span class="badge bg-success">Devolvido</span>';
                     else if (emp.status === 'renovado') badge = '<span class="badge bg-info text-dark">Renovado</span>';
                     html += `<tr>`;
-                    html += `<td>${docSnap.id}</td>`;
                     html += `<td>${usuarioNome || emp.usuarioId || '-'}</td>`;
                     html += `<td>${livroTitulo || emp.livroId || '-'}</td>`;
                     html += `<td>${formatarData(dataEmprestimo)}</td>`;
                     html += `<td>${formatarData(dataDevolucao)}</td>`;
                     html += `<td>${badge}</td>`;
                     html += `<td>`;
-                    html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${docSnap.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${docSnap.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${docSnap.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${emp.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${emp.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
+                    html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${emp.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
                     html += `</td>`;
                     html += `</tr>`;
                 }
@@ -1019,10 +1049,55 @@
                         }
                     });
                 });
+                // Atualizar paginação
+                atualizarPaginacao(paginaAtual, totalPaginas, emprestimos.length);
             } catch (e) {
                 tabela.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erro ao carregar empréstimos.</td></tr>';
                 console.error('Erro ao carregar empréstimos:', e);
+                atualizarPaginacao(1, 1, 0);
             }
+        }
+            // Ativar botão de pesquisar
+            document.getElementById('btnPesquisar').addEventListener('click', function() {
+                window.paginaEmprestimosAtual = 1;
+                carregarEmprestimos();
+            });
+
+        // Função para atualizar a paginação
+        function atualizarPaginacao(paginaAtual, totalPaginas, totalItens) {
+            const paginacao = document.querySelector('.pagination');
+            if (!paginacao) return;
+            let html = '';
+            // Botão anterior
+            html += `<li class="page-item${paginaAtual === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="${paginaAtual - 1}" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a></li>`;
+            // Números de página (máximo 5)
+            let start = Math.max(1, paginaAtual - 2);
+            let end = Math.min(totalPaginas, start + 4);
+            if (end - start < 4) start = Math.max(1, end - 4);
+            for (let i = start; i <= end; i++) {
+                html += `<li class="page-item${i === paginaAtual ? ' active' : ''}"><a class="page-link" href="#" data-pagina="${i}">${i}</a></li>`;
+            }
+            // Botão próximo
+            html += `<li class="page-item${paginaAtual === totalPaginas ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="${paginaAtual + 1}" aria-label="Próximo"><span aria-hidden="true">&raquo;</span></a></li>`;
+            paginacao.innerHTML = html;
+            // Atualizar texto de "Mostrando X-Y de Z"
+            const texto = document.querySelector('.card-footer span.text-muted');
+            if (texto) {
+                const inicio = totalItens === 0 ? 0 : ((paginaAtual - 1) * 10 + 1);
+                const fim = Math.min(paginaAtual * 10, totalItens);
+                texto.textContent = `Mostrando ${inicio}-${fim} de ${totalItens} empréstimos`;
+            }
+            // Listeners
+            paginacao.querySelectorAll('a.page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pagina = parseInt(this.getAttribute('data-pagina'));
+                    if (!isNaN(pagina) && pagina >= 1 && pagina <= totalPaginas && pagina !== window.paginaEmprestimosAtual) {
+                        window.paginaEmprestimosAtual = pagina;
+                        carregarEmprestimos();
+                    }
+                });
+            });
         }
     </script>
 
