@@ -453,12 +453,30 @@
         });
 
         // Função para carregar dados do dashboard
-        function carregarDadosDashboard() {
-            // Simulação de dados (em um ambiente real, esses dados viriam do Firestore)
-            document.getElementById('totalLivros').textContent = '1,250';
-            document.getElementById('emprestimosAtivos').textContent = '87';
-            document.getElementById('totalUsuarios').textContent = '320';
-            document.getElementById('livrosAtrasados').textContent = '12';
+        async function carregarDadosDashboard() {
+            // Buscar total de livros
+            const livrosSnap = await getDocs(collection(db, 'livros'));
+            document.getElementById('totalLivros').textContent = livrosSnap.size;
+
+            // Buscar total de usuários
+            const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+            document.getElementById('totalUsuarios').textContent = usuariosSnap.size;
+
+            // Buscar empréstimos ativos e atrasados
+            const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+            let ativos = 0;
+            let atrasados = 0;
+            const hoje = new Date();
+            emprestimosSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.status === 'ativo') ativos++;
+                if (data.dataDevolucao) {
+                    const dataDev = new Date(data.dataDevolucao);
+                    if (data.status === 'ativo' && dataDev < hoje) atrasados++;
+                }
+            });
+            document.getElementById('emprestimosAtivos').textContent = ativos;
+            document.getElementById('livrosAtrasados').textContent = atrasados;
         }
 
         // Função para inicializar gráficos
