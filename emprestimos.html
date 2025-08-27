@@ -509,12 +509,16 @@
             let sugestoes = [];
             querySnapshot.forEach(docSnap => {
                 const data = docSnap.data();
+                // Corrigir isbn para string
+                let isbnDb = data.isbn;
+                if (isbnDb === undefined || isbnDb === null) isbnDb = '';
+                if (typeof isbnDb !== 'string') isbnDb = String(isbnDb);
                 if (
                     docSnap.id.toLowerCase().includes(termo) ||
                     (data.titulo && data.titulo.toLowerCase().includes(termo)) ||
-                    (data.isbn && data.isbn.toLowerCase().includes(termo))
+                    (isbnDb && isbnDb.toLowerCase().includes(termo))
                 ) {
-                    sugestoes.push({ id: docSnap.id, titulo: data.titulo, isbn: data.isbn });
+                    sugestoes.push({ id: docSnap.id, titulo: data.titulo, isbn: isbnDb });
                 }
             });
             livroAutocomplete.innerHTML = sugestoes.slice(0,8).map(l => `<div class='autocomplete-item' style='padding:6px;cursor:pointer;' data-id='${l.id}' data-titulo='${l.titulo||''}' data-isbn='${l.isbn||''}'>${l.titulo || ''} <small class='text-muted'>${l.isbn||l.id}</small></div>`).join('');
