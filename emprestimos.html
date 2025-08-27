@@ -306,6 +306,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-user"></i></span>
                                     <input type="text" class="form-control" id="usuarioEmprestimo" placeholder="Digite o ID ou nome do usuário" required>
+    <input type="text" class="form-control" id="usuarioEmprestimo" placeholder="Digite o ID ou nome do usuário" autocomplete="off" required>
+    <div class="autocomplete-list" id="usuarioAutocomplete" style="position:absolute;z-index:1000;width:100%;background:#fff;border:1px solid #ccc;display:none;"></div>
                                     <button class="btn btn-outline-secondary" type="button" id="btnBuscarUsuario">Buscar</button>
                                 </div>
                             </div>
@@ -323,6 +325,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-book"></i></span>
                                     <input type="text" class="form-control" id="livroEmprestimo" placeholder="Digite o título, ISBN ou ID do livro" required>
+    <input type="text" class="form-control" id="livroEmprestimo" placeholder="Digite o título, ISBN ou ID do livro" autocomplete="off" required>
+    <div class="autocomplete-list" id="livroAutocomplete" style="position:absolute;z-index:1000;width:100%;background:#fff;border:1px solid #ccc;display:none;"></div>
                                     <button class="btn btn-outline-secondary" type="button" id="btnBuscarLivro">Buscar</button>
                                 </div>
                             </div>
@@ -448,6 +452,85 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // Função utilitária para debounce
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Autocomplete Usuário
+        const usuarioInput = document.getElementById('usuarioEmprestimo');
+        const usuarioAutocomplete = document.getElementById('usuarioAutocomplete');
+        usuarioInput.addEventListener('input', debounce(async function() {
+            const termo = usuarioInput.value.trim().toLowerCase();
+            if (termo.length < 2) { usuarioAutocomplete.style.display = 'none'; return; }
+            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+            const usuariosRef = collection(db, 'usuarios');
+            const querySnapshot = await getDocs(usuariosRef);
+            let sugestoes = [];
+            querySnapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (
+                    docSnap.id.toLowerCase().includes(termo) ||
+                    (data.nome && data.nome.toLowerCase().includes(termo)) ||
+                    (data.email && data.email.toLowerCase().includes(termo))
+                ) {
+                    sugestoes.push({ id: docSnap.id, nome: data.nome, email: data.email });
+                }
+            });
+            usuarioAutocomplete.innerHTML = sugestoes.slice(0,8).map(u => `<div class='autocomplete-item' style='padding:6px;cursor:pointer;' data-id='${u.id}' data-nome='${u.nome||''}' data-email='${u.email||''}'>${u.nome || ''} <small class='text-muted'>${u.email||u.id}</small></div>`).join('');
+            usuarioAutocomplete.style.display = sugestoes.length ? 'block' : 'none';
+        }, 300));
+        usuarioAutocomplete.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('autocomplete-item')) {
+                usuarioInput.value = e.target.getAttribute('data-nome') || e.target.getAttribute('data-id');
+                usuarioAutocomplete.style.display = 'none';
+                // Preencher infoUsuario automaticamente
+                document.getElementById('btnBuscarUsuario').click();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!usuarioAutocomplete.contains(e.target) && e.target !== usuarioInput) usuarioAutocomplete.style.display = 'none';
+        });
+
+        // Autocomplete Livro
+        const livroInput = document.getElementById('livroEmprestimo');
+        const livroAutocomplete = document.getElementById('livroAutocomplete');
+        livroInput.addEventListener('input', debounce(async function() {
+            const termo = livroInput.value.trim().toLowerCase();
+            if (termo.length < 2) { livroAutocomplete.style.display = 'none'; return; }
+            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+            const livrosRef = collection(db, 'livros');
+            const querySnapshot = await getDocs(livrosRef);
+            let sugestoes = [];
+            querySnapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (
+                    docSnap.id.toLowerCase().includes(termo) ||
+                    (data.titulo && data.titulo.toLowerCase().includes(termo)) ||
+                    (data.isbn && data.isbn.toLowerCase().includes(termo))
+                ) {
+                    sugestoes.push({ id: docSnap.id, titulo: data.titulo, isbn: data.isbn });
+                }
+            });
+            livroAutocomplete.innerHTML = sugestoes.slice(0,8).map(l => `<div class='autocomplete-item' style='padding:6px;cursor:pointer;' data-id='${l.id}' data-titulo='${l.titulo||''}' data-isbn='${l.isbn||''}'>${l.titulo || ''} <small class='text-muted'>${l.isbn||l.id}</small></div>`).join('');
+            livroAutocomplete.style.display = sugestoes.length ? 'block' : 'none';
+        }, 300));
+        livroAutocomplete.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('autocomplete-item')) {
+                livroInput.value = e.target.getAttribute('data-titulo') || e.target.getAttribute('data-id');
+                livroAutocomplete.style.display = 'none';
+                // Preencher infoLivro automaticamente
+                document.getElementById('btnBuscarLivro').click();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!livroAutocomplete.contains(e.target) && e.target !== livroInput) livroAutocomplete.style.display = 'none';
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             // Ativar botão Novo Empréstimo para limpar modal ao abrir
