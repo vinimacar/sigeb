@@ -1012,12 +1012,29 @@
                 tabela.innerHTML = html;
 
                 // Ativar listeners dos botões de ação
-                tabela.querySelectorAll('.btn-editar').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        alert('Ação: Editar empréstimo ' + id + ' (implementar modal de edição)');
-                    });
-                });
+    tabela.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.getAttribute('data-id');
+            // Buscar dados do empréstimo
+            const { getDoc, doc: docFn, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+            const emprestimoDoc = await getDoc(docFn(db, 'emprestimos', id));
+            if (!emprestimoDoc.exists()) {
+                alert('Empréstimo não encontrado.');
+                return;
+            }
+            const emp = emprestimoDoc.data();
+            // Preencher campos do modal de edição
+            document.getElementById('editEmprestimoId').value = id;
+            document.getElementById('editUsuarioEmprestimo').value = emp.usuarioNome || emp.usuarioId || '';
+            document.getElementById('editLivroEmprestimo').value = emp.livroTitulo || emp.livroId || '';
+            document.getElementById('editDataEmprestimo').value = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate().toISOString().split('T')[0] : '';
+            document.getElementById('editDataDevolucao').value = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate().toISOString().split('T')[0] : '';
+            document.getElementById('editObservacoes').value = emp.observacoes || '';
+            // Abrir modal de edição
+            const editModal = new bootstrap.Modal(document.getElementById('editarEmprestimoModal'));
+            editModal.show();
+        });
+    });
                 tabela.querySelectorAll('.btn-devolver').forEach(btn => {
                     btn.addEventListener('click', async function() {
                         const id = this.getAttribute('data-id');
