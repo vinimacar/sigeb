@@ -1,3 +1,47 @@
+</div>
+
+<!-- Modal de Edição de Empréstimo -->
+<div class="modal fade" id="editarEmprestimoModal" tabindex="-1" aria-labelledby="editarEmprestimoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarEmprestimoModalLabel">Editar Empréstimo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarEmprestimo">
+                    <input type="hidden" id="editEmprestimoId" />
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="editUsuarioEmprestimo" class="form-label">Usuário</label>
+                            <input type="text" class="form-control" id="editUsuarioEmprestimo" readonly />
+                        </div>
+                        <div class="col-md-12">
+                            <label for="editLivroEmprestimo" class="form-label">Livro</label>
+                            <input type="text" class="form-control" id="editLivroEmprestimo" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDataEmprestimo" class="form-label">Data do Empréstimo</label>
+                            <input type="date" class="form-control" id="editDataEmprestimo" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDataDevolucao" class="form-label">Data de Devolução Prevista</label>
+                            <input type="date" class="form-control" id="editDataDevolucao" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label for="editObservacoes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="editObservacoes" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarEdicaoEmprestimo">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</div>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
