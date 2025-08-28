@@ -909,10 +909,28 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     return;
                 }
 
-                // Salvar o empréstimo no Firestore
+
+                // Verificar estoque disponível do livro
+                let estoqueDisponivel = 0;
+                if (typeof livroEncontrado.quantidadeDisponivel === 'number') {
+                    estoqueDisponivel = livroEncontrado.quantidadeDisponivel;
+                } else if (typeof livroEncontrado.estoque === 'number') {
+                    estoqueDisponivel = livroEncontrado.estoque;
+                } else if (typeof livroEncontrado.quantidade === 'number') {
+                    estoqueDisponivel = livroEncontrado.quantidade;
+                }
+
+                // Buscar quantos empréstimos ativos existem para este livro
                 try {
-                    const { addDoc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                    const { collection, query, where, getDocs, addDoc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                     const emprestimosRef = collection(db, 'emprestimos');
+                    const q = query(emprestimosRef, where('livroId', '==', livroEncontrado.id), where('status', 'in', ['em_andamento', 'atrasado', 'renovado']));
+                    const snapshot = await getDocs(q);
+                    const emprestimosAtivos = snapshot.size;
+                    if (estoqueDisponivel - emprestimosAtivos < 1) {
+                        alert('Não há unidades disponíveis deste livro para novo empréstimo.');
+                        return;
+                    }
                     // Pega os campos do formulário
                     const dataEmprestimo = document.getElementById('dataEmprestimo').value;
                     const dataDevolucao = document.getElementById('dataDevolucao').value;
@@ -1086,7 +1104,7 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     const formatarData = d => d ? d.toLocaleDateString('pt-BR') : '-';
                     let badge = '<span class="badge bg-secondary">Desconhecido</span>';
                     if (emp.status === 'em_andamento') badge = '<span class="badge bg-primary">Em Andamento</span>';
-                    else if (emp.status === 'atrasado') badge = '<span class="badge bg-warning text-dark">Atrasado</span>';
+                    else if (emp.status === 'atrasado') badge = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Atrasado</span>';
                     else if (emp.status === 'devolvido') badge = '<span class="badge bg-success">Devolvido</span>';
                     else if (emp.status === 'renovado') badge = '<span class="badge bg-info text-dark">Renovado</span>';
                     html += `<tr>`;
