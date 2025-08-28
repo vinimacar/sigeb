@@ -1,3 +1,30 @@
+<script type="module">
+// Salvar edição do empréstimo
+document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', async function() {
+    const id = document.getElementById('editEmprestimoId').value;
+    const dataEmprestimo = document.getElementById('editDataEmprestimo').value;
+    const dataDevolucao = document.getElementById('editDataDevolucao').value;
+    const observacoes = document.getElementById('editObservacoes').value;
+    if (!dataEmprestimo || !dataDevolucao) {
+        alert('Preencha as datas corretamente.');
+        return;
+    }
+    try {
+        const { updateDoc, doc: docFn, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+        await updateDoc(docFn(db, 'emprestimos', id), {
+            dataEmprestimo: Timestamp.fromDate(new Date(dataEmprestimo)),
+            dataDevolucao: Timestamp.fromDate(new Date(dataDevolucao)),
+            observacoes: observacoes
+        });
+        alert('Empréstimo atualizado com sucesso!');
+        bootstrap.Modal.getInstance(document.getElementById('editarEmprestimoModal')).hide();
+        carregarEmprestimos();
+    } catch (e) {
+        alert('Erro ao atualizar empréstimo.');
+        console.error(e);
+    }
+});
+</script>
 </div>
 
 <!-- Modal de Edição de Empréstimo -->
