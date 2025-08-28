@@ -11,8 +11,25 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
     }
     try {
         const { updateDoc, doc: docFn, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-    // Usa window.db se db não estiver definido
-    const dbRef = typeof db !== 'undefined' ? db : window.db;
+    // Garante que está usando a instância correta do Firestore
+    let dbRef = undefined;
+    if (typeof db !== 'undefined' && db !== null) {
+        dbRef = db;
+    } else if (window.db) {
+        dbRef = window.db;
+    } else {
+        // Tenta obter do app global
+        try {
+            const { getFirestore } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+            const { firebaseConfig } = await import('./firebase-config.js');
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+            const app = initializeApp(firebaseConfig);
+            dbRef = getFirestore(app);
+        } catch (e) {
+            alert('Erro ao obter referência do Firestore.');
+            return;
+        }
+    }
     await updateDoc(docFn(dbRef, 'emprestimos', id), {
             dataEmprestimo: Timestamp.fromDate(new Date(dataEmprestimo)),
             dataDevolucao: Timestamp.fromDate(new Date(dataDevolucao)),
