@@ -11,7 +11,9 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
     }
     try {
         const { updateDoc, doc: docFn, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-        await updateDoc(docFn(db, 'emprestimos', id), {
+    // Usa window.db se db não estiver definido
+    const dbRef = typeof db !== 'undefined' ? db : window.db;
+    await updateDoc(docFn(dbRef, 'emprestimos', id), {
             dataEmprestimo: Timestamp.fromDate(new Date(dataEmprestimo)),
             dataDevolucao: Timestamp.fromDate(new Date(dataDevolucao)),
             observacoes: observacoes
