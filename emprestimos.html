@@ -37,7 +37,11 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
         });
         alert('Empréstimo atualizado com sucesso!');
         bootstrap.Modal.getInstance(document.getElementById('editarEmprestimoModal')).hide();
-        carregarEmprestimos();
+        if (typeof carregarEmprestimos === 'function') {
+            carregarEmprestimos();
+        } else if (typeof window.carregarEmprestimos === 'function') {
+            window.carregarEmprestimos();
+        }
     } catch (e) {
         alert('Erro ao atualizar empréstimo.');
         console.error(e);
