@@ -1168,10 +1168,38 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${emp.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
                     html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${emp.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
                     html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${emp.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
+                    html += `<button class='btn btn-sm btn-success btn-whatsapp' data-id='${emp.id}' data-usuario='${emp.usuarioId || ''}' title='WhatsApp'><i class='fab fa-whatsapp'></i></button>`;
                     html += `</td>`;
                     html += `</tr>`;
                 }
                 tabela.innerHTML = html;
+                // Ativar botão WhatsApp na tabela
+                tabela.querySelectorAll('.btn-whatsapp').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const usuarioId = this.getAttribute('data-usuario');
+                        let telefone = '';
+                        if (usuarioId) {
+                            try {
+                                const { getDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                                const usuarioDoc = await getDoc(docFn(db, 'usuarios', usuarioId));
+                                if (usuarioDoc.exists()) {
+                                    telefone = usuarioDoc.data().telefone || '';
+                                }
+                            } catch (e) {}
+                        }
+                        if (!telefone) {
+                            alert('Telefone do aluno não cadastrado.');
+                            return;
+                        }
+                        let telLimpo = telefone.replace(/\D/g, '');
+                        if (telLimpo.length < 10) {
+                            alert('Telefone do aluno inválido.');
+                            return;
+                        }
+                        const msg = encodeURIComponent('Olá, você possui um empréstimo de livro em atraso na biblioteca. Por favor, regularize sua situação.');
+                        window.open(`https://wa.me/55${telLimpo}?text=${msg}`, '_blank');
+                    });
+                });
 
                 // Ativar listeners dos botões de ação
     tabela.querySelectorAll('.btn-editar').forEach(btn => {
