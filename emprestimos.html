@@ -1238,7 +1238,9 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                         if (infoDiv) {
                             infoDiv.innerHTML = `
                                 <div class="col-md-6">
-                                    <p class="mb-1"><strong>Usuário:</strong> ${usuarioNome || emp.usuarioId || '-'}</p>
+                                    <p class="mb-1"><strong>Usuário:</strong> ${usuarioNome || emp.usuarioId || '-'}
+                                        <button id="btnWhatsappAluno" title="Enviar WhatsApp" class="btn btn-success btn-sm ms-2"><i class="fab fa-whatsapp"></i></button>
+                                    </p>
                                     <p class="mb-1"><strong>Livro:</strong> ${livroTitulo || emp.livroId || '-'}</p>
                                     <p class="mb-1"><strong>Data Empréstimo:</strong> ${dataEmprestimo ? dataEmprestimo.toLocaleDateString('pt-BR') : '-'}</p>
                                 </div>
@@ -1248,6 +1250,37 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                                     <p class="mb-1"><strong>Atraso:</strong> 0 dias</p>
                                 </div>
                             `;
+                            // Adiciona evento ao botão do WhatsApp
+                            setTimeout(async () => {
+                                const btnZap = document.getElementById('btnWhatsappAluno');
+                                if (btnZap) {
+                                    let telefone = '';
+                                    // Buscar telefone do usuário
+                                    if (emp.usuarioId) {
+                                        try {
+                                            const { getDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                                            const usuarioDoc = await getDoc(docFn(db, 'usuarios', emp.usuarioId));
+                                            if (usuarioDoc.exists()) {
+                                                telefone = usuarioDoc.data().telefone || '';
+                                            }
+                                        } catch (e) {}
+                                    }
+                                    btnZap.onclick = function() {
+                                        if (!telefone) {
+                                            alert('Telefone do aluno não cadastrado.');
+                                            return;
+                                        }
+                                        // Remove caracteres não numéricos
+                                        let telLimpo = telefone.replace(/\D/g, '');
+                                        if (telLimpo.length < 10) {
+                                            alert('Telefone do aluno inválido.');
+                                            return;
+                                        }
+                                        const msg = encodeURIComponent('Olá, você possui um empréstimo de livro em atraso na biblioteca. Por favor, regularize sua situação.');
+                                        window.open(`https://wa.me/55${telLimpo}?text=${msg}`, '_blank');
+                                    };
+                                }
+                            }, 100);
                         }
                         // Seta data de devolução efetiva para hoje
                         const hoje = new Date().toISOString().split('T')[0];
