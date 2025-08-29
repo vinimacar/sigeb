@@ -1007,6 +1007,36 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                 const { collection, getDocs, getDoc, doc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                 const emprestimosRef = collection(db, 'emprestimos');
                 const querySnapshot = await getDocs(emprestimosRef);
+                // --- Alerta sonoro e pop-up para atrasos ---
+                let countAtrasados = 0;
+                const agoraAlerta = new Date();
+                querySnapshot.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    let dataDevolucao = emp.dataDevolucao;
+                    if (dataDevolucao && dataDevolucao.toDate) dataDevolucao = dataDevolucao.toDate();
+                    else if (dataDevolucao instanceof Timestamp) dataDevolucao = dataDevolucao.toDate();
+                    else dataDevolucao = null;
+                    if ((emp.status === 'em_andamento' || emp.status === 'renovado') && dataDevolucao && dataDevolucao < agoraAlerta) {
+                        countAtrasados++;
+                    }
+                    if (emp.status === 'atrasado') countAtrasados++;
+                });
+                if (countAtrasados > 0) {
+                    // Alerta sonoro
+                    let audio = document.getElementById('alertaAtrasoAudio');
+                    if (!audio) {
+                        audio = document.createElement('audio');
+                        audio.id = 'alertaAtrasoAudio';
+                        audio.src = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa4c82.mp3'; // som de alerta livre
+                        audio.preload = 'auto';
+                        document.body.appendChild(audio);
+                    }
+                    audio.currentTime = 0;
+                    audio.play();
+                    setTimeout(() => {
+                        alert('Atenção: Existem empréstimos em atraso!');
+                    }, 300); // Pequeno delay para o som tocar antes do pop-up
+                }
                 // --- Estatísticas rápidas ---
                 let totalAtivos = 0;
                 let totalAtrasados = 0;
@@ -1102,12 +1132,23 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     const dataEmprestimo = emp.dataEmprestimo && emp.dataEmprestimo.toDate ? emp.dataEmprestimo.toDate() : (emp.dataEmprestimo instanceof Timestamp ? emp.dataEmprestimo.toDate() : null);
                     const dataDevolucao = emp.dataDevolucao && emp.dataDevolucao.toDate ? emp.dataDevolucao.toDate() : (emp.dataDevolucao instanceof Timestamp ? emp.dataDevolucao.toDate() : null);
                     const formatarData = d => d ? d.toLocaleDateString('pt-BR') : '-';
+                    // Verifica atraso em tempo real
+                    let isAtrasado = false;
+                    if ((emp.status === 'em_andamento' || emp.status === 'renovado') && dataDevolucao) {
+                        const agora = new Date();
+                        if (dataDevolucao < agora) isAtrasado = true;
+                    }
                     let badge = '<span class="badge bg-secondary">Desconhecido</span>';
-                    if (emp.status === 'em_andamento') badge = '<span class="badge bg-primary">Em Andamento</span>';
-                    else if (emp.status === 'atrasado') badge = '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Atrasado</span>';
-                    else if (emp.status === 'devolvido') badge = '<span class="badge bg-success">Devolvido</span>';
-                    else if (emp.status === 'renovado') badge = '<span class="badge bg-info text-dark">Renovado</span>';
-                    html += `<tr>`;
+                    if (isAtrasado || emp.status === 'atrasado') {
+                        badge = '<span class="badge bg-danger text-light animate__animated animate__flash animate__infinite"><i class="fas fa-exclamation-triangle me-1"></i>Atrasado</span>';
+                    } else if (emp.status === 'em_andamento') {
+                        badge = '<span class="badge bg-primary">Em Andamento</span>';
+                    } else if (emp.status === 'devolvido') {
+                        badge = '<span class="badge bg-success">Devolvido</span>';
+                    } else if (emp.status === 'renovado') {
+                        badge = '<span class="badge bg-info text-dark">Renovado</span>';
+                    }
+                    html += `<tr${isAtrasado ? ' class="table-danger"' : ''}>`;
                     html += `<td>${usuarioNome || emp.usuarioId || '-'}</td>`;
                     html += `<td>${livroTitulo || emp.livroId || '-'}</td>`;
                     html += `<td>${formatarData(dataEmprestimo)}</td>`;
