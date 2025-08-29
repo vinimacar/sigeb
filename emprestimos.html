@@ -1191,7 +1191,7 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     } else if (emp.status === 'devolvido') {
                         badge = '<span class="badge bg-success">Devolvido</span>';
                     } else if (emp.status === 'renovado') {
-                        badge = '<span class="badge bg-info text-dark">Renovado</span>';
+                        badge = '<span class="badge bg-warning text-dark">Renovado</span>';
                     }
                     html += `<tr${isAtrasado ? ' class="table-danger"' : ''}>`;
                     html += `<td>${usuarioNome || emp.usuarioId || '-'}</td>`;
@@ -1357,8 +1357,26 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                 tabela.querySelectorAll('.btn-renovar').forEach(btn => {
                     btn.addEventListener('click', async function() {
                         const id = this.getAttribute('data-id');
-                        // Aqui pode implementar lógica de renovação
-                        alert('Ação: Renovar empréstimo ' + id);
+                        // Buscar dados do empréstimo
+                        const { getDoc, doc: docFn, Timestamp, updateDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        const emprestimoDoc = await getDoc(docFn(db, 'emprestimos', id));
+                        if (!emprestimoDoc.exists()) {
+                            alert('Empréstimo não encontrado.');
+                            return;
+                        }
+                        const emp = emprestimoDoc.data();
+                        let dataDevolucao = emp.dataDevolucao;
+                        if (dataDevolucao && dataDevolucao.toDate) dataDevolucao = dataDevolucao.toDate();
+                        else if (dataDevolucao instanceof Timestamp) dataDevolucao = dataDevolucao.toDate();
+                        else dataDevolucao = new Date();
+                        // Adiciona 7 dias
+                        dataDevolucao.setDate(dataDevolucao.getDate() + 7);
+                        await updateDoc(docFn(db, 'emprestimos', id), {
+                            dataDevolucao: Timestamp.fromDate(dataDevolucao),
+                            status: 'renovado'
+                        });
+                        if (typeof carregarEmprestimos === 'function') carregarEmprestimos();
+                        alert('Empréstimo renovado por mais 7 dias!');
                     });
                 });
                 tabela.querySelectorAll('.btn-excluir').forEach(btn => {
