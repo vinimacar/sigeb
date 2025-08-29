@@ -110,6 +110,42 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
     
     <!-- CSS personalizado -->
     <link rel="stylesheet" href="styles.css">
+    <style>
+    .btn-action {
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 6px;
+        font-size: 1.1rem;
+        border: none;
+        background: #f4f4f4;
+        color: #444;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+    .btn-action:last-child { margin-right: 0; }
+    .btn-action:hover {
+        background: #e0e0e0;
+        color: #222;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        z-index: 2;
+    }
+    .btn-editar { color: #0d6efd; }
+    .btn-editar:hover { background: #e7f1ff; color: #0a58ca; }
+    .btn-devolver { color: #198754; }
+    .btn-devolver:hover { background: #e6f9ed; color: #146c43; }
+    .btn-renovar { color: #0dcaf0; }
+    .btn-renovar:hover { background: #e6faff; color: #0a6c8c; }
+    .btn-excluir { color: #dc3545; }
+    .btn-excluir:hover { background: #ffe6e9; color: #a71d2a; }
+    .btn-whatsapp { color: #25d366; }
+    .btn-whatsapp:hover { background: #e6fff2; color: #128c7e; }
+    .btn-action i { font-size: 1.2em; }
+    </style>
     
     <!-- Favicon -->
     <link rel="shortcut icon" href="icone.png" type="image/png">
@@ -1164,15 +1200,22 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     html += `<td>${formatarData(dataDevolucao)}</td>`;
                     html += `<td>${badge}</td>`;
                     html += `<td>`;
-                    html += `<button class='btn btn-sm btn-outline-primary me-1 btn-editar' data-id='${emp.id}' title='Editar'><i class='fas fa-pencil-alt'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-success me-1 btn-devolver' data-id='${emp.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-info me-1 btn-renovar' data-id='${emp.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
-                    html += `<button class='btn btn-sm btn-outline-danger btn-excluir' data-id='${emp.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
-                    html += `<button class='btn btn-sm btn-success btn-whatsapp' data-id='${emp.id}' data-usuario='${emp.usuarioId || ''}' title='WhatsApp'><i class='fab fa-whatsapp'></i></button>`;
+                    html += `<button class='btn btn-action btn-editar' data-id='${emp.id}' title='Editar'><i class='fas fa-pencil-alt'></i></button>`;
+                    html += `<button class='btn btn-action btn-devolver' data-id='${emp.id}' title='Registrar devolução'><i class='fas fa-undo'></i></button>`;
+                    html += `<button class='btn btn-action btn-renovar' data-id='${emp.id}' title='Renovar'><i class='fas fa-sync-alt'></i></button>`;
+                    html += `<button class='btn btn-action btn-excluir' data-id='${emp.id}' title='Excluir'><i class='fas fa-trash'></i></button>`;
+                    html += `<button class='btn btn-action btn-whatsapp' data-id='${emp.id}' data-usuario='${emp.usuarioId || ''}' title='WhatsApp'><i class='fab fa-whatsapp'></i></button>`;
                     html += `</td>`;
                     html += `</tr>`;
                 }
                 tabela.innerHTML = html;
+                // Ativar tooltips Bootstrap (se disponível)
+                if (window.bootstrap && window.bootstrap.Tooltip) {
+                    tabela.querySelectorAll('.btn-action').forEach(btn => {
+                        new bootstrap.Tooltip(btn);
+                    });
+                }
+// ...existing code...
                 // Ativar botão WhatsApp na tabela
                 tabela.querySelectorAll('.btn-whatsapp').forEach(btn => {
                     btn.addEventListener('click', async function() {
