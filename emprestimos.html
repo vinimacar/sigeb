@@ -1032,7 +1032,7 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                     if (!audio) {
                         audio = document.createElement('audio');
                         audio.id = 'alertaAtrasoAudio';
-                        audio.src = 'alert.mp3'; // utilize alert.mp que está no projeto
+                        audio.src = 'alert.mp'; // utilize alert.mp que está no projeto
                         audio.preload = 'auto';
                         document.body.appendChild(audio);
                     }
@@ -1242,27 +1242,25 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                                     <p class="mb-1"><strong>Atraso:</strong> 0 dias</p>
                                 </div>
                             `;
-                            // Adiciona evento ao botão do WhatsApp
-                            setTimeout(async () => {
+                            // Adiciona evento ao botão do WhatsApp (ícone sempre visível)
+                            setTimeout(() => {
                                 const btnZap = document.getElementById('btnWhatsappAluno');
                                 if (btnZap) {
-                                    let telefone = '';
-                                    // Buscar telefone do usuário
-                                    if (emp.usuarioId) {
-                                        try {
-                                            const { getDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-                                            const usuarioDoc = await getDoc(docFn(db, 'usuarios', emp.usuarioId));
-                                            if (usuarioDoc.exists()) {
-                                                telefone = usuarioDoc.data().telefone || '';
-                                            }
-                                        } catch (e) {}
-                                    }
-                                    btnZap.onclick = function() {
+                                    btnZap.onclick = async function() {
+                                        let telefone = '';
+                                        if (emp.usuarioId) {
+                                            try {
+                                                const { getDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                                                const usuarioDoc = await getDoc(docFn(db, 'usuarios', emp.usuarioId));
+                                                if (usuarioDoc.exists()) {
+                                                    telefone = usuarioDoc.data().telefone || '';
+                                                }
+                                            } catch (e) {}
+                                        }
                                         if (!telefone) {
                                             alert('Telefone do aluno não cadastrado.');
                                             return;
                                         }
-                                        // Remove caracteres não numéricos
                                         let telLimpo = telefone.replace(/\D/g, '');
                                         if (telLimpo.length < 10) {
                                             alert('Telefone do aluno inválido.');
