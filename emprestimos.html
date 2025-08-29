@@ -1045,24 +1045,30 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                 }
                 // --- Estatísticas rápidas ---
                 let totalAtivos = 0;
-                let totalAtrasados = 0;
-                let totalDevolvidosMes = 0;
-                let totalRenovados = 0;
+                let livrosAtrasados = new Set();
+                let livrosDevolvidos = new Set();
+                let livrosRenovados = new Set();
                 const agora = new Date();
                 const mesAtual = agora.getMonth();
                 const anoAtual = agora.getFullYear();
                 querySnapshot.forEach(docSnap => {
                     const emp = docSnap.data();
+                    // Ativos
                     if (emp.status === 'em_andamento' || emp.status === 'renovado') totalAtivos++;
-                    if (emp.status === 'atrasado') totalAtrasados++;
-                    if (emp.status === 'renovado') totalRenovados++;
+                    // Atrasados (status ou data)
+                    let dataDevolucao = emp.dataDevolucao;
+                    if (dataDevolucao && dataDevolucao.toDate) dataDevolucao = dataDevolucao.toDate();
+                    else if (dataDevolucao instanceof Timestamp) dataDevolucao = dataDevolucao.toDate();
+                    else dataDevolucao = null;
+                    if (((emp.status === 'em_andamento' || emp.status === 'renovado') && dataDevolucao && dataDevolucao < agora) || emp.status === 'atrasado') {
+                        if (emp.livroId) livrosAtrasados.add(emp.livroId);
+                    }
+                    // Renovados
+                    if (emp.status === 'renovado' && emp.livroId) livrosRenovados.add(emp.livroId);
+                    // Devolvidos no mês
                     if (emp.status === 'devolvido') {
-                        let dataDevolucao = emp.dataDevolucao;
-                        if (dataDevolucao && dataDevolucao.toDate) dataDevolucao = dataDevolucao.toDate();
-                        else if (dataDevolucao instanceof Timestamp) dataDevolucao = dataDevolucao.toDate();
-                        else dataDevolucao = null;
                         if (dataDevolucao && dataDevolucao.getMonth() === mesAtual && dataDevolucao.getFullYear() === anoAtual) {
-                            totalDevolvidosMes++;
+                            if (emp.livroId) livrosDevolvidos.add(emp.livroId);
                         }
                     }
                 });
@@ -1070,11 +1076,11 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                 const cardAtivos = document.querySelector('.card .fa-book-reader')?.closest('.card')?.querySelector('.h5');
                 if (cardAtivos) cardAtivos.textContent = totalAtivos;
                 const cardAtrasados = document.querySelector('.card .fa-exclamation-triangle')?.closest('.card')?.querySelector('.h5');
-                if (cardAtrasados) cardAtrasados.textContent = totalAtrasados;
+                if (cardAtrasados) cardAtrasados.textContent = livrosAtrasados.size;
                 const cardDevolvidos = document.querySelector('.card .fa-check-circle')?.closest('.card')?.querySelector('.h5');
-                if (cardDevolvidos) cardDevolvidos.textContent = totalDevolvidosMes;
+                if (cardDevolvidos) cardDevolvidos.textContent = livrosDevolvidos.size;
                 const cardRenovados = document.querySelector('.card .fa-sync-alt')?.closest('.card')?.querySelector('.h5');
-                if (cardRenovados) cardRenovados.textContent = totalRenovados;
+                if (cardRenovados) cardRenovados.textContent = livrosRenovados.size;
 
                 if (querySnapshot.empty) {
                     tabela.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Nenhum empréstimo encontrado.</td></tr>';
