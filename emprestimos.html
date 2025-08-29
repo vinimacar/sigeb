@@ -971,16 +971,21 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
             document.getElementById('btnConfirmarDevolucao').addEventListener('click', function() {
                 const form = document.getElementById('formDevolucao');
                 if (form.checkValidity()) {
-                    // Aqui você implementaria a lógica para registrar a devolução no Firestore
-                    alert('Devolução registrada com sucesso!');
-
-                    // Fechar o modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('devolucaoModal'));
-                    modal.hide();
-
-                    // Limpar o formulário
-                    form.reset();
-                    document.getElementById('infoEmprestimo').style.display = 'none';
+                    // Atualiza status para 'devolvido' no Firestore
+                    const id = document.getElementById('idEmprestimo').value;
+                    (async () => {
+                        const { updateDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        await updateDoc(docFn(db, 'emprestimos', id), { status: 'devolvido' });
+                        // Atualiza tabela e cards
+                        if (typeof carregarEmprestimos === 'function') carregarEmprestimos();
+                        alert('Devolução registrada com sucesso!');
+                        // Fechar o modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('devolucaoModal'));
+                        modal.hide();
+                        // Limpar o formulário
+                        form.reset();
+                        document.getElementById('infoEmprestimo').style.display = 'none';
+                    })();
                 } else {
                     form.reportValidity();
                 }
