@@ -956,24 +956,25 @@ document.getElementById('btnSalvarEdicaoEmprestimo').addEventListener('click', a
                 }
 
 
-                // Verificar estoque disponível do livro
-                let estoqueDisponivel = 0;
-                if (typeof livroEncontrado.quantidadeDisponivel === 'number') {
-                    estoqueDisponivel = livroEncontrado.quantidadeDisponivel;
+
+                // Verificar estoque disponível do livro (quantidade total - empréstimos ativos)
+                let quantidadeTotal = 0;
+                if (typeof livroEncontrado.quantidade === 'number') {
+                    quantidadeTotal = livroEncontrado.quantidade;
                 } else if (typeof livroEncontrado.estoque === 'number') {
-                    estoqueDisponivel = livroEncontrado.estoque;
-                } else if (typeof livroEncontrado.quantidade === 'number') {
-                    estoqueDisponivel = livroEncontrado.quantidade;
+                    quantidadeTotal = livroEncontrado.estoque;
+                } else if (typeof livroEncontrado.quantidadeDisponivel === 'number') {
+                    quantidadeTotal = livroEncontrado.quantidadeDisponivel;
                 }
 
-                // Buscar quantos empréstimos ativos existem para este livro
                 try {
                     const { collection, query, where, getDocs, addDoc, Timestamp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
                     const emprestimosRef = collection(db, 'emprestimos');
                     const q = query(emprestimosRef, where('livroId', '==', livroEncontrado.id), where('status', 'in', ['em_andamento', 'atrasado', 'renovado']));
                     const snapshot = await getDocs(q);
                     const emprestimosAtivos = snapshot.size;
-                    if (estoqueDisponivel - emprestimosAtivos < 1) {
+                    const disponiveis = quantidadeTotal - emprestimosAtivos;
+                    if (quantidadeTotal < 1 || disponiveis < 1) {
                         alert('Não há unidades disponíveis deste livro para novo empréstimo.');
                         return;
                     }
