@@ -940,7 +940,26 @@
             const livro = window.livrosCache.find(l => l.id === id);
             if (!livro) return alert('Livro não encontrado!');
             let info = `Título: ${livro.titulo || ''}\nAutor: ${livro.autor || ''}\nCategoria: ${livro.categoria || ''}\nISBN: ${livro.isbn || ''}\nEditora: ${livro.editora || ''}\nAno: ${livro.anoPublicacao || ''}\nStatus: ${(livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível'))}`;
-            alert(info);
+            // Buscar usuários que pegaram este livro
+            (async () => {
+                try {
+                    const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+                    const emprestimosRef = collection(db, 'emprestimos');
+                    const q = query(emprestimosRef, where('livroId', '==', id), where('status', 'in', ['em_andamento', 'atrasado', 'renovado']));
+                    const snapshot = await getDocs(q);
+                    if (snapshot.size > 0) {
+                        let nomes = [];
+                        snapshot.forEach(doc => {
+                            const emp = doc.data();
+                            if (emp.usuarioNome) nomes.push(emp.usuarioNome);
+                        });
+                        if (nomes.length > 0) {
+                            info += `\n\nEmprestado para:\n- ` + nomes.join('\n- ');
+                        }
+                    }
+                } catch (e) {}
+                alert(info);
+            })();
         };
 
         // Editar Livro
@@ -1019,6 +1038,9 @@
             if (!livro.disponivel) return alert('Este livro não está disponível para empréstimo.');
             // Redireciona para a página de empréstimos, passando o id do livro
             window.location.href = `emprestimos.html?livroId=${encodeURIComponent(id)}`;
+            // Após registrar empréstimo, atualizar status do livro
+            // (A lógica real de atualização deve estar também no backend/emprestimos.html, mas aqui pode-se forçar recarregar)
+            setTimeout(() => { if (typeof window.carregarLivros === 'function') window.carregarLivros(); }, 2000);
         };
         window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
 </script>
