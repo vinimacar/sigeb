@@ -209,7 +209,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Empréstimos do Mês</h6>
-                                        <a href="#" class="btn btn-sm btn-outline-primary mt-2">Gerar</a>
+                                        <button id="btnEmprestimosMes" class="btn btn-sm btn-outline-primary mt-2">Gerar</button>
                                     </div>
                                 </div>
                             </div>
@@ -309,63 +309,9 @@
                             </div>
                         </div>
                         
-                        <!-- Tabela de dados -->
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Livro</th>
-                                        <th>Usuário</th>
-                                        <th>Data Empréstimo</th>
-                                        <th>Data Devolução</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>#EMP001</td>
-                                        <td>Dom Casmurro</td>
-                                        <td>João da Silva</td>
-                                        <td>10/05/2023</td>
-                                        <td>24/05/2023</td>
-                                        <td><span class="badge bg-success">Devolvido</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#EMP002</td>
-                                        <td>O Pequeno Príncipe</td>
-                                        <td>Maria Santos</td>
-                                        <td>12/05/2023</td>
-                                        <td>26/05/2023</td>
-                                        <td><span class="badge bg-success">Devolvido</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#EMP003</td>
-                                        <td>1984</td>
-                                        <td>Pedro Oliveira</td>
-                                        <td>15/05/2023</td>
-                                        <td>29/05/2023</td>
-                                        <td><span class="badge bg-success">Devolvido</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#EMP004</td>
-                                        <td>A Revolução dos Bichos</td>
-                                        <td>Ana Costa</td>
-                                        <td>18/05/2023</td>
-                                        <td>01/06/2023</td>
-                                        <td><span class="badge bg-warning">Em atraso</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#EMP005</td>
-                                        <td>Memórias Póstumas de Brás Cubas</td>
-                                        <td>Carlos Mendes</td>
-                                        <td>20/05/2023</td>
-                                        <td>03/06/2023</td>
-                                        <td><span class="badge bg-primary">Em andamento</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <!-- Tabela de dados dinâmica -->
+                        <div class="table-responsive" id="tabelaEmprestimosMesContainer"></div>
+                        <button id="btnExportarPDF" class="btn btn-danger my-2" style="display:none"><i class="fas fa-file-pdf me-1"></i>Exportar PDF</button>
                         
                         <!-- Paginação -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
@@ -491,6 +437,87 @@
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
     
     <script type="module">
+    // Função utilitária para formatar data
+    function formatarData(dt) {
+        if (!dt) return '';
+        const d = new Date(dt.seconds ? dt.seconds * 1000 : dt);
+        return d.toLocaleDateString('pt-BR');
+    }
+
+    // Função para gerar tabela HTML de empréstimos
+    function gerarTabelaEmprestimos(dados) {
+        if (!dados.length) return '<div class="alert alert-info">Nenhum empréstimo encontrado para o filtro.</div>';
+        let html = '<table class="table table-hover align-middle"><thead><tr>'+
+            '<th>ID</th><th>Livro</th><th>Usuário</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr></thead><tbody>';
+        for (const emp of dados) {
+            html += `<tr><td>${emp.id}</td><td>${emp.livro || ''}</td><td>${emp.usuario || ''}</td><td>${formatarData(emp.dataEmprestimo)}</td><td>${formatarData(emp.dataDevolucao)}</td><td><span class="badge bg-${emp.statusCor}">${emp.status}</span></td></tr>`;
+        }
+        html += '</tbody></table>';
+        return html;
+    }
+
+    // Listener do botão Empréstimos do Mês
+    document.getElementById('btnEmprestimosMes').addEventListener('click', async function() {
+        const tabelaDiv = document.getElementById('tabelaEmprestimosMesContainer');
+        tabelaDiv.innerHTML = 'Carregando...';
+        document.getElementById('btnExportarPDF').style.display = 'none';
+
+        // Pega filtros do formulário
+        const inicio = document.getElementById('periodoInicio').value;
+        const fim = document.getElementById('periodoFim').value;
+        const categoriaUsuario = document.getElementById('categoriaUsuario').value;
+        const categoriaLivro = document.getElementById('categoriaLivro').value;
+
+        // Busca dados do Firestore
+        let queryEmp = collection(db, 'emprestimos');
+        let emprestimosSnap = await getDocs(queryEmp);
+        let dados = [];
+        emprestimosSnap.forEach(docEmp => {
+            const d = docEmp.data();
+            // Filtros
+            let passa = true;
+            if (inicio) {
+                const dataEmp = d.dataEmprestimo?.seconds ? new Date(d.dataEmprestimo.seconds * 1000) : new Date(d.dataEmprestimo);
+                if (dataEmp < new Date(inicio)) passa = false;
+            }
+            if (fim) {
+                const dataEmp = d.dataEmprestimo?.seconds ? new Date(d.dataEmprestimo.seconds * 1000) : new Date(d.dataEmprestimo);
+                if (dataEmp > new Date(fim + 'T23:59:59')) passa = false;
+            }
+            if (categoriaUsuario && (!d.categoriaUsuario || d.categoriaUsuario !== categoriaUsuario)) passa = false;
+            if (categoriaLivro && (!d.categoriaLivro || d.categoriaLivro !== categoriaLivro)) passa = false;
+            if (passa) {
+                dados.push({
+                    id: docEmp.id,
+                    livro: d.livro || '',
+                    usuario: d.usuario || '',
+                    dataEmprestimo: d.dataEmprestimo,
+                    dataDevolucao: d.dataDevolucao,
+                    status: d.status || '',
+                    statusCor: d.status === 'Devolvido' ? 'success' : (d.status === 'Em atraso' ? 'warning' : (d.status === 'Em andamento' ? 'primary' : 'secondary'))
+                });
+            }
+        });
+        tabelaDiv.innerHTML = gerarTabelaEmprestimos(dados);
+        if (dados.length) document.getElementById('btnExportarPDF').style.display = 'inline-block';
+        // Salva dados para exportação
+        window.__dadosEmprestimosMes = dados;
+    });
+
+    // Listener para exportar PDF
+    document.getElementById('btnExportarPDF').addEventListener('click', async function() {
+        const [{ jsPDF }, autoTable] = await Promise.all([
+            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+        ]);
+        const doc = new jsPDF();
+        const dados = window.__dadosEmprestimosMes || [];
+        autoTable.default(doc, {
+            head: [['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status']],
+            body: dados.map(e => [e.id, e.livro, e.usuario, formatarData(e.dataEmprestimo), formatarData(e.dataDevolucao), e.status]),
+        });
+        doc.save('emprestimos-mes.pdf');
+    });
 
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
     import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
