@@ -662,38 +662,36 @@
                 livrosPagina.forEach(livro => {
                     const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
                     const statusClass = livro.disponivel ? 'bg-success' : (livro.reservado ? 'bg-info' : 'bg-danger');
-                    const row = `
-                        <tr>
-                            <td>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
-                                        <i class="fas fa-book text-primary"></i>
+                        const row = `
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox">
                                     </div>
-                                    <div>
-                                        <h6 class="mb-0">${livro.titulo || 'Sem título'}</h6>
-                                        <small class="text-muted">${livro.editora || 'Editora não informada'}, ${livro.anoPublicacao || 'Ano não informado'}</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
+                                            <i class="fas fa-book text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">${livro.titulo || 'Sem título'}</h6>
+                                            <small class="text-muted">${livro.editora || 'Editora não informada'}, ${livro.anoPublicacao || 'Ano não informado'}</small>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>${livro.autor || 'Autor não informado'}</td>
-                            <td>${livro.categoria || 'Categoria não informada'}</td>
-                            <td>${livro.isbn || 'ISBN não informado'}</td>
-                            <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
-                            <td><span class="badge ${statusClass}">${status}</span></td>
-                            <td>
-                                <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-primary me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
-                                            <button class="btn btn-sm btn-outline-success me-1" title="Editar" onclick="editarLivro('${livro.id}')"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirLivro('${livro.id}')"><i class="fas fa-trash-alt"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                                </td>
+                                <td>${livro.autor || 'Autor não informado'}</td>
+                                <td>${livro.categoria || 'Categoria não informada'}</td>
+                                <td>${livro.isbn || 'ISBN não informado'}</td>
+                                <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
+                                <td><span class="badge ${statusClass}">${status}</span></td>
+                                <td>
+                                    <button class="btn btn-action btn-visualizar me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-action btn-editar me-1" title="Editar" onclick="editarLivro('${livro.id}')"><i class="fas fa-pencil-alt"></i></button>
+                                    <button class="btn btn-action btn-excluir" title="Excluir" onclick="excluirLivro('${livro.id}')"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
                     tabelaLivros.innerHTML += row;
                 });
                 if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
@@ -1063,8 +1061,8 @@
     document.getElementById('btnImprimirPDF').addEventListener('click', async function() {
         const doc = new window.jspdf.jsPDF({ orientation: 'landscape' });
         const nomeEscola = 'ESCOLA ESTADUAL GOVERNADOR BIAS FORTES';
-        const logoUrl = 'logobias.png';
-        // Adiciona logo
+        const logoUrl = 'SIGEB.png'; // Logo SIGEB
+        // Adiciona logo SIGEB
         const img = new Image();
         img.src = logoUrl;
         await new Promise(resolve => { img.onload = resolve; });
@@ -1075,17 +1073,22 @@
         // Título
         doc.setFontSize(14);
         doc.text('Acervo de Livros', 150, 30, { align: 'center' });
+        // Data e hora da impressão
+        const now = new Date();
+        const dataHora = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+        doc.setFontSize(10);
+        doc.setTextColor(80,80,80);
+        doc.text('Impresso em: ' + dataHora, 260, 18);
 
-        // Definição das colunas
+        // Definição das colunas (sem Localização)
         const columns = [
-            { title: 'Título', dataKey: 'titulo', width: 50 },
+            { title: 'Título', dataKey: 'titulo', width: 55 },
             { title: 'Autor', dataKey: 'autor', width: 40 },
             { title: 'Categoria', dataKey: 'categoria', width: 28 },
             { title: 'ISBN', dataKey: 'isbn', width: 28 },
             { title: 'Editora', dataKey: 'editora', width: 28 },
             { title: 'Ano', dataKey: 'anoPublicacao', width: 16 },
-            { title: 'Localização', dataKey: 'localizacao', width: 24 },
-            { title: 'Qtd.', dataKey: 'quantidade', width: 10 },
+            { title: 'Qtd.', dataKey: 'quantidade', width: 12 },
             { title: 'Status', dataKey: 'status', width: 18 },
             { title: 'Reservado', dataKey: 'reservado', width: 18 }
         ];
@@ -1102,7 +1105,6 @@
                 isbn: String(livro.isbn || ''),
                 editora: String(livro.editora || ''),
                 anoPublicacao: String(livro.anoPublicacao || ''),
-                localizacao: String(livro.localizacao || ''),
                 quantidade: livro.quantidade != null ? String(livro.quantidade) : '',
                 status: livro.disponivel ? 'Disponível' : 'Indisponível',
                 reservado: livro.reservado ? 'Sim' : 'Não'
