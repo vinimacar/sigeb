@@ -900,8 +900,8 @@
                 `;
                 // Status
                 cell = novaLinha.insertCell();
-                const statusClass = usuario.status === 'Bloqueado' ? 'bg-warning' : 'bg-success';
-                const statusText = usuario.status || 'Ativo';
+                let statusText = (usuario.status || '').toLowerCase() === 'disponível' ? 'Disponível' : 'Indisponível';
+                let statusClass = statusText === 'Disponível' ? 'bg-success' : 'bg-secondary';
                 cell.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
                 // Ações como botões de ícone
                 cell = novaLinha.insertCell();
