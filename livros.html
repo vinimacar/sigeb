@@ -660,38 +660,45 @@
                 }
                 tabelaLivros.innerHTML = '';
                 livrosPagina.forEach(livro => {
-                    const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
-                    const statusClass = livro.disponivel ? 'bg-success' : (livro.reservado ? 'bg-info' : 'bg-danger');
-                        const row = `
-                            <tr>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox">
+                    let statusText = 'Indisponível';
+                    let statusClass = 'bg-danger';
+                    if (livro.disponivel === true) {
+                        statusText = 'Disponível';
+                        statusClass = 'bg-success';
+                    } else if (livro.reservado === true) {
+                        statusText = 'Reservado';
+                        statusClass = 'bg-info';
+                    }
+                    const row = `
+                        <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
+                                        <i class="fas fa-book text-primary"></i>
                                     </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
-                                            <i class="fas fa-book text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">${livro.titulo || 'Sem título'}</h6>
-                                            <small class="text-muted">${livro.editora || 'Editora não informada'}, ${livro.anoPublicacao || 'Ano não informado'}</small>
-                                        </div>
+                                    <div>
+                                        <h6 class="mb-0">${livro.titulo || 'Sem título'}</h6>
+                                        <small class="text-muted">${livro.editora || 'Editora não informada'}, ${livro.anoPublicacao || 'Ano não informado'}</small>
                                     </div>
-                                </td>
-                                <td>${livro.autor || 'Autor não informado'}</td>
-                                <td>${livro.categoria || 'Categoria não informada'}</td>
-                                <td>${livro.isbn || 'ISBN não informado'}</td>
-                                <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
-                                <td><span class="badge ${statusClass}">${status}</span></td>
-                                <td>
-                                    <button class="btn btn-action btn-visualizar me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
-                                    <button class="btn btn-action btn-editar me-1" title="Editar" onclick="editarLivro('${livro.id}')"><i class="fas fa-pencil-alt"></i></button>
-                                    <button class="btn btn-action btn-excluir" title="Excluir" onclick="excluirLivro('${livro.id}')"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        `;
+                                </div>
+                            </td>
+                            <td>${livro.autor || 'Autor não informado'}</td>
+                            <td>${livro.categoria || 'Categoria não informada'}</td>
+                            <td>${livro.isbn || 'ISBN não informado'}</td>
+                            <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-action btn-visualizar me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-action btn-editar me-1" title="Editar" onclick="editarLivro('${livro.id}')"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="btn btn-action btn-excluir" title="Excluir" onclick="excluirLivro('${livro.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
                     tabelaLivros.innerHTML += row;
                 });
                 if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
