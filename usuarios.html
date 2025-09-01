@@ -1320,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
                         ]);
                         // Buscar usuários do Firestore usando a instância global db
-                        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
                         let dbInstance = window.db;
                         if (!dbInstance || typeof dbInstance !== 'object' || !('type' in dbInstance) || dbInstance.type !== 'firestore') {
                             alert('Erro: O banco de dados não foi inicializado corretamente. Recarregue a página e tente novamente.');
