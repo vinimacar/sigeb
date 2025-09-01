@@ -1059,31 +1059,42 @@
     // Função para gerar PDF do acervo de livros (layout melhorado)
     import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
     document.getElementById('btnImprimirPDF').addEventListener('click', async function() {
-        const doc = new window.jspdf.jsPDF({ orientation: 'landscape' });
+        const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         const nomeEscola = 'ESCOLA ESTADUAL GOVERNADOR BIAS FORTES';
-        const logoUrl = 'SIGEB.png'; // Logo SIGEB
-        // Adiciona logo SIGEB
+        const logoUrl = 'SIGEB.png';
+        // Carregar logo
         const img = new Image();
         img.src = logoUrl;
         await new Promise(resolve => { img.onload = resolve; });
-        doc.addImage(img, 'PNG', 10, 5, 30, 18);
-        // Nome da escola
-        doc.setFontSize(18);
-        doc.text(nomeEscola, 150, 18, { align: 'center' });
-        // Título
-        doc.setFontSize(14);
-        doc.text('Acervo de Livros', 150, 30, { align: 'center' });
-        // Data e hora da impressão
+
+        // Margens e layout
+        const marginLeft = 15;
+        const marginRight = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const usableWidth = pageWidth - marginLeft - marginRight;
+
+        // Cabeçalho
+        doc.addImage(img, 'PNG', marginLeft, 8, 28, 18);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(30, 30, 30);
+        doc.text(nomeEscola, pageWidth / 2, 18, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(13);
+        doc.setTextColor(60, 60, 60);
+        doc.text('Relatório do Acervo de Livros', pageWidth / 2, 28, { align: 'center' });
+
+        // Data e hora
         const now = new Date();
         const dataHora = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
         doc.setFontSize(10);
-        doc.setTextColor(80,80,80);
-        doc.text('Impresso em: ' + dataHora, 260, 18);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Impresso em: ' + dataHora, pageWidth - marginRight, 18, { align: 'right' });
 
-        // Definição das colunas (sem Localização)
+        // Colunas da tabela
         const columns = [
-            { title: 'Título', dataKey: 'titulo', width: 55 },
-            { title: 'Autor', dataKey: 'autor', width: 40 },
+            { title: 'Título', dataKey: 'titulo', width: 60 },
+            { title: 'Autor', dataKey: 'autor', width: 38 },
             { title: 'Categoria', dataKey: 'categoria', width: 28 },
             { title: 'ISBN', dataKey: 'isbn', width: 28 },
             { title: 'Editora', dataKey: 'editora', width: 28 },
@@ -1093,7 +1104,7 @@
             { title: 'Reservado', dataKey: 'reservado', width: 18 }
         ];
 
-        // Buscar todos os livros do Firestore
+        // Buscar dados
         const querySnapshot = await getDocs(collection(db, 'livros'));
         const data = [];
         querySnapshot.forEach((docSnap) => {
@@ -1111,75 +1122,93 @@
             });
         });
 
-        // Função para desenhar tabela com linhas e cores
+        // Função para desenhar tabela profissional
         function drawTable(doc, columns, data, startY) {
             let y = startY;
             const rowHeight = 8;
             const colX = [];
-            let x = 10;
+            let x = marginLeft;
             columns.forEach(col => {
                 colX.push(x);
                 x += col.width;
             });
-            // Cabeçalho
+            // Cabeçalho da tabela
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
-            doc.setFillColor(25, 118, 210); // azul escuro
+            doc.setFillColor(44, 62, 80); // azul escuro
             doc.setTextColor(255,255,255);
-            doc.rect(10, y, x-10, rowHeight, 'F');
+            doc.roundedRect(marginLeft, y, x-marginLeft, rowHeight, 2, 2, 'F');
             columns.forEach((col, i) => {
                 doc.text(col.title, colX[i]+2, y+6);
             });
             y += rowHeight;
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            // Linhas
+            // Linhas da tabela
             data.forEach((row, idx) => {
                 // Alternância de cor
                 if (idx % 2 === 0) {
-                    doc.setFillColor(232, 240, 254); // azul claro
+                    doc.setFillColor(236, 240, 241); // cinza claro
                 } else {
                     doc.setFillColor(255,255,255);
                 }
-                doc.rect(10, y, x-10, rowHeight, 'F');
-                doc.setTextColor(33,33,33);
+                doc.rect(marginLeft, y, x-marginLeft, rowHeight, 'F');
                 columns.forEach((col, i) => {
                     let value = row[col.dataKey] || '';
                     // Cores para status e reservado
                     if (col.dataKey === 'status') {
-                        doc.setTextColor(value === 'Disponível' ? 56 : 211, value === 'Disponível' ? 142 : 47, value === 'Disponível' ? 60 : 47);
+                        doc.setTextColor(value === 'Disponível' ? 39 : 192, value === 'Disponível' ? 174 : 57, value === 'Disponível' ? 96 : 43);
                     } else if (col.dataKey === 'reservado') {
-                        doc.setTextColor(value === 'Sim' ? 251 : 25, value === 'Sim' ? 192 : 118, value === 'Sim' ? 45 : 210);
+                        doc.setTextColor(value === 'Sim' ? 231 : 52, value === 'Sim' ? 76 : 152, value === 'Sim' ? 60 : 219);
                     } else {
-                        doc.setTextColor(33,33,33);
+                        doc.setTextColor(44,62,80);
                     }
                     doc.text(String(value), colX[i]+2, y+6, { maxWidth: col.width-4 });
                 });
                 y += rowHeight;
                 // Nova página se passar do limite
                 if (y > 190) {
+                    // Rodapé com paginação
+                    addFooter(doc);
                     doc.addPage();
-                    y = 20;
-                    // Redesenhar cabeçalho na nova página
+                    y = 28;
+                    // Redesenhar cabeçalho da tabela
+                    doc.setFont('helvetica', 'bold');
                     doc.setFontSize(10);
-                    doc.setFillColor(25, 118, 210);
+                    doc.setFillColor(44, 62, 80);
                     doc.setTextColor(255,255,255);
-                    doc.rect(10, y, x-10, rowHeight, 'F');
+                    doc.roundedRect(marginLeft, y, x-marginLeft, rowHeight, 2, 2, 'F');
                     columns.forEach((col, i) => {
                         doc.text(col.title, colX[i]+2, y+6);
                     });
                     y += rowHeight;
+                    doc.setFont('helvetica', 'normal');
                     doc.setFontSize(9);
                 }
             });
             // Linhas verticais
+            doc.setDrawColor(180,180,180);
             for (let i = 0; i < columns.length+1; i++) {
-                doc.setDrawColor(180,180,180);
                 doc.line(colX[i] || x, startY, colX[i] || x, y);
             }
             // Linha horizontal final
-            doc.line(10, y, x-0.5, y);
+            doc.line(marginLeft, y, x-0.5, y);
+            // Rodapé final
+            addFooter(doc);
         }
 
-        drawTable(doc, columns, data, 45);
+        // Função para rodapé profissional
+        function addFooter(doc) {
+            const pageCount = doc.internal.getNumberOfPages();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            doc.setFontSize(9);
+            doc.setTextColor(120,120,120);
+            doc.text(`Página ${pageCount}`, pageWidth - marginRight, 203, { align: 'right' });
+            doc.setTextColor(180,180,180);
+            doc.text('SIGEB - Sistema de Gerenciamento de Biblioteca', marginLeft, 203);
+        }
+
+        drawTable(doc, columns, data, 38);
         doc.save('acervo_livros.pdf');
     });
     </script>
