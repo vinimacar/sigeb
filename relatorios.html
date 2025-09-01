@@ -491,12 +491,16 @@
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
     
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
-        import { firebaseConfig } from './firebase-config.js';
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+    import { firebaseConfig } from './firebase-config.js';
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
         document.addEventListener('DOMContentLoaded', function() {
             // Verificar autenticação
@@ -518,51 +522,79 @@
                 });
             });
 
-            // Configurar botão de gerar relatório
-            document.getElementById('btnGerarRelatorio').addEventListener('click', function() {
-                alert('Gerando relatório...');
+            // Ativar todos os botões principais
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+
+            // Botão Gerar Relatório: busca dados reais do Firestore
+            document.getElementById('btnGerarRelatorio').addEventListener('click', async function() {
+                const relatorioDiv = document.getElementById('relatorioResultado');
+                relatorioDiv.innerHTML = 'Carregando...';
+                try {
+                    const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+                    const livrosSnap = await getDocs(collection(db, 'livros'));
+                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                    relatorioDiv.innerHTML =
+                        `<b>Usuários:</b> ${usuariosSnap.size}<br>`+
+                        `<b>Livros:</b> ${livrosSnap.size}<br>`+
+                        `<b>Empréstimos:</b> ${emprestimosSnap.size}`;
+                } catch (e) {
+                    relatorioDiv.innerHTML = 'Erro ao buscar dados do relatório: ' + e.message;
+                }
             });
 
-            // Configurar botão de limpar filtros
+            // Botão Limpar Filtros
             document.getElementById('btnLimparFiltros').addEventListener('click', function() {
                 document.getElementById('formFiltros').reset();
+                const relatorioDiv = document.getElementById('relatorioResultado');
+                if (relatorioDiv) relatorioDiv.innerHTML = '';
             });
         });
 
         // Função para inicializar os gráficos
         function inicializarGraficos() {
-            // Gráfico de empréstimos por categoria de usuário
-            const ctxUsuarios = document.getElementById('graficoUsuarios').getContext('2d');
-            new Chart(ctxUsuarios, {
-                type: 'pie',
-                data: {
-                    labels: ['Estudantes', 'Professores', 'Funcionários', 'Comunidade'],
-                    datasets: [{
-                        data: [65, 20, 10, 5],
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                        }
+
+            // Gráfico de empréstimos por categoria de usuário (dados reais)
+            (async () => {
+                const ctxUsuarios = document.getElementById('graficoUsuarios').getContext('2d');
+                let categorias = ['Estudantes', 'Professores', 'Funcionários', 'Comunidade'];
+                let dados = [0, 0, 0, 0];
+                try {
+                    const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+                    usuariosSnap.forEach(doc => {
+                        const cat = (doc.data().categoria || '').toLowerCase();
+                        if (cat.includes('estudante')) dados[0]++;
+                        else if (cat.includes('professor')) dados[1]++;
+                        else if (cat.includes('funcion')) dados[2]++;
+                        else dados[3]++;
+                    });
+                } catch {}
+                new Chart(ctxUsuarios, {
+                    type: 'pie',
+                    data: {
+                        labels: categorias,
+                        datasets: [{
+                            data: dados,
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                                'rgba(75, 192, 192, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'right' } }
                     }
-                }
-            });
+                });
+            })();
 
             // Gráfico de empréstimos por categoria de livro
             const ctxLivros = document.getElementById('graficoLivros').getContext('2d');
