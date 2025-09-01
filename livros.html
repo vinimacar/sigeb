@@ -658,8 +658,12 @@
                     document.querySelector('.pagination').innerHTML = '';
                     return;
                 }
+
                 tabelaLivros.innerHTML = '';
-                livrosPagina.forEach(livro => {
+                // Para cada livro, buscar a quantidade de empréstimos ativos e exibir a quantidade disponível
+                (async () => {
+                  const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+                  for (const livro of livrosPagina) {
                     let statusText = 'Indisponível';
                     let statusClass = 'bg-danger';
                     if (livro.disponivel === true) {
@@ -669,6 +673,16 @@
                         statusText = 'Reservado';
                         statusClass = 'bg-info';
                     }
+                    // Buscar quantidade de empréstimos ativos para este livro
+                    let qtdEmprestimosAtivos = 0;
+                    try {
+                      const emprestimosRef = collection(db, 'emprestimos');
+                      const q = query(emprestimosRef, where('livroId', '==', livro.id), where('status', 'in', ['em_andamento', 'atrasado', 'renovado']));
+                      const snapshot = await getDocs(q);
+                      qtdEmprestimosAtivos = snapshot.size;
+                    } catch (e) { qtdEmprestimosAtivos = 0; }
+                    const qtdTotal = livro.quantidade != null ? livro.quantidade : 0;
+                    const qtdDisponivel = Math.max(qtdTotal - qtdEmprestimosAtivos, 0);
                     const row = `
                         <tr>
                             <td>
@@ -690,7 +704,7 @@
                             <td>${livro.autor || 'Autor não informado'}</td>
                             <td>${livro.categoria || 'Categoria não informada'}</td>
                             <td>${livro.isbn || 'ISBN não informado'}</td>
-                            <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
+                            <td>${qtdDisponivel} de ${qtdTotal}</td>
                             <td><span class="badge ${statusClass}">${statusText}</span></td>
                             <td>
                                 <button class="btn btn-action btn-visualizar me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
@@ -700,8 +714,9 @@
                         </tr>
                     `;
                     tabelaLivros.innerHTML += row;
-                });
-                if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
+                  }
+                  if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
+                })();
 
                 // Paginação dinâmica
                 const paginacao = document.querySelector('.pagination');
