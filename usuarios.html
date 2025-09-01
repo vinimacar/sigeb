@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEB - Usuários</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="icone.png" type="image/png">
+    
+    <!-- Firebase -->
+    <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
+    <!-- CSS para garantir que o dropdown do menu Ações sempre apareça para cima -->
     <style>
     /* Garante que o menu de ações sempre fique sobreposto e visível */
     .dropdown-menu {
@@ -20,27 +42,7 @@
     .table-responsive, .card-body, .card {
         overflow: visible !important;
     }
-    /* Estilo para tabela de acervo */
-    /* ...visual anterior não tinha estilos customizados para tabela de livros... */
     </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGEB - Livros</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- CSS personalizado -->
-    <link rel="stylesheet" href="styles.css">
-    
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="icone.png" type="image/png">
 </head>
 <body>
     <!-- Barra de navegação superior -->
@@ -59,13 +61,13 @@
                         <a class="nav-link" href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="livros.html"><i class="fas fa-book"></i> Livros</a>
+                        <a class="nav-link" href="livros.html"><i class="fas fa-book"></i> Livros</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="emprestimos.html"><i class="fas fa-exchange-alt"></i> Empréstimos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="usuarios.html"><i class="fas fa-users"></i> Usuários</a>
+                        <a class="nav-link active" href="usuarios.html"><i class="fas fa-users"></i> Usuários</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a>
@@ -104,13 +106,13 @@
                             <a href="dashboard.html" class="list-group-item list-group-item-action">
                                 <i class="fas fa-home me-2"></i> Dashboard
                             </a>
-                            <a href="livros.html" class="list-group-item list-group-item-action active">
+                            <a href="livros.html" class="list-group-item list-group-item-action">
                                 <i class="fas fa-book me-2"></i> Livros
                             </a>
                             <a href="emprestimos.html" class="list-group-item list-group-item-action">
                                 <i class="fas fa-exchange-alt me-2"></i> Empréstimos
                             </a>
-                            <a href="usuarios.html" class="list-group-item list-group-item-action">
+                            <a href="usuarios.html" class="list-group-item list-group-item-action active">
                                 <i class="fas fa-users me-2"></i> Usuários
                             </a>
                             <a href="relatorios.html" class="list-group-item list-group-item-action">
@@ -128,14 +130,14 @@
             <div class="col-12 col-lg-9 col-xl-10">
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h2 class="mb-0">Gerenciamento de Livros</h2>
-                        <p class="text-muted">Cadastre, edite e gerencie o acervo da biblioteca</p>
+                        <h2 class="mb-0">Gerenciamento de Usuários</h2>
+                        <p class="text-muted">Cadastre, edite e gerencie os usuários da biblioteca</p>
                     </div>
                     <div class="col-md-6 text-md-end">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#novoLivroModal">
-                            <i class="fas fa-plus-circle me-1"></i> Novo Livro
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#novoUsuarioModal">
+                            <i class="fas fa-plus-circle me-1"></i> Novo Usuário
                         </button>
-                        <button class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#importarLivrosModal">
+                        <button class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#importarUsuariosModal">
                             <i class="fas fa-file-import me-1"></i> Importar
                         </button>
                     </div>
@@ -148,71 +150,113 @@
                             <div class="col-md-6">
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                    <input type="text" class="form-control" id="pesquisaLivro" placeholder="Pesquisar por título, autor, ISBN...">
+                                    <input type="text" class="form-control" id="pesquisaUsuario" placeholder="Pesquisar por nome, email, ID...">
                                     <button class="btn btn-primary" id="btnPesquisar">Pesquisar</button>
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <select class="form-select" id="filtroCategoria">
                                     <option value="">Todas as Categorias</option>
-                                    <option value="ACADEMICO">Acadêmico</option>
-                                    <option value="AUTOAJUDA">Autoajuda</option>
-                                    <option value="AVENTURA">Aventura</option>
-                                    <option value="BIOGRAFIA">Biografia</option>
-                                    <option value="CRONICAS">Crônicas</option>
-                                    <option value="CIENCIAS">Ciências</option>
-                                    <option value="DIDATICO">Didático</option>
-                                    <option value="DRAMA">Drama</option>
-                                    <option value="EDUCACAO">Educação</option>
-                                    <option value="FANTASIA">Fantasia</option>
-                                    <option value="FICCAO">Ficção</option>
-                                    <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
-                                    <option value="FORMACAO">Formação</option>
-                                    <option value="HISTORIA">História</option>
-                                    <option value="INFANTIL">Infantil</option>
-                                    <option value="JUVENIL">Juvenil</option>
-                                    <option value="LITERATURA">Literatura</option>
-                                    <option value="MISTERIO">Mistério</option>
-                                    <option value="NAO_FICCAO">Não Ficção</option>
-                                    <option value="NOVELA">Novela</option>
-                                    <option value="OUTROS">Outros</option>
-                                    <option value="POESIA">Poesia</option>
-                                    <option value="ROMANCE">Romance</option>
-                                    <option value="TEATRO">Teatro</option>
-                                    <option value="TECNOLOGIA">Tecnologia</option>
-                                    <option value="TECNICO">Técnico</option>
-                                    <option value="TERROR">Terror</option>
+                                    <option value="Estudante">Estudante</option>
+                                    <option value="Professor">Professor</option>
+                                    <option value="Funcionario">Funcionário</option>
+                                    <option value="Comunidade">Comunidade</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <select class="form-select" id="filtroEditora">
-                                    <option value="">Todas as Editoras</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <select class="form-select" id="filtroStatus">
                                     <option value="">Todos os Status</option>
-                                    <option value="disponivel">Disponível</option>
-                                    <option value="emprestado">Emprestado</option>
-                                    <option value="reservado">Reservado</option>
-                                    <option value="indisponivel">Indisponível</option>
+                                    <option value="ativo">Ativo</option>
+                                    <option value="inativo">Inativo</option>
+                                    <option value="bloqueado">Bloqueado</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Tabela de livros -->
+                <!-- Estatísticas rápidas -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card shadow border-start-primary h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                            <i class="fas fa-users text-primary fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs fw-bold text-uppercase mb-1">Total de Usuários</div>
+                                        <div class="h5 mb-0 fw-bold" id="cardTotalUsuarios">...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow border-start-success h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                                            <i class="fas fa-user-check text-success fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs fw-bold text-uppercase mb-1">Usuários Ativos</div>
+                                        <div class="h5 mb-0 fw-bold" id="cardUsuariosAtivos">...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow border-start-warning h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                            <i class="fas fa-user-clock text-warning fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs fw-bold text-uppercase mb-1">Novos (Mês)</div>
+                                        <div class="h5 mb-0 fw-bold" id="cardNovosMes">...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow border-start-danger h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-danger bg-opacity-10 p-3 rounded">
+                                            <i class="fas fa-user-slash text-danger fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs fw-bold text-uppercase mb-1">Bloqueados</div>
+                                        <div class="h5 mb-0 fw-bold" id="cardBloqueados">...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabela de usuários -->
                 <div class="card shadow">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Acervo de Livros</h5>
+                        <h5 class="mb-0">Usuários Cadastrados</h5>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnImprimirPDF">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
                                 <i class="fas fa-print me-1"></i> Imprimir
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary">
                                 <i class="fas fa-file-export me-1"></i> Exportar
-                            </button>
                             </button>
                         </div>
                     </div>
@@ -226,16 +270,15 @@
                                                 <input class="form-check-input" type="checkbox" id="checkTodos">
                                             </div>
                                         </th>
-                                        <th>Título</th>
-                                        <th>Autor</th>
+                                        <th>Nome</th>
+                                        <th>Email</th>
                                         <th>Categoria</th>
-                                        <th>ISBN</th>
-                                        <th>Quantidade</th>
+                                        <th>Empréstimos</th>
                                         <th>Status</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabelaLivros">
+                                <tbody id="tabelaUsuarios">
                                     <!-- Os dados serão carregados do Firestore -->
                                 </tbody>
                             </table>
@@ -243,8 +286,8 @@
                     </div>
                     <div class="card-footer">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div id="infoPaginacaoLivros">
-                                <!-- Informação de paginação será preenchida dinamicamente -->
+                            <div>
+                                <span class="text-muted">Mostrando 1-5 de 1,248 usuários</span>
                             </div>
                             <nav aria-label="Paginação">
                                 <ul class="pagination mb-0">
@@ -270,122 +313,205 @@
         </div>
     </div>
 
-    <!-- Modal de Novo Livro -->
-    <div class="modal fade" id="novoLivroModal" tabindex="-1" aria-labelledby="novoLivroModalLabel" aria-hidden="true">
+    <!-- Modal de Novo Usuário -->
+    <div class="modal fade" id="novoUsuarioModal" tabindex="-1" aria-labelledby="novoUsuarioModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="novoLivroModalLabel">Cadastrar Novo Livro</h5>
+                    <h5 class="modal-title" id="novoUsuarioModalLabel">Cadastrar Novo Usuário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="formNovoLivro">
+                    <form id="formNovoUsuario">
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="isbn" class="form-label">ISBN</label>
-                                <input type="text" class="form-control" id="isbn" autocomplete="off">
-                                <div id="isbnFeedback" class="form-text text-danger"></div>
+                            <div class="col-md-6">
+                                <label for="nome" class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="nome" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="titulo" class="form-label">Título</label>
-                                <input type="text" class="form-control" id="titulo" required>
+                                <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email">
+                            </div>
+                            <!-- Telefone removido -->
+                            <script>
+                            // Busca automática de endereço pelo CEP ao sair do campo
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Atualiza os cards de estatísticas rápidas
+                                async function atualizarCardsEstatisticas() {
+                                    const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+                                    const usuariosRef = collection(db, 'usuarios');
+                                    try {
+                                        const snapshot = await getDocs(usuariosRef);
+                                        let total = 0, ativos = 0, bloqueados = 0, novosMes = 0;
+                                        const mesAtual = new Date().getMonth();
+                                        const anoAtual = new Date().getFullYear();
+                                        snapshot.forEach(doc => {
+                                            total++;
+                                            const u = doc.data();
+                                            if ((u.status || '').toLowerCase() === 'bloqueado') bloqueados++;
+                                            else ativos++;
+                                            if (u.dataCadastro) {
+                                                const d = new Date(u.dataCadastro);
+                                                if (d.getMonth() === mesAtual && d.getFullYear() === anoAtual) novosMes++;
+                                            }
+                                        });
+                                        document.getElementById('cardTotalUsuarios').textContent = total;
+                                        document.getElementById('cardUsuariosAtivos').textContent = ativos;
+                                        document.getElementById('cardBloqueados').textContent = bloqueados;
+                                        document.getElementById('cardNovosMes').textContent = novosMes;
+                                    } catch (e) {
+                                        document.getElementById('cardTotalUsuarios').textContent = '-';
+                                        document.getElementById('cardUsuariosAtivos').textContent = '-';
+                                        document.getElementById('cardBloqueados').textContent = '-';
+                                        document.getElementById('cardNovosMes').textContent = '-';
+                                    }
+                                }
+                                atualizarCardsEstatisticas();
+                                const cepInput = document.getElementById('cep');
+                                if (cepInput) {
+                                    cepInput.addEventListener('blur', async function() {
+                                        const cep = cepInput.value.replace(/\D/g, '');
+                                        if (cep.length === 8) {
+                                            try {
+                                                const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                                                const data = await resp.json();
+                                                if (!data.erro) {
+                                                    document.getElementById('endereco').value = data.logradouro || '';
+                                                    document.getElementById('bairro').value = data.bairro || '';
+                                                    document.getElementById('cidade').value = data.localidade || '';
+                                                    document.getElementById('estado').value = data.uf || '';
+                                                }
+                                            } catch (e) { /* ignora erro */ }
+                                        }
+                                    });
+                                }
+                            });
+                            </script>
+                            <div class="col-md-6">
+                                <label for="whatsapp" class="form-label">WhatsApp</label>
+                                <input type="tel" class="form-control" id="whatsapp" placeholder="(99) 99999-9999" maxlength="15">
                             </div>
                             <div class="col-md-6">
-                                <label for="autor" class="form-label">Autor</label>
-                                <input type="text" class="form-control" id="autor" required>
+                                <label for="dataNascimento" class="form-label">Data de Nascimento</label>
+                                <input type="date" class="form-control" id="dataNascimento">
                             </div>
-                            <div class="col-md-4">
-                                <label for="editora" class="form-label">Editora</label>
-                                <input type="text" class="form-control" id="editora">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="anoPublicacao" class="form-label">Ano de Publicação</label>
-                                <input type="number" class="form-control" id="anoPublicacao">
+                            <div class="col-md-6">
+                                <label for="documento" class="form-label">Documento (CPF/RG)</label>
+                                <input type="text" class="form-control" id="documento">
                             </div>
                             <div class="col-md-6">
                                 <label for="categoria" class="form-label">Categoria</label>
                                 <select class="form-select" id="categoria" required>
                                     <option value="">Selecione...</option>
-                                    <option value="ACADEMICO">Acadêmico</option>
-                                    <option value="AUTOAJUDA">Autoajuda</option>
-                                    <option value="AVENTURA">Aventura</option>
-                                    <option value="BIOGRAFIA">Biografia</option>
-                                    <option value="CRONICAS">Crônicas</option>
-                                    <option value="CIENCIAS">Ciências</option>
-                                    <option value="DIDATICO">Didático</option>
-                                    <option value="DRAMA">Drama</option>
-                                    <option value="EDUCACAO">Educação</option>
-                                    <option value="FANTASIA">Fantasia</option>
-                                    <option value="FICCAO">Ficção</option>
-                                    <option value="FICCAO_CIENTIFICA">Ficção Científica</option>
-                                    <option value="FORMACAO">Formação</option>
-                                    <option value="HISTORIA">História</option>
-                                    <option value="INFANTIL">Infantil</option>
-                                    <option value="JUVENIL">Juvenil</option>
-                                    <option value="LITERATURA">Literatura</option>
-                                    <option value="MISTERIO">Mistério</option>
-                                    <option value="NAO_FICCAO">Não Ficção</option>
-                                    <option value="NOVELA">Novela</option>
-                                    <option value="OUTROS">Outros</option>
-                                    <option value="POESIA">Poesia</option>
-                                    <option value="ROMANCE">Romance</option>
-                                    <option value="TEATRO">Teatro</option>
-                                    <option value="TECNOLOGIA">Tecnologia</option>
-                                    <option value="TECNICO">Técnico</option>
-                                    <option value="TERROR">Terror</option>
+                                    <option value="Estudante">Estudante</option>
+                                    <option value="Professor">Professor</option>
+                                    <option value="Funcionario">Funcionário</option>
+                                    <option value="Comunidade">Comunidade</option>
                                 </select>
                             </div>
+                            <div class="col-md-8">
+                                <label for="endereco" class="form-label">Endereço</label>
+                                <input type="text" class="form-control" id="endereco">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="numero" class="form-label">Número</label>
+                                <input type="text" class="form-control" id="numero">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="bairro" class="form-label">Bairro</label>
+                                <input type="text" class="form-control" id="bairro">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="cidade" class="form-label">Cidade</label>
+                                <input type="text" class="form-control" id="cidade">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="estado" class="form-label">Estado</label>
+                                <select class="form-select" id="estado">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amapá</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Ceará</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espírito Santo</option>
+                                    <option value="GO">Goiás</option>
+                                    <option value="MA">Maranhão</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Pará</option>
+                                    <option value="PB">Paraíba</option>
+                                    <option value="PR">Paraná</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piauí</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rondônia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">São Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="cep" class="form-label">CEP</label>
+                                <input type="text" class="form-control" id="cep" maxlength="9" placeholder="00000-000">
+                            </div>
                             <div class="col-md-6">
-                                <label for="localizacao" class="form-label">Localização na Biblioteca</label>
-                                <input type="text" class="form-control" id="localizacao" placeholder="Ex: Estante A, Prateleira 3">
+                                <!-- Campo de senha removido -->
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Campo de confirmar senha removido -->
                             </div>
                             <div class="col-md-12">
-                                <label for="descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="descricao" rows="3"></textarea>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="quantidade" class="form-label">Quantidade</label>
-                                <input type="number" class="form-control" id="quantidade" value="1" min="1">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" required>
-                                    <option value="disponivel" selected>Disponível</option>
-                                    <option value="indisponivel">Indisponível</option>
-                                </select>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enviarEmail">
+                                    <label class="form-check-label" for="enviarEmail">
+                                        Enviar email de boas-vindas com instruções de acesso
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnSalvarLivro">Salvar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarUsuario">Salvar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Importar Livros -->
-    <div class="modal fade" id="importarLivrosModal" tabindex="-1" aria-labelledby="importarLivrosModalLabel" aria-hidden="true">
+    <!-- Modal de Importar Usuários -->
+    <div class="modal fade" id="importarUsuariosModal" tabindex="-1" aria-labelledby="importarUsuariosModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="importarLivrosModalLabel">Importar Livros</h5>
+                    <h5 class="modal-title" id="importarUsuariosModalLabel">Importar Usuários</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="arquivoImportacao" class="form-label">Selecione o arquivo CSV ou Excel</label>
-                        <input class="form-control" type="file" id="arquivoImportacao" accept=".csv, .xlsx, .xls">
+                        <input class="form-control" type="file" id="arquivoImportacao" accept=".csv, .xlsx">
                     </div>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> O arquivo deve conter as colunas: Título, Autor, ISBN, Editora, Ano, Categoria, Quantidade.
+                        <i class="fas fa-info-circle me-2"></i> O arquivo deve conter as colunas: Nome, Email, Telefone, Categoria, Documento.
                     </div>
-                    <div id="previewImportacao" class="table-responsive" style="display:none; max-height:300px; overflow:auto;"></div>
+                    <div class="mb-3">
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-download me-1"></i> Baixar modelo de planilha
+                        </a>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnImportarLivros">Importar</button>
+                    <button type="button" class="btn btn-primary" id="btnImportarUsuarios">Importar</button>
                 </div>
             </div>
         </div>
@@ -400,17 +526,17 @@
 
     <!-- Bootstrap JS e dependências -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- SheetJS para leitura de arquivos Excel/CSV -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    
+    <!-- jsPDF para geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- JsBarcode para gerar código de barras -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
-    
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
-        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
-        import { firebaseConfig } from './firebase-config.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+    import { getFirestore, collection, getDocs, doc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+    import { firebaseConfig } from './firebase-config.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -418,138 +544,15 @@
     window.db = db;
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Validação e busca automática de ISBN
-            const isbnInput = document.getElementById('isbn');
-            const isbnFeedback = document.getElementById('isbnFeedback');
-            let lastIsbnChecked = '';
-            isbnInput.addEventListener('blur', async function() {
-                const isbn = isbnInput.value.replace(/[^0-9Xx]/g, '').trim();
-                if (!isbn) {
-                    isbnFeedback.textContent = '';
-                    return;
-                }
-                if (isbn === lastIsbnChecked) return;
-                lastIsbnChecked = isbn;
-                isbnFeedback.textContent = 'Verificando ISBN...';
-                // Verificar duplicidade no Firestore
-                try {
-                    const { getDocs, query, where, collection: col } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
-                    const q = query(col(db, 'livros'), where('isbn', '==', isbn));
-                    const snap = await getDocs(q);
-                    if (!snap.empty) {
-                        const docFound = snap.docs[0];
-                        isbnFeedback.innerHTML = 'Já existe um livro cadastrado com este ISBN! <button id="btnEditarIsbnExistente" class="btn btn-sm btn-warning ms-2">Editar registro</button>';
-                        // Desabilita o botão de salvar
-                        document.getElementById('btnSalvarLivro').disabled = true;
-                        // Evento para editar registro existente
-                        document.getElementById('btnEditarIsbnExistente').onclick = function() {
-                            // Preencher o formulário com os dados do livro encontrado
-                            const livro = docFound.data();
-                            document.getElementById('titulo').value = livro.titulo || '';
-                            document.getElementById('autor').value = livro.autor || '';
-                            document.getElementById('isbn').value = livro.isbn || '';
-                            document.getElementById('editora').value = livro.editora || '';
-                            document.getElementById('anoPublicacao').value = livro.anoPublicacao || '';
-                            document.getElementById('categoria').value = livro.categoria || '';
-                            document.getElementById('localizacao').value = livro.localizacao || '';
-                            document.getElementById('descricao').value = livro.descricao || '';
-                            document.getElementById('quantidade').value = livro.quantidade || 1;
-                            document.getElementById('status').value = livro.disponivel ? 'disponivel' : 'indisponivel';
-                            // Habilita o botão de salvar e marca como edição
-                            const btnSalvar = document.getElementById('btnSalvarLivro');
-                            btnSalvar.disabled = false;
-                            btnSalvar._isEditando = true;
-                            // Remove event listeners antigos
-                            btnSalvar.replaceWith(btnSalvar.cloneNode(true));
-                            const btnSalvarNovo = document.getElementById('btnSalvarLivro');
-                            btnSalvarNovo._isEditando = true;
-                            btnSalvarNovo.disabled = false;
-                            btnSalvarNovo.onclick = async function() {
-                                const form = document.getElementById('formNovoLivro');
-                                if (form.checkValidity()) {
-                                    try {
-                                        const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
-                                        const updateDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).updateDoc;
-                                        await updateDoc(docRef(db, 'livros', docFound.id), {
-                                            titulo: document.getElementById('titulo').value,
-                                            autor: document.getElementById('autor').value,
-                                            isbn: document.getElementById('isbn').value,
-                                            editora: document.getElementById('editora').value,
-                                            anoPublicacao: document.getElementById('anoPublicacao').value,
-                                            categoria: document.getElementById('categoria').value,
-                                            localizacao: document.getElementById('localizacao').value,
-                                            descricao: document.getElementById('descricao').value,
-                                            quantidade: Number(document.getElementById('quantidade').value),
-                                            disponivel: document.getElementById('status').value === 'disponivel',
-                                        });
-                                        alert('Livro atualizado com sucesso!');
-                                        const modal = bootstrap.Modal.getInstance(document.getElementById('novoLivroModal'));
-                                        modal.hide();
-                                        window.carregarLivros();
-                                        // Limpa modo edição
-                                        btnSalvarNovo._isEditando = false;
-                                    } catch (e) {
-                                        alert('Erro ao atualizar livro: ' + e.message);
-                                    }
-                                } else {
-                                    form.reportValidity();
-                                }
-                            };
-                        };
-                        return;
-                    } else {
-                        // Se não existe duplicidade, habilita o botão de salvar normalmente
-                        document.getElementById('btnSalvarLivro').disabled = false;
-                    }
-                } catch (e) {
-                    isbnFeedback.textContent = 'Erro ao verificar ISBN.';
-                    document.getElementById('btnSalvarLivro').disabled = false;
-                    return;
-                }
-                // Buscar dados na OpenLibrary
-                try {
-                    const resp = await fetch(`https://openlibrary.org/search.json?isbn=${isbn}`);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data.docs && data.docs.length > 0) {
-                            const livro = data.docs[0];
-                            if (livro.title) document.getElementById('titulo').value = livro.title;
-                            if (livro.author_name && livro.author_name.length) document.getElementById('autor').value = livro.author_name.join(', ');
-                            if (livro.publisher && livro.publisher.length) document.getElementById('editora').value = livro.publisher[0];
-                            if (livro.first_publish_year) document.getElementById('anoPublicacao').value = livro.first_publish_year;
-                            if (livro.subject && livro.subject.length) document.getElementById('categoria').value = '';
-                            isbnFeedback.textContent = 'Dados preenchidos automaticamente pela OpenLibrary.';
-                        } else {
-                            isbnFeedback.textContent = '';
-                        }
-                    }
-                } catch (e) {
-                    // ignora erro
-                }
-                // Buscar dados na Biblioteca Nacional
-                try {
-                    const resp = await fetch(`https://servicos.bn.br/api/consulta/isbn/${isbn}`);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data && data.titulo) document.getElementById('titulo').value = data.titulo;
-                        if (data && data.autor) document.getElementById('autor').value = data.autor;
-                        if (data && data.editora) document.getElementById('editora').value = data.editora;
-                        if (data && data.ano) document.getElementById('anoPublicacao').value = data.ano;
-                        isbnFeedback.textContent = 'Dados preenchidos automaticamente pela Biblioteca Nacional.';
-                    }
-                } catch (e) {
-                    // ignora erro
-                }
-                if (!isbnFeedback.textContent) isbnFeedback.textContent = '';
-            });
             // Verificar autenticação
             onAuthStateChanged(auth, function(user) {
                 if (user) {
                     document.getElementById('userName').textContent = user.displayName || user.email;
-                    carregarLivros();
+                    carregarUsuarios();
                 } else {
                     window.location.href = 'index.html';
                 }
+            });
 
             // Configurar botão de logout
             document.getElementById('logoutBtn').addEventListener('click', function() {
@@ -560,657 +563,861 @@
                 });
             });
 
-            // Variável para armazenar todos os livros carregados (declarada globalmente)
-        });
-
-        // Variável global para armazenar todos os livros carregados
-        window.livrosCache = [];
-
-            // Função para carregar livros do Firestore
-            window.carregarLivros = async function carregarLivros(filtro = '') {
-                const tabelaLivros = document.getElementById('tabelaLivros');
-                const infoPaginacao = document.getElementById('infoPaginacaoLivros');
-                tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Carregando dados...</td></tr>';
-                try {
-                    const querySnapshot = await getDocs(collection(db, 'livros'));
-                    window.livrosCache = [];
-                    let editorasSet = new Set();
-                    querySnapshot.forEach((doc) => {
-                        const livro = doc.data();
-                        window.livrosCache.push({ id: doc.id, ...livro });
-                        if (livro.editora && livro.editora.trim() !== '') {
-                            editorasSet.add(livro.editora.trim());
-                        }
-                    });
-                    // Preencher filtro de editoras
-                    const filtroEditora = document.getElementById('filtroEditora');
-                    if (filtroEditora) {
-                        const editoras = Array.from(editorasSet).sort((a, b) => a.localeCompare(b));
-                        filtroEditora.innerHTML = '<option value="">Todas as Editoras</option>' + editoras.map(e => `<option value="${e}">${e}</option>`).join('');
-                    }
-                    exibirLivros(filtro);
-                } catch (error) {
-                    console.error("Erro ao carregar livros:", error);
-                    tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Erro ao carregar dados. Tente novamente.</td></tr>';
-                    if (infoPaginacao) infoPaginacao.textContent = '';
-                }
-            }
-
-            // Função para exibir livros filtrados
-            function exibirLivros(filtro = '') {
-                const tabelaLivros = document.getElementById('tabelaLivros');
-                const infoPaginacao = document.getElementById('infoPaginacaoLivros');
-                // Paginação client-side
-                const livrosPorPagina = 10;
-                let livrosFiltrados = window.livrosCache;
-                // Filtro de texto
-                if (filtro && filtro.trim() !== '') {
-                    const termo = filtro.trim().toLowerCase();
-                    livrosFiltrados = livrosFiltrados.filter(livro =>
-                        (livro.titulo && String(livro.titulo).toLowerCase().includes(termo)) ||
-                        (livro.autor && String(livro.autor).toLowerCase().includes(termo)) ||
-                        (livro.isbn && String(livro.isbn).toLowerCase().includes(termo))
-                    );
-                }
-                // Filtro de categoria
-                const categoria = document.getElementById('filtroCategoria').value;
-                if (categoria) {
-                    livrosFiltrados = livrosFiltrados.filter(livro => livro.categoria === categoria);
-                }
-                // Filtro de editora
-                const editora = document.getElementById('filtroEditora').value;
-                if (editora) {
-                    livrosFiltrados = livrosFiltrados.filter(livro => (livro.editora || '') === editora);
-                }
-                // Filtro de status
-                const status = document.getElementById('filtroStatus').value;
-                if (status) {
-                    if (status === 'disponivel') {
-                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === true);
-                    } else if (status === 'emprestado') {
-                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === false && livro.reservado !== true);
-                    } else if (status === 'reservado') {
-                        livrosFiltrados = livrosFiltrados.filter(livro => livro.reservado === true);
-                    } else if (status === 'indisponivel') {
-                        livrosFiltrados = livrosFiltrados.filter(livro => livro.disponivel === false && livro.reservado !== true);
-                    }
-                }
-                // Ordenar alfabeticamente pelo título
-                livrosFiltrados = livrosFiltrados.slice().sort((a, b) => {
-                    const t1 = (a.titulo || '').toLowerCase();
-                    const t2 = (b.titulo || '').toLowerCase();
-                    if (t1 < t2) return -1;
-                    if (t1 > t2) return 1;
-                    return 0;
-                });
-                // Página atual (default 1)
-                let paginaAtual = window.paginaLivrosAtual || 1;
-                const totalPaginas = Math.ceil(livrosFiltrados.length / livrosPorPagina) || 1;
-                if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
-                window.paginaLivrosAtual = paginaAtual;
-                // Slice dos livros para a página
-                const inicio = (paginaAtual - 1) * livrosPorPagina;
-                const fim = inicio + livrosPorPagina;
-                const livrosPagina = livrosFiltrados.slice(inicio, fim);
-                if (livrosFiltrados.length === 0) {
-                    tabelaLivros.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum livro encontrado</td></tr>';
-                    if (infoPaginacao) infoPaginacao.textContent = '';
-                    document.querySelector('.pagination').innerHTML = '';
-                    return;
-                }
-                tabelaLivros.innerHTML = '';
-                livrosPagina.forEach(livro => {
-                    const status = livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível');
-                    const statusClass = livro.disponivel ? 'bg-success' : (livro.reservado ? 'bg-info' : 'bg-danger');
-                        const row = `
-                            <tr>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
-                                            <i class="fas fa-book text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">${livro.titulo || 'Sem título'}</h6>
-                                            <small class="text-muted">${livro.editora || 'Editora não informada'}, ${livro.anoPublicacao || 'Ano não informado'}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>${livro.autor || 'Autor não informado'}</td>
-                                <td>${livro.categoria || 'Categoria não informada'}</td>
-                                <td>${livro.isbn || 'ISBN não informado'}</td>
-                                <td>${livro.quantidade != null ? livro.quantidade : ''}</td>
-                                <td><span class="badge ${statusClass}">${status}</span></td>
-                                <td>
-                                    <button class="btn btn-action btn-visualizar me-1" title="Visualizar" onclick="visualizarLivro('${livro.id}')"><i class="fas fa-eye"></i></button>
-                                    <button class="btn btn-action btn-editar me-1" title="Editar" onclick="editarLivro('${livro.id}')"><i class="fas fa-pencil-alt"></i></button>
-                                    <button class="btn btn-action btn-excluir" title="Excluir" onclick="excluirLivro('${livro.id}')"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        `;
-                    tabelaLivros.innerHTML += row;
-                });
-                if (infoPaginacao) infoPaginacao.textContent = `Mostrando ${livrosFiltrados.length} livro(s)`;
-
-                // Paginação dinâmica
-                const paginacao = document.querySelector('.pagination');
-                if (paginacao) {
-                    let html = '';
-                    html += `<li class="page-item${paginaAtual === 1 ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="anterior" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a></li>`;
-                    for (let i = 1; i <= totalPaginas; i++) {
-                        html += `<li class="page-item${i === paginaAtual ? ' active' : ''}"><a class="page-link" href="#" data-pagina="${i}">${i}</a></li>`;
-                    }
-                    html += `<li class="page-item${paginaAtual === totalPaginas ? ' disabled' : ''}"><a class="page-link" href="#" data-pagina="proxima" aria-label="Próximo"><span aria-hidden="true">&raquo;</span></a></li>`;
-                    paginacao.innerHTML = html;
-                    // Eventos de clique
-                    paginacao.querySelectorAll('a[data-pagina]').forEach(link => {
-                        link.onclick = function(e) {
-                            e.preventDefault();
-                            let alvo = this.getAttribute('data-pagina');
-                            if (alvo === 'anterior' && paginaAtual > 1) {
-                                window.paginaLivrosAtual = paginaAtual - 1;
-                            } else if (alvo === 'proxima' && paginaAtual < totalPaginas) {
-                                window.paginaLivrosAtual = paginaAtual + 1;
-                            } else if (!isNaN(Number(alvo))) {
-                                window.paginaLivrosAtual = Number(alvo);
-                            }
-                            exibirLivros(filtro);
-                        };
-                    });
-                }
-            }
-
-            // Ativar botão de pesquisa
-            document.getElementById('btnPesquisar').addEventListener('click', function() {
-            // Filtros de categoria, editora e status
-            document.getElementById('filtroCategoria').addEventListener('change', function() {
-                exibirLivros(document.getElementById('pesquisaLivro').value);
-            });
-            document.getElementById('filtroEditora').addEventListener('change', function() {
-                exibirLivros(document.getElementById('pesquisaLivro').value);
-            });
-            document.getElementById('filtroStatus').addEventListener('change', function() {
-                exibirLivros(document.getElementById('pesquisaLivro').value);
-            });
-                const termo = document.getElementById('pesquisaLivro').value;
-                exibirLivros(termo);
-            });
-
-            // Permitir pesquisar ao pressionar Enter
-            document.getElementById('pesquisaLivro').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    document.getElementById('btnPesquisar').click();
-                }
-            });
-
             // Configurar checkbox "selecionar todos"
             document.getElementById('checkTodos').addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('#tabelaLivros .form-check-input');
+                const checkboxes = document.querySelectorAll('#tabelaUsuarios .form-check-input');
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
             });
 
-            // Configurar botão de salvar livro
-            document.getElementById('btnSalvarLivro').addEventListener('click', function() {
-                const form = document.getElementById('formNovoLivro');
+            // Configurar botão de salvar usuário
+
+            document.getElementById('btnSalvarUsuario').addEventListener('click', async function() {
+                const form = document.getElementById('formNovoUsuario');
                 if (form.checkValidity()) {
-                    // Detecta se é edição (btnSalvarLivro foi sobrescrito pela função editarLivro)
-                    if (typeof btnSalvarLivro._isEditando === 'undefined' || !btnSalvarLivro._isEditando) {
-                        // Cadastro de novo livro
-                        (async () => {
-                            try {
-                                const addDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).addDoc;
-                                const collectionFn = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).collection;
-                                await addDoc(collectionFn(db, 'livros'), {
-                                    titulo: document.getElementById('titulo').value,
-                                    autor: document.getElementById('autor').value,
-                                    isbn: document.getElementById('isbn').value,
-                                    editora: document.getElementById('editora').value,
-                                    anoPublicacao: document.getElementById('anoPublicacao').value,
-                                    categoria: document.getElementById('categoria').value,
-                                    localizacao: document.getElementById('localizacao').value,
-                                    descricao: document.getElementById('descricao').value,
-                                    quantidade: Number(document.getElementById('quantidade').value),
-                                    disponivel: document.getElementById('status').value === 'disponivel',
-                                    reservado: false
-                                });
-                                alert('Livro cadastrado com sucesso!');
-                                // Corrigir acessibilidade: remover aria-hidden manualmente antes de fechar o modal
-                                const modalEl = document.getElementById('novoLivroModal');
-                                if (modalEl) {
-                                    modalEl.removeAttribute('aria-hidden');
-                                }
-                                const modal = bootstrap.Modal.getInstance(modalEl);
-                                modal.hide();
-                                form.reset();
-                                carregarLivros();
-                            } catch (e) {
-                                alert('Erro ao cadastrar livro: ' + e.message);
-                            }
-                        })();
-                    } else {
-                        // Edição: já tratada na função editarLivro
-                        // Após salvar edição, limpa flag
-                        btnSalvarLivro._isEditando = false;
+                    // Coletar dados do usuário
+                    const usuario = {
+                        nome: document.getElementById('nome').value,
+                        email: document.getElementById('email').value,
+                        whatsapp: document.getElementById('whatsapp').value,
+                        dataNascimento: document.getElementById('dataNascimento').value,
+                        documento: document.getElementById('documento').value,
+                        categoria: document.getElementById('categoria').value,
+                        endereco: document.getElementById('endereco').value,
+                        numero: document.getElementById('numero').value,
+                        bairro: document.getElementById('bairro').value,
+                        cidade: document.getElementById('cidade').value,
+                        estado: document.getElementById('estado').value,
+                        cep: document.getElementById('cep').value
+                    };
+                    try {
+                        // Salvar usuário no Firestore
+                        usuario.dataCadastro = new Date().toISOString();
+                        const { addDoc, collection } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+                        const usuariosRef = collection(db, 'usuarios');
+                        const docRef = await addDoc(usuariosRef, usuario);
+                        usuario._id = docRef.id;
+                        // Exibir ficha timbrada
+                        gerarFichaTimbrada(usuario);
+                        // Gerar cartão do leitor em PDF
+                        gerarCartaoLeitorPDF(usuario);
+                        // Atualizar lista
+                        await carregarUsuarios();
+                        await atualizarCardsEstatisticas();
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('novoUsuarioModal'));
+                        modal.hide();
+                        form.reset();
+                    } catch (error) {
+                        alert('Erro ao salvar usuário: ' + (error.message || error));
                     }
                 } else {
                     form.reportValidity();
                 }
             });
-
-            // Configurar botão de importar livros
-            document.getElementById('btnImportarLivros').addEventListener('click', function() {
-                const arquivo = document.getElementById('arquivoImportacao').files[0];
-                if (!arquivo) {
-                    alert('Por favor, selecione um arquivo para importar.');
-                    return;
-                }
-                // Ler o arquivo e importar para o Firestore
-                const reader = new FileReader();
-                reader.onload = async function(evt) {
-                    let data = evt.target.result;
-                    let workbook;
-                    if (arquivo.name.endsWith('.csv')) {
-                        workbook = XLSX.read(data, { type: 'binary', codepage: 65001 });
-                    } else {
-                        workbook = XLSX.read(data, { type: 'binary' });
-                    }
-                    const firstSheet = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheet];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: '', header: 1 });
-                    if (json.length < 2) {
-                        alert('Arquivo vazio ou sem dados.');
-                        return;
-                    }
-                    // Mapear colunas
-                    const header = json[0].map(h => h.toString().toLowerCase().trim());
-                    const linhas = json.slice(1);
-                    // Função para obter valor de coluna por nome
-                    function getCol(row, colName) {
-                        const idx = header.indexOf(colName);
-                        return idx >= 0 ? row[idx] : '';
-                    }
-                    // Importar para Firestore
-                    const addDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).addDoc;
-                    const collectionFn = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).collection;
-                    let count = 0, erros = 0;
-                    for (let row of linhas) {
-                        // Ignorar linhas totalmente vazias
-                        if (row.every(cell => !cell || cell.toString().trim() === '')) continue;
-                        try {
-                            await addDoc(collectionFn(db, 'livros'), {
-                                titulo: getCol(row, 'título') || getCol(row, 'titulo'),
-                                autor: getCol(row, 'autor'),
-                                isbn: getCol(row, 'isbn'),
-                                editora: getCol(row, 'editora'),
-                                anoPublicacao: getCol(row, 'ano') || getCol(row, 'ano de publicação') || getCol(row, 'ano publicacao'),
-                                categoria: getCol(row, 'categoria'),
-                                quantidade: Number(getCol(row, 'quantidade') || 1),
-                                localizacao: getCol(row, 'localizacao') || getCol(row, 'localização'),
-                                descricao: getCol(row, 'descricao') || getCol(row, 'descrição'),
-                                disponivel: true,
-                                reservado: false
-                            });
-                            count++;
-                        } catch (e) {
-                            erros++;
-                        }
-                    }
-                    alert(`Importação concluída! ${count} livro(s) importado(s)${erros ? `, ${erros} erro(s)` : ''}.`);
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('importarLivrosModal'));
-                    modal.hide();
-                    carregarLivros();
-                };
-                reader.onerror = function() {
-                    alert('Erro ao ler o arquivo.');
-                };
-                reader.readAsBinaryString(arquivo);
-            });
-
-        // Visualização prévia do arquivo de importação
-        document.getElementById('arquivoImportacao').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const previewDiv = document.getElementById('previewImportacao');
-            previewDiv.innerHTML = '';
-            if (!file) {
-                previewDiv.style.display = 'none';
+        // Gera o cartão do leitor em PDF com nome, categoria, logo e código de barras do ID
+    window.gerarCartaoLeitorPDF = async function(usuario) {
+            if (!usuario || !usuario._id || !usuario.nome || !usuario.categoria) {
+                alert('Dados insuficientes para gerar o cartão do leitor.');
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                let data = evt.target.result;
-                let workbook;
-                if (file.name.endsWith('.csv')) {
-                    workbook = XLSX.read(data, { type: 'binary', codepage: 65001 });
-                } else {
-                    workbook = XLSX.read(data, { type: 'binary' });
-                }
-                const firstSheet = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheet];
-                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                if (json.length === 0) {
-                    previewDiv.innerHTML = '<div class="alert alert-warning">Arquivo vazio ou formato inválido.</div>';
-                    previewDiv.style.display = 'block';
-                    return;
-                }
-                // Montar tabela HTML
-                let html = '<table class="table table-bordered table-sm"><thead><tr>';
-                json[0].forEach(col => {
-                    html += `<th>${col}</th>`;
-                });
-                html += '</tr></thead><tbody>';
-                for (let i = 1; i < Math.min(json.length, 11); i++) { // mostra até 10 linhas
-                    html += '<tr>';
-                    json[i].forEach(cell => {
-                        html += `<td>${cell !== undefined ? cell : ''}</td>`;
-                    });
-                    html += '</tr>';
-                }
-                html += '</tbody></table>';
-                if (json.length > 11) {
-                    html += `<div class="text-muted small">Exibindo as 10 primeiras linhas de ${json.length - 1} registros.</div>`;
-                }
-                previewDiv.innerHTML = html;
-                previewDiv.style.display = 'block';
-            };
-            reader.onerror = function() {
-                previewDiv.innerHTML = '<div class="alert alert-danger">Erro ao ler o arquivo.</div>';
-                previewDiv.style.display = 'block';
-            };
-            reader.readAsBinaryString(file);
-            });
-        });
-        // Funções para manipulação de livros (mantidas para compatibilidade)
-        window.visualizarLivro = function(id) { console.log("Visualizar livro:", id); };
-        // Visualizar Livro
-        window.visualizarLivro = function(id) {
-            const livro = window.livrosCache.find(l => l.id === id);
-            if (!livro) return alert('Livro não encontrado!');
-            let info = `Título: ${livro.titulo || ''}\nAutor: ${livro.autor || ''}\nCategoria: ${livro.categoria || ''}\nISBN: ${livro.isbn || ''}\nEditora: ${livro.editora || ''}\nAno: ${livro.anoPublicacao || ''}\nStatus: ${(livro.disponivel ? 'Disponível' : (livro.reservado ? 'Reservado' : 'Indisponível'))}`;
-            alert(info);
-        };
-
-        // Editar Livro
-        window.editarLivro = function(id) {
-            const livro = window.livrosCache.find(l => l.id === id);
-            if (!livro) return alert('Livro não encontrado!');
-            // Preencher o formulário do modal com os dados do livro
-            document.getElementById('titulo').value = livro.titulo || '';
-            document.getElementById('autor').value = livro.autor || '';
-            document.getElementById('isbn').value = livro.isbn || '';
-            document.getElementById('editora').value = livro.editora || '';
-            document.getElementById('anoPublicacao').value = livro.anoPublicacao || '';
-            document.getElementById('categoria').value = livro.categoria || '';
-            document.getElementById('localizacao').value = livro.localizacao || '';
-            document.getElementById('descricao').value = livro.descricao || '';
-            document.getElementById('quantidade').value = livro.quantidade || 1;
-            document.getElementById('status').value = livro.disponivel ? 'disponivel' : 'indisponivel';
-            // Abrir o modal de edição
-            const modal = new bootstrap.Modal(document.getElementById('novoLivroModal'));
-            modal.show();
-            // Substituir o botão Salvar para modo edição
-            const btnSalvarAntigo = document.getElementById('btnSalvarLivro');
-            const btnSalvarNovo = btnSalvarAntigo.cloneNode(true);
-            btnSalvarAntigo.parentNode.replaceChild(btnSalvarNovo, btnSalvarAntigo);
-            btnSalvarNovo._isEditando = true;
-            btnSalvarNovo.onclick = async function() {
-                const form = document.getElementById('formNovoLivro');
-                if (form.checkValidity()) {
-                    try {
-                        const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
-                        const updateDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).updateDoc;
-                        await updateDoc(docRef(db, 'livros', id), {
-                            titulo: document.getElementById('titulo').value,
-                            autor: document.getElementById('autor').value,
-                            isbn: document.getElementById('isbn').value,
-                            editora: document.getElementById('editora').value,
-                            anoPublicacao: document.getElementById('anoPublicacao').value,
-                            categoria: document.getElementById('categoria').value,
-                            localizacao: document.getElementById('localizacao').value,
-                            descricao: document.getElementById('descricao').value,
-                            quantidade: Number(document.getElementById('quantidade').value),
-                            disponivel: document.getElementById('status').value === 'disponivel',
-                        });
-                        alert('Livro atualizado com sucesso!');
-                        modal.hide();
-                        window.carregarLivros();
-                        // Restaurar botão Salvar para modo padrão
-                        btnSalvarNovo._isEditando = false;
-                    } catch (e) {
-                        alert('Erro ao atualizar livro: ' + e.message);
-                    }
-                } else {
-                    form.reportValidity();
-                }
-            };
-        };
-
-        // Excluir Livro
-        window.excluirLivro = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir este livro?')) return;
-            try {
-                const docRef = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).doc;
-                const deleteDoc = (await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js')).deleteDoc;
-                await deleteDoc(docRef(db, 'livros', id));
-                alert('Livro excluído com sucesso!');
-                carregarLivros();
-            } catch (e) {
-                alert('Erro ao excluir livro: ' + e.message);
-            }
-        };
-
-        // Mantém as funções de emprestar/cancelar reserva como antes
-        window.emprestarLivro = function(id) {
-            const livro = window.livrosCache.find(l => l.id === id);
-            if (!livro) return alert('Livro não encontrado!');
-            if (!livro.disponivel) return alert('Este livro não está disponível para empréstimo.');
-            // Redireciona para a página de empréstimos, passando o id do livro
-            window.location.href = `emprestimos.html?livroId=${encodeURIComponent(id)}`;
-        };
-        window.cancelarReserva = function(id) { console.log("Cancelar reserva:", id); };
-</script>
-    <script>
-    // Função para exportar TODO o acervo de livros do Firestore em CSV
-    document.querySelector('.btn-group .btn-outline-secondary:nth-child(2)').addEventListener('click', async function() {
-        // Importa dinamicamente getDocs e collection
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
-        const dbRef = typeof db !== 'undefined' ? db : window.db;
-        const querySnapshot = await getDocs(collection(dbRef, 'livros'));
-        // Cabeçalho CSV com todos os campos relevantes
-        let csv = 'Título,Autor,Categoria,ISBN,Editora,Ano,Localização,Descrição,Quantidade,Status,Reservado\n';
-        querySnapshot.forEach((docSnap) => {
-            const livro = docSnap.data();
-            const status = livro.disponivel ? 'Disponível' : 'Indisponível';
-            const reservado = livro.reservado ? 'Sim' : 'Não';
-            const linha = [
-                '"' + String(livro.titulo ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.autor ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.categoria ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.isbn ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.editora ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.anoPublicacao ?? '') + '"',
-                '"' + String(livro.localizacao ?? '').replace(/"/g, '""') + '"',
-                '"' + String(livro.descricao ?? '').replace(/"/g, '""') + '"',
-                '"' + (livro.quantidade != null ? String(livro.quantidade) : '') + '"',
-                '"' + status + '"',
-                '"' + reservado + '"'
-            ];
-            csv += linha.join(',') + '\n';
-        });
-        // Cria e baixa o arquivo CSV
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'acervo_livros.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
-    </script>
-    <!-- jsPDF CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script type="module">
-    // Função para gerar PDF do acervo de livros (layout melhorado)
-    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
-    document.getElementById('btnImprimirPDF').addEventListener('click', async function() {
-        const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        const nomeEscola = 'ESCOLA ESTADUAL GOV. BIAS FORTES';
-        const logoUrl = 'SIGEB.png';
-        // Carregar logo
-        const img = new Image();
-        img.src = logoUrl;
-        await new Promise(resolve => { img.onload = resolve; });
-
-        // Margens e layout
-        const marginLeft = 15;
-        const marginRight = 15;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const usableWidth = pageWidth - marginLeft - marginRight;
-
-        // Cabeçalho
-        doc.addImage(img, 'PNG', marginLeft, 8, 28, 18);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(20);
-        doc.setTextColor(30, 30, 30);
-        doc.text(nomeEscola, pageWidth / 2, 18, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(13);
-        doc.setTextColor(60, 60, 60);
-        doc.text('Relatório do Acervo de Livros', pageWidth / 2, 28, { align: 'center' });
-
-        // Data e hora
-        const now = new Date();
-        const dataHora = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text('Impresso em: ' + dataHora, pageWidth - marginRight, 18, { align: 'right' });
-
-        // Colunas da tabela
-        const columns = [
-            { title: 'Título', dataKey: 'titulo', width: 60 },
-            { title: 'Autor', dataKey: 'autor', width: 38 },
-            { title: 'Categoria', dataKey: 'categoria', width: 28 },
-            { title: 'ISBN', dataKey: 'isbn', width: 28 },
-            { title: 'Editora', dataKey: 'editora', width: 28 },
-            { title: 'Ano', dataKey: 'anoPublicacao', width: 16 },
-            { title: 'Qtd.', dataKey: 'quantidade', width: 12 },
-            { title: 'Status', dataKey: 'status', width: 18 },
-            { title: 'Reservado', dataKey: 'reservado', width: 18 }
-        ];
-
-        // Buscar dados
-        const querySnapshot = await getDocs(collection(db, 'livros'));
-        const data = [];
-        querySnapshot.forEach((docSnap) => {
-            const livro = docSnap.data();
-            data.push({
-                titulo: String(livro.titulo || ''),
-                autor: String(livro.autor || ''),
-                categoria: String(livro.categoria || ''),
-                isbn: String(livro.isbn || ''),
-                editora: String(livro.editora || ''),
-                anoPublicacao: String(livro.anoPublicacao || ''),
-                quantidade: livro.quantidade != null ? String(livro.quantidade) : '',
-                status: livro.disponivel ? 'Disponível' : 'Indisponível',
-                reservado: livro.reservado ? 'Sim' : 'Não'
-            });
-        });
-
-        // Função para desenhar tabela profissional
-        function drawTable(doc, columns, data, startY) {
-            let y = startY;
-            const rowHeight = 8;
-            const colX = [];
-            let x = marginLeft;
-            columns.forEach(col => {
-                colX.push(x);
-                x += col.width;
-            });
-            // Cabeçalho da tabela
+            // Carregar logo como base64
+            const logoUrl = 'logobias.png';
+            const logoBase64 = await getImageBase64(logoUrl);
+            // Gerar código de barras em canvas
+            const barcodeCanvas = document.createElement('canvas');
+            JsBarcode(barcodeCanvas, usuario._id, { format: 'CODE128', width: 2, height: 40, displayValue: false });
+            const barcodeBase64 = barcodeCanvas.toDataURL('image/png');
+            // Criar PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [54, 86] }); // Tamanho cartão padrão
+            // Fundo geral
+            doc.setFillColor(245, 247, 252);
+            doc.rect(0, 0, 86, 54, 'F');
+            // Faixa azul superior
+            doc.setFillColor(33, 86, 180);
+            doc.rect(0, 0, 86, 15, 'F');
+            // Logo centralizada na faixa
+            doc.addImage(logoBase64, 'PNG', 4, 2.5, 13, 13);
+            // Nome da escola na faixa
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.setFillColor(44, 62, 80); // azul escuro
+            doc.setFontSize(6.2);
             doc.setTextColor(255,255,255);
-            doc.roundedRect(marginLeft, y, x-marginLeft, rowHeight, 2, 2, 'F');
-            columns.forEach((col, i) => {
-                doc.text(col.title, colX[i]+2, y+6);
-            });
-            y += rowHeight;
+            doc.text('Escola Estadual Governador Bias Fortes', 43, 7.5, { align: 'center' });
+            // Título cartão
+            doc.setFontSize(11);
+            doc.text('Cartão do Leitor', 43, 14, { align: 'center' });
+            // Área branca para dados
+            doc.setFillColor(255,255,255);
+            doc.roundedRect(4, 17, 78, 18, 2, 2, 'F');
+            // Nome
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            // Linhas da tabela
-            data.forEach((row, idx) => {
-                // Alternância de cor
-                if (idx % 2 === 0) {
-                    doc.setFillColor(236, 240, 241); // cinza claro
-                } else {
-                    doc.setFillColor(255,255,255);
+            doc.setFontSize(8.5);
+            doc.setTextColor(33, 86, 180);
+            doc.text('Nome:', 8, 24);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10.5);
+            doc.setTextColor(40,40,40);
+            doc.text(usuario.nome, 25, 24);
+            // Categoria
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(33, 86, 180);
+            doc.text('Categoria:', 8, 31);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10.5);
+            doc.setTextColor(40,40,40);
+            doc.text(usuario.categoria, 30, 31);
+            // Área código de barras
+            doc.setFillColor(240,242,247);
+            doc.roundedRect(4, 37, 78, 12, 2, 2, 'F');
+            // Código de barras
+            doc.addImage(barcodeBase64, 'PNG', 23, 39, 40, 9);
+            // ID abaixo do código de barras
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(100);
+            doc.text(usuario._id, 43, 50, { align: 'center' });
+            // Baixar PDF
+            doc.save(`cartao-leitor-${usuario.nome.replace(/\s+/g, '_')}.pdf`);
+        }
+
+        // Utilitário para converter imagem em base64
+        function getImageBase64(url) {
+            return new Promise((resolve, reject) => {
+                const img = new window.Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = function() { reject('Erro ao carregar logo'); };
+                img.src = url;
+            });
+        }
+
+            // Função para gerar ficha timbrada
+            function gerarFichaTimbrada(usuario) {
+                // Cria modal se não existir
+                let modalFicha = document.getElementById('fichaUsuarioModal');
+                if (!modalFicha) {
+                    const modalHtml = `
+                    <div class="modal fade" id="fichaUsuarioModal" tabindex="-1" aria-labelledby="fichaUsuarioModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="fichaUsuarioModalLabel">Ficha de Cadastro do Usuário</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body" id="fichaUsuarioBody">
+                                    <!-- Conteúdo da ficha será inserido aqui -->
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    <button type="button" class="btn btn-primary" id="btnImprimirFicha">Imprimir</button>
+                                    <button type="button" class="btn btn-outline-success" id="btnSalvarFichaPDF">Arquivar (PDF)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    modalFicha = document.getElementById('fichaUsuarioModal');
                 }
-                doc.rect(marginLeft, y, x-marginLeft, rowHeight, 'F');
-                columns.forEach((col, i) => {
-                    let value = row[col.dataKey] || '';
-                    // Cores para status e reservado
-                    if (col.dataKey === 'status') {
-                        doc.setTextColor(value === 'Disponível' ? 39 : 192, value === 'Disponível' ? 174 : 57, value === 'Disponível' ? 96 : 43);
-                    } else if (col.dataKey === 'reservado') {
-                        doc.setTextColor(value === 'Sim' ? 231 : 52, value === 'Sim' ? 76 : 152, value === 'Sim' ? 60 : 219);
-                    } else {
-                        doc.setTextColor(44,62,80);
-                    }
-                    doc.text(String(value), colX[i]+2, y+6, { maxWidth: col.width-4 });
-                });
-                y += rowHeight;
-                // Nova página se passar do limite
-                if (y > 190) {
-                    // Rodapé com paginação
-                    addFooter(doc);
-                    doc.addPage();
-                    y = 28;
-                    // Redesenhar cabeçalho da tabela
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(10);
-                    doc.setFillColor(44, 62, 80);
-                    doc.setTextColor(255,255,255);
-                    doc.roundedRect(marginLeft, y, x-marginLeft, rowHeight, 2, 2, 'F');
-                    columns.forEach((col, i) => {
-                        doc.text(col.title, colX[i]+2, y+6);
-                    });
-                    y += rowHeight;
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(9);
+                // Monta o HTML da ficha
+                const fichaBody = document.getElementById('fichaUsuarioBody');
+                fichaBody.innerHTML = `
+                    <div style="text-align:center; margin-bottom: 24px;">
+                        <img src="logobias.png" alt="Logo da Escola" style="height:60px; margin-bottom:8px;"><br>
+                        <span style="font-size:1.5rem; font-weight:bold;">Escola Estadual Governador Bias Fortes</span><br>
+                        <span style="font-size:1.1rem; color:#555;">Ficha de Cadastro de Usuário da Biblioteca</span>
+                    </div>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr><th>Nome Completo</th><td>${usuario.nome}</td></tr>
+                            <tr><th>Email</th><td>${usuario.email}</td></tr>
+                            <tr><th>Telefone</th><td>${usuario.telefone}</td></tr>
+                            <tr><th>Data de Nascimento</th><td>${usuario.dataNascimento}</td></tr>
+                            <tr><th>Documento</th><td>${usuario.documento}</td></tr>
+                            <tr><th>Categoria</th><td>${usuario.categoria}</td></tr>
+                            <tr><th>Endereço</th><td>${usuario.endereco}</td></tr>
+                            <tr><th>Cidade</th><td>${usuario.cidade}</td></tr>
+                            <tr><th>Estado</th><td>${usuario.estado}</td></tr>
+                            <tr><th>CEP</th><td>${usuario.cep}</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top:32px; text-align:right; color:#888; font-size:0.95rem;">
+                        Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
+                    </div>
+                `;
+                // Exibe o modal
+                const fichaModal = new bootstrap.Modal(modalFicha);
+                fichaModal.show();
+
+                // Imprimir ficha
+                document.getElementById('btnImprimirFicha').onclick = function() {
+                    const fichaHtml = fichaBody.innerHTML;
+                    const win = window.open('', '', 'width=800,height=900');
+                    win.document.write('<html><head><title>Ficha de Usuário</title>');
+                    win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
+                    win.document.write('</head><body>' + fichaHtml + '</body></html>');
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 500);
+                };
+
+                // Arquivar (baixar PDF) - usando print-to-pdf do navegador
+                document.getElementById('btnSalvarFichaPDF').onclick = function() {
+                    const fichaHtml = fichaBody.innerHTML;
+                    const win = window.open('', '', 'width=800,height=900');
+                    win.document.write('<html><head><title>Ficha de Usuário</title>');
+                    win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
+                    win.document.write('</head><body>' + fichaHtml + '</body></html>');
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 500);
+                };
+            }
+
+            // Configurar botão de importar usuários
+            document.getElementById('btnImportarUsuarios').addEventListener('click', function() {
+                const arquivo = document.getElementById('arquivoImportacao').files[0];
+                if (arquivo) {
+                    alert('Importação iniciada. Isso pode levar alguns minutos.');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('importarUsuariosModal'));
+                    modal.hide();
+                } else {
+                    alert('Por favor, selecione um arquivo para importar.');
                 }
             });
-            // Linhas verticais
-            doc.setDrawColor(180,180,180);
-            for (let i = 0; i < columns.length+1; i++) {
-                doc.line(colX[i] || x, startY, colX[i] || x, y);
+
+            // Ativar filtro de pesquisa por nome, email ou ID
+            document.getElementById('btnPesquisar').addEventListener('click', function() {
+                filtrarUsuarios();
+            });
+            document.getElementById('pesquisaUsuario').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') filtrarUsuarios();
+            });
+            // Ativar filtros por Categoria e Status
+            document.getElementById('filtroCategoria').addEventListener('change', filtrarUsuarios);
+            document.getElementById('filtroStatus').addEventListener('change', filtrarUsuarios);
+        });
+
+        // Função para carregar usuários do Firestore
+        // Variáveis de paginação
+        let paginaAtual = 1;
+        const usuariosPorPagina = 10;
+
+        async function carregarUsuarios() {
+            const usuariosRef = collection(db, 'usuarios');
+            try {
+                const snapshot = await getDocs(usuariosRef);
+                window._usuariosCache = [];
+                const tabelaUsuarios = document.getElementById('tabelaUsuarios');
+                tabelaUsuarios.innerHTML = '';
+                snapshot.forEach((doc) => {
+                    const usuario = doc.data();
+                    window._usuariosCache.push({ ...usuario, _id: doc.id });
+                });
+                paginaAtual = 1;
+                exibirUsuariosPaginados();
+            } catch (error) {
+                console.error("Erro ao carregar usuários: ", error);
+                alert("Erro ao carregar usuários. Verifique o console para mais detalhes.");
             }
-            // Linha horizontal final
-            doc.line(marginLeft, y, x-0.5, y);
-            // Rodapé final
-            addFooter(doc);
         }
 
-        // Função para rodapé profissional
-        function addFooter(doc) {
-            const pageCount = doc.internal.getNumberOfPages();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            doc.setFontSize(9);
-            doc.setTextColor(120,120,120);
-            doc.text(`Página ${pageCount}`, pageWidth - marginRight, 203, { align: 'right' });
-            doc.setTextColor(180,180,180);
-            doc.text('SIGEB - Sistema de Gerenciamento de Biblioteca', marginLeft, 203);
+        // Exibe usuários na tabela
+        function exibirUsuariosPaginados(listaFiltrada) {
+            const tabelaUsuarios = document.getElementById('tabelaUsuarios');
+            let lista = listaFiltrada || window._usuariosCache || [];
+            // Ordena alfabeticamente por nome (case-insensitive)
+            lista = lista.slice().sort((a, b) => {
+                const nomeA = (a.nome || '').toLowerCase();
+                const nomeB = (b.nome || '').toLowerCase();
+                if (nomeA < nomeB) return -1;
+                if (nomeA > nomeB) return 1;
+                return 0;
+            });
+            const totalUsuarios = lista.length;
+            const totalPaginas = Math.ceil(totalUsuarios / usuariosPorPagina) || 1;
+            if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+            const inicio = (paginaAtual - 1) * usuariosPorPagina;
+            const fim = inicio + usuariosPorPagina;
+            const usuariosPagina = lista.slice(inicio, fim);
+            tabelaUsuarios.innerHTML = '';
+            if (!usuariosPagina || usuariosPagina.length === 0) {
+                const novaLinha = tabelaUsuarios.insertRow();
+                const cell = novaLinha.insertCell();
+                cell.colSpan = 7;
+                cell.className = "text-center";
+                cell.innerHTML = "<p class='my-3'>Nenhum usuário cadastrado. Adicione um novo usuário para começar.</p>";
+                atualizarPaginacao(1, 1, 0);
+                return;
+            }
+            usuariosPagina.forEach(usuario => {
+                const novaLinha = tabelaUsuarios.insertRow();
+                // Checkbox
+                let cell = novaLinha.insertCell();
+                cell.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox"></div>`;
+                // Nome e ID
+                cell = novaLinha.insertCell();
+                const iniciais = usuario.nome ? usuario.nome.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'UN';
+                const corClasse = ['bg-primary', 'bg-success', 'bg-danger', 'bg-warning', 'bg-info'][Math.floor(Math.random() * 5)];
+                cell.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle ${corClasse} me-2">
+                            <span>${iniciais}</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">${usuario.nome || 'Nome não informado'}</h6>
+                            <small class="text-muted">ID: ${usuario._id ? usuario._id.substring(0, 6) : ''}</small>
+                        </div>
+                    </div>
+                `;
+                // Email
+                cell = novaLinha.insertCell();
+                cell.textContent = usuario.email || 'Email não informado';
+                // Categoria
+                cell = novaLinha.insertCell();
+                cell.textContent = usuario.categoria || 'Não definida';
+                // Empréstimos
+                cell = novaLinha.insertCell();
+                const numEmprestimos = usuario.emprestimos ? usuario.emprestimos.length : 0;
+                const porcentagem = Math.min(numEmprestimos * 20, 100);
+                const barColor = numEmprestimos > 3 ? 'bg-warning' : 'bg-success';
+                cell.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">${numEmprestimos}</span>
+                        <div class="progress flex-grow-1" style="height: 5px;">
+                            <div class="${barColor}" role="progressbar" style="width: ${porcentagem}%"; 
+                                aria-valuenow="${porcentagem}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                `;
+                // Status
+                cell = novaLinha.insertCell();
+                let statusText = (usuario.status || '').toLowerCase() === 'disponível' ? 'Disponível' : 'Indisponível';
+                let statusClass = statusText === 'Disponível' ? 'bg-success' : 'bg-secondary';
+                cell.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
+                // Ações como botões de ícone
+                cell = novaLinha.insertCell();
+                cell.innerHTML = `
+                    <button class="btn btn-sm btn-outline-primary me-1" title="Visualizar" onclick="visualizarUsuario('${usuario._id}')"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-success me-1" title="Editar" onclick="editarUsuario('${usuario._id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-info me-1" title="Empréstimos" onclick="verEmprestimosUsuario('${usuario._id}')"><i class="fas fa-book"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary me-1" title="Cartão de Leitor" onclick="imprimirCartaoLeitor('${usuario._id}')"><i class="fas fa-id-card"></i></button>
+                    ${usuario.status === 'Bloqueado' 
+                        ? `<button class='btn btn-sm btn-outline-success me-1' title='Desbloquear' onclick='desbloquearUsuario("${usuario._id}")'><i class='fas fa-check-circle'></i></button>`
+                        : `<button class='btn btn-sm btn-outline-warning me-1' title='Bloquear' onclick='bloquearUsuario("${usuario._id}")'><i class='fas fa-ban'></i></button>`}
+                    <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirUsuario('${usuario._id}')"><i class="fas fa-trash-alt"></i></button>
+                `;
+        // Imprimir Cartão de Leitor pelo menu Ações
+        window.imprimirCartaoLeitor = function(id) {
+            const usuario = (window._usuariosCache || []).find(u => u._id === id);
+            if (!usuario) return alert('Usuário não encontrado!');
+            if (typeof window.gerarCartaoLeitorPDF !== 'function') {
+                alert('Função de geração do cartão não está disponível.');
+                return;
+            }
+            window.gerarCartaoLeitorPDF(usuario);
+        };
+            });
+            atualizarPaginacao(paginaAtual, totalPaginas, totalUsuarios);
         }
 
-        drawTable(doc, columns, data, 38);
-        doc.save('acervo_livros.pdf');
+        // Filtra usuários pelo campo de pesquisa
+        function filtrarUsuarios() {
+            const termo = document.getElementById('pesquisaUsuario').value.trim().toLowerCase();
+            const categoria = document.getElementById('filtroCategoria').value;
+            const status = document.getElementById('filtroStatus').value;
+            if (!window._usuariosCache) return;
+            let filtrados = window._usuariosCache;
+            // Filtro de texto
+            if (termo) {
+                filtrados = filtrados.filter(u => (
+                    (u.nome && u.nome.toLowerCase().includes(termo)) ||
+                    (u.email && u.email.toLowerCase().includes(termo)) ||
+                    (u._id && u._id.toLowerCase().includes(termo))
+                ));
+            }
+            // Filtro de categoria
+            if (categoria) {
+                filtrados = filtrados.filter(u => (u.categoria || '').toLowerCase() === categoria.toLowerCase());
+            }
+            // Filtro de status
+            if (status) {
+                filtrados = filtrados.filter(u => (u.status || 'ativo').toLowerCase() === status.toLowerCase());
+            }
+            paginaAtual = 1;
+            exibirUsuariosPaginados(filtrados);
+        }
+
+        // Atualiza a paginação na interface
+        function atualizarPaginacao(pagina, totalPaginas, totalUsuarios) {
+            const paginacao = document.querySelector('.pagination');
+            if (!paginacao) return;
+            paginacao.innerHTML = '';
+            // Botão anterior
+            const liAnterior = document.createElement('li');
+            liAnterior.className = 'page-item' + (pagina <= 1 ? ' disabled' : '');
+            liAnterior.innerHTML = `<a class="page-link" href="#" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a>`;
+            liAnterior.onclick = function(e) { e.preventDefault(); if (pagina > 1) { paginaAtual--; exibirUsuariosPaginados(); } };
+            paginacao.appendChild(liAnterior);
+            // Números das páginas
+            for (let i = 1; i <= totalPaginas; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === pagina ? ' active' : '');
+                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                li.onclick = function(e) { e.preventDefault(); paginaAtual = i; exibirUsuariosPaginados(); };
+                paginacao.appendChild(li);
+            }
+            // Botão próximo
+            const liProximo = document.createElement('li');
+            liProximo.className = 'page-item' + (pagina >= totalPaginas ? ' disabled' : '');
+            liProximo.innerHTML = `<a class="page-link" href="#" aria-label="Próximo"><span aria-hidden="true">&raquo;</span></a>`;
+            liProximo.onclick = function(e) { e.preventDefault(); if (pagina < totalPaginas) { paginaAtual++; exibirUsuariosPaginados(); } };
+            paginacao.appendChild(liProximo);
+
+            // Atualiza texto de "Mostrando X-Y de Z usuários"
+            const texto = document.querySelector('.card-footer .text-muted');
+            if (texto) {
+                const inicio = totalUsuarios === 0 ? 0 : ((pagina - 1) * usuariosPorPagina + 1);
+                const fim = Math.min(pagina * usuariosPorPagina, totalUsuarios);
+                texto.textContent = `Mostrando ${inicio}-${fim} de ${totalUsuarios} usuários`;
+            }
+        }
+        // Funções para manipulação de usuários (mantidas para compatibilidade)
+        window.visualizarUsuario = function(id) {
+            const usuario = (window._usuariosCache || []).find(u => u._id === id);
+            if (!usuario) return alert('Usuário não encontrado!');
+            let info = `<b>Nome:</b> ${usuario.nome || ''}<br>`;
+            info += `<b>Email:</b> ${usuario.email || ''}<br>`;
+            info += `<b>Categoria:</b> ${usuario.categoria || ''}<br>`;
+            info += `<b>Status:</b> ${usuario.status || 'Ativo'}<br>`;
+            info += `<b>Telefone:</b> ${usuario.telefone || ''}<br>`;
+            info += `<b>Documento:</b> ${usuario.documento || ''}<br>`;
+            info += `<b>Endereço:</b> ${usuario.endereco || ''}, ${usuario.cidade || ''} - ${usuario.estado || ''} (${usuario.cep || ''})<br>`;
+            info += `<b>Data de Nascimento:</b> ${usuario.dataNascimento || ''}`;
+            showSimpleModal('Visualizar Usuário', info);
+        };
+                // Modal de edição de usuário
+                window.editarUsuario = function(id) {
+                        const usuario = (window._usuariosCache || []).find(u => u._id === id);
+                        if (!usuario) return alert('Usuário não encontrado!');
+                        let modal = document.getElementById('editarUsuarioModal');
+                        if (!modal) {
+                                const html = `
+                                <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="editarUsuarioModalLabel">Editar Usuário</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form id="formEditarUsuario">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label for="editarNome" class="form-label">Nome Completo</label>
+                                                            <input type="text" class="form-control" id="editarNome" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarEmail" class="form-label">Email</label>
+                                                            <input type="email" class="form-control" id="editarEmail" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarTelefone" class="form-label">Telefone</label>
+                                                            <input type="tel" class="form-control" id="editarTelefone">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarDataNascimento" class="form-label">Data de Nascimento</label>
+                                                            <input type="date" class="form-control" id="editarDataNascimento">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarDocumento" class="form-label">Documento (CPF/RG)</label>
+                                                            <input type="text" class="form-control" id="editarDocumento">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="editarCategoria" class="form-label">Categoria</label>
+                                                            <select class="form-select" id="editarCategoria" required>
+                                                                <option value="">Selecione...</option>
+                                                                <option value="Estudante">Estudante</option>
+                                                                <option value="Professor">Professor</option>
+                                                                <option value="Funcionario">Funcionário</option>
+                                                                <option value="Comunidade">Comunidade</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-8">
+                                                            <label for="editarEndereco" class="form-label">Endereço</label>
+                                                            <input type="text" class="form-control" id="editarEndereco">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label for="editarNumero" class="form-label">Número</label>
+                                                            <input type="text" class="form-control" id="editarNumero">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <label for="editarBairro" class="form-label">Bairro</label>
+                                                            <input type="text" class="form-control" id="editarBairro">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarCidade" class="form-label">Cidade</label>
+                                                            <input type="text" class="form-control" id="editarCidade">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarEstado" class="form-label">Estado</label>
+                                                            <select class="form-select" id="editarEstado">
+                                                                <option value="">Selecione...</option>
+                                                                <option value="AC">Acre</option>
+                                                                <option value="AL">Alagoas</option>
+                                                                <option value="AP">Amapá</option>
+                                                                <option value="AM">Amazonas</option>
+                                                                <option value="BA">Bahia</option>
+                                                                <option value="CE">Ceará</option>
+                                                                <option value="DF">Distrito Federal</option>
+                                                                <option value="ES">Espírito Santo</option>
+                                                                <option value="GO">Goiás</option>
+                                                                <option value="MA">Maranhão</option>
+                                                                <option value="MT">Mato Grosso</option>
+                                                                <option value="MS">Mato Grosso do Sul</option>
+                                                                <option value="MG">Minas Gerais</option>
+                                                                <option value="PA">Pará</option>
+                                                                <option value="PB">Paraíba</option>
+                                                                <option value="PR">Paraná</option>
+                                                                <option value="PE">Pernambuco</option>
+                                                                <option value="PI">Piauí</option>
+                                                                <option value="RJ">Rio de Janeiro</option>
+                                                                <option value="RN">Rio Grande do Norte</option>
+                                                                <option value="RS">Rio Grande do Sul</option>
+                                                                <option value="RO">Rondônia</option>
+                                                                <option value="RR">Roraima</option>
+                                                                <option value="SC">Santa Catarina</option>
+                                                                <option value="SP">São Paulo</option>
+                                                                <option value="SE">Sergipe</option>
+                                                                <option value="TO">Tocantins</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label for="editarCep" class="form-label">CEP</label>
+                                                            <input type="text" class="form-control" id="editarCep">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-primary" id="btnSalvarEdicaoUsuario">Salvar Alterações</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                document.body.insertAdjacentHTML('beforeend', html);
+                                modal = document.getElementById('editarUsuarioModal');
+                        }
+                        // Preencher campos
+                        document.getElementById('editarNome').value = usuario.nome || '';
+                        document.getElementById('editarEmail').value = usuario.email || '';
+                        document.getElementById('editarTelefone').value = usuario.telefone || '';
+                        document.getElementById('editarDataNascimento').value = usuario.dataNascimento || '';
+                        document.getElementById('editarDocumento').value = usuario.documento || '';
+                        document.getElementById('editarCategoria').value = usuario.categoria || '';
+                        document.getElementById('editarEndereco').value = usuario.endereco || '';
+                        document.getElementById('editarNumero').value = usuario.numero || '';
+                        document.getElementById('editarBairro').value = usuario.bairro || '';
+                        document.getElementById('editarCidade').value = usuario.cidade || '';
+                        document.getElementById('editarEstado').value = usuario.estado || '';
+                        document.getElementById('editarCep').value = usuario.cep || '';
+                        // Salvar alterações no Firestore
+                        document.getElementById('btnSalvarEdicaoUsuario').onclick = async function() {
+                            // Coletar dados do formulário
+                            const dadosAtualizados = {
+                                nome: document.getElementById('editarNome').value,
+                                email: document.getElementById('editarEmail').value,
+                                telefone: document.getElementById('editarTelefone').value,
+                                dataNascimento: document.getElementById('editarDataNascimento').value,
+                                documento: document.getElementById('editarDocumento').value,
+                                categoria: document.getElementById('editarCategoria').value,
+                                endereco: document.getElementById('editarEndereco').value,
+                                numero: document.getElementById('editarNumero').value,
+                                bairro: document.getElementById('editarBairro').value,
+                                cidade: document.getElementById('editarCidade').value,
+                                estado: document.getElementById('editarEstado').value,
+                                cep: document.getElementById('editarCep').value
+                            };
+                            try {
+                                const usuarioRef = doc(db, 'usuarios', usuario._id);
+                                await updateDoc(usuarioRef, dadosAtualizados);
+                                // Atualizar cache local
+                                Object.assign(usuario, dadosAtualizados);
+                                exibirUsuariosPaginados();
+                                const modalInst = bootstrap.Modal.getInstance(document.getElementById('editarUsuarioModal'));
+                                modalInst.hide();
+                                alert('Usuário atualizado com sucesso!');
+                            } catch (error) {
+                                alert('Erro ao atualizar usuário: ' + (error.message || error));
+                            }
+                        };
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+                };
+
+                // Modal de empréstimos do usuário
+                window.verEmprestimosUsuario = function(id) {
+                        const usuario = (window._usuariosCache || []).find(u => u._id === id);
+                        if (!usuario) return alert('Usuário não encontrado!');
+                        let modal = document.getElementById('emprestimosUsuarioModal');
+                        if (!modal) {
+                                const html = `
+                                <div class="modal fade" id="emprestimosUsuarioModal" tabindex="-1" aria-labelledby="emprestimosUsuarioModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="emprestimosUsuarioModalLabel">Empréstimos do Usuário</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                            </div>
+                                            <div class="modal-body" id="emprestimosUsuarioBody"></div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                document.body.insertAdjacentHTML('beforeend', html);
+                                modal = document.getElementById('emprestimosUsuarioModal');
+                        }
+                        // Montar lista de empréstimos
+                        const body = document.getElementById('emprestimosUsuarioBody');
+                        const emprestimos = usuario.emprestimos || [];
+                        if (emprestimos.length === 0) {
+                                body.innerHTML = `<p class='text-center my-3'>Nenhum empréstimo registrado para este usuário.</p>`;
+                        } else {
+                                let html = `<table class='table table-bordered'><thead><tr><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Status</th></tr></thead><tbody>`;
+                                emprestimos.forEach(e => {
+                                        html += `<tr><td>${e.livro || '-'}</td><td>${e.dataEmprestimo || '-'}</td><td>${e.dataDevolucao || '-'}</td><td>${e.status || '-'}</td></tr>`;
+                                });
+                                html += `</tbody></table>`;
+                                body.innerHTML = html;
+                        }
+                        const bsModal = new bootstrap.Modal(modal);
+                        bsModal.show();
+                };
+        window.bloquearUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            const usuario = window._usuariosCache.find(u => u._id === id);
+            if (usuario) {
+                usuario.status = 'Bloqueado';
+                exibirUsuariosPaginados();
+                alert('Usuário bloqueado!');
+            }
+        };
+        window.desbloquearUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            const usuario = window._usuariosCache.find(u => u._id === id);
+            if (usuario) {
+                usuario.status = 'Ativo';
+                exibirUsuariosPaginados();
+                alert('Usuário desbloqueado!');
+            }
+        };
+        window.excluirUsuario = function(id) {
+            if (!window._usuariosCache) return;
+            if (confirm('Tem certeza que deseja excluir este usuário?')) {
+                window._usuariosCache = window._usuariosCache.filter(u => u._id !== id);
+                exibirUsuariosPaginados();
+                alert('Usuário excluído! (A exclusão real do banco deve ser implementada)');
+            }
+        };
+
+        // Modal simples para visualizar informações
+        function showSimpleModal(titulo, conteudo) {
+            let modal = document.getElementById('simpleInfoModal');
+            if (!modal) {
+                const html = `
+                <div class="modal fade" id="simpleInfoModal" tabindex="-1" aria-labelledby="simpleInfoModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="simpleInfoModalLabel"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body" id="simpleInfoModalBody"></div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', html);
+                modal = document.getElementById('simpleInfoModal');
+            }
+            document.getElementById('simpleInfoModalLabel').innerHTML = titulo;
+            document.getElementById('simpleInfoModalBody').innerHTML = conteudo;
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+        // Modal de Sobre Componentes
+        function mostrarSobreComponentes() {
+                let modal = document.getElementById('sobreComponentesModal');
+                if (!modal) {
+                        const html = `
+                        <div class="modal fade" id="sobreComponentesModal" tabindex="-1" aria-labelledby="sobreComponentesModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="sobreComponentesModalLabel">Sobre os Componentes do SIGEB</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <div class="card shadow border-primary">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title mb-3"><i class="fas fa-cubes me-2 text-primary"></i>Componentes do SIGEB</h5>
+                                                        <ul class="list-group list-group-flush">
+                                                            <li class="list-group-item"><b>Usuários:</b> Cadastro, edição, bloqueio, exclusão e estatísticas dos usuários do sistema.</li>
+                                                            <li class="list-group-item"><b>Livros:</b> Gerenciamento do acervo, cadastro, edição, exclusão, importação/exportação e controle de quantidade.</li>
+                                                            <li class="list-group-item"><b>Empréstimos:</b> Registro, renovação, devolução e histórico de empréstimos de livros.</li>
+                                                            <li class="list-group-item"><b>Relatórios:</b> Geração de relatórios de uso, empréstimos, usuários e inventário.</li>
+                                                            <li class="list-group-item"><b>Inventário:</b> Controle e auditoria do acervo físico da biblioteca.</li>
+                                                            <li class="list-group-item"><b>Configurações:</b> Personalização do sistema, dados da escola e preferências gerais.</li>
+                                                        </ul>
+                                                        <div class="mt-3 text-muted small">SIGEB - Sistema Integrado de Gestão de Biblioteca</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                        document.body.insertAdjacentHTML('beforeend', html);
+                        modal = document.getElementById('sobreComponentesModal');
+                }
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+        }
+        window.mostrarSobreComponentes = mostrarSobreComponentes;
+        </script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+            // Ativar botão Imprimir para gerar PDF dos usuários
+            document.querySelectorAll('button, .btn, [data-bs-target]').forEach(btn => {
+                if (btn.textContent && btn.textContent.toLowerCase().includes('imprimir')) {
+                    btn.addEventListener('click', async function() {
+                        // Carregar jsPDF e autoTable
+                        const [{ jsPDF }, autoTable] = await Promise.all([
+                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+                        ]);
+                        // Buscar usuários do Firestore usando a instância global db
+                        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+                        const usuariosRef = collection(window.db || db, 'usuarios');
+                        const querySnapshot = await getDocs(usuariosRef);
+                        const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        // Montar dados da tabela
+                        const columns = [
+                            { header: 'Nome', dataKey: 'nome' },
+                            { header: 'Email', dataKey: 'email' },
+                            { header: 'Categoria', dataKey: 'categoria' },
+                            { header: 'ID', dataKey: 'id' }
+                        ];
+                        const rows = querySnapshot.docs.map(doc => ({
+                            nome: doc.data().nome || '',
+                            email: doc.data().email || '',
+                            categoria: doc.data().categoria || '',
+                            id: doc.id
+                        }));
+                        // Criar PDF
+                        const docPDF = new jsPDF();
+                        // Adicionar logo
+                        const logoUrl = 'SIGEB.png';
+                        const logoImg = new Image();
+                        logoImg.src = logoUrl;
+                        logoImg.onload = function() {
+                            docPDF.addImage(logoImg, 'PNG', 10, 10, 25, 25);
+                            docPDF.setFontSize(16);
+                            docPDF.text('Escola Estadual Governador Bias Fortes', 40, 20);
+                            docPDF.setFontSize(12);
+                            docPDF.text('Lista de Usuários do Sistema', 40, 28);
+                            autoTable.default(docPDF, {
+                                head: [columns.map(c => c.header)],
+                                body: rows.map(r => columns.map(c => r[c.dataKey])),
+                                startY: 40,
+                                styles: { fontSize: 10 }
+                            });
+                            docPDF.save('usuarios-sigeb.pdf');
+                        };
+                        logoImg.onerror = function() {
+                            // Se não carregar logo, gerar sem logo
+                            docPDF.setFontSize(16);
+                            docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
+                            docPDF.setFontSize(12);
+                            docPDF.text('Lista de Usuários do Sistema', 10, 28);
+                            autoTable.default(docPDF, {
+                                head: [columns.map(c => c.header)],
+                                body: rows.map(r => columns.map(c => r[c.dataKey])),
+                                startY: 40,
+                                styles: { fontSize: 10 }
+                            });
+                            docPDF.save('usuarios-sigeb.pdf');
+                        };
+                    });
+                }
+            });
+    // Atualização em tempo real dos cards de estatísticas rápidas
+    (async () => {
+        const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+        const usuariosRef = collection(db, 'usuarios');
+        onSnapshot(usuariosRef, (snapshot) => {
+            let total = 0, ativos = 0, bloqueados = 0, novosMes = 0;
+            const mesAtual = new Date().getMonth();
+            const anoAtual = new Date().getFullYear();
+            snapshot.forEach(doc => {
+                total++;
+                const u = doc.data();
+                if ((u.status || '').toLowerCase() === 'bloqueado') bloqueados++;
+                else ativos++;
+                if (u.dataCadastro) {
+                    const d = new Date(u.dataCadastro);
+                    if (d.getMonth() === mesAtual && d.getFullYear() === anoAtual) novosMes++;
+                }
+            });
+            document.getElementById('cardTotalUsuarios').textContent = total;
+            document.getElementById('cardUsuariosAtivos').textContent = ativos;
+            document.getElementById('cardBloqueados').textContent = bloqueados;
+            document.getElementById('cardNovosMes').textContent = novosMes;
+        }, (e) => {
+            document.getElementById('cardTotalUsuarios').textContent = '-';
+            document.getElementById('cardUsuariosAtivos').textContent = '-';
+            document.getElementById('cardBloqueados').textContent = '-';
+            document.getElementById('cardNovosMes').textContent = '-';
+        });
+    })();
+    // Máscara para o campo CEP
+    const cepInput = document.getElementById('cep');
+    if (cepInput) {
+        cepInput.addEventListener('input', function(e) {
+            let v = cepInput.value.replace(/\D/g, '');
+            if (v.length > 5) v = v.replace(/(\d{5})(\d{1,3})/, '$1-$2');
+            cepInput.value = v;
+        });
+    }
+        const whatsappInput = document.getElementById('whatsapp');
+        if (whatsappInput) {
+            whatsappInput.addEventListener('input', function(e) {
+                let v = whatsappInput.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                if (v.length > 0) v = '(' + v;
+                if (v.length > 3) v = v.slice(0, 3) + ') ' + v.slice(3);
+                if (v.length > 10) v = v.slice(0, 10) + '-' + v.slice(10);
+                whatsappInput.value = v;
+            });
+        }
     });
     </script>
-</body>
-</html>
