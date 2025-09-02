@@ -140,11 +140,11 @@
                                 <div class="col-md-4">
                                     <label for="tipoRelatorio" class="form-label">Tipo de Relatório</label>
                                     <select class="form-select" id="tipoRelatorio">
-                                        <option value="emprestimos">Empréstimos</option>
-                                        <option value="acervo">Acervo</option>
-                                        <option value="usuarios">Usuários</option>
-                                        <option value="atrasos">Atrasos</option>
-                                        <option value="estatisticas">Estatísticas Gerais</option>
+                                        <option value="emprestimos" selected>Empréstimos</option>
+                                        <option value="acervo" selected>Acervo</option>
+                                        <option value="usuarios" selected>Usuários</option>
+                                        <option value="atrasos" selected>Atrasos</option>
+                                        <option value="estatisticas" selected>Estatísticas Gerais</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
@@ -158,30 +158,30 @@
                                 <div class="col-md-4">
                                     <label for="categoriaUsuario" class="form-label">Categoria de Usuário</label>
                                     <select class="form-select" id="categoriaUsuario">
-                                        <option value="">Todas</option>
-                                        <option value="estudante">Estudante</option>
-                                        <option value="professor">Professor</option>
-                                        <option value="funcionario">Funcionário</option>
-                                        <option value="comunidade">Comunidade</option>
+                                        <option value="" selected>Todas</option>
+                                        <option value="estudante" selected>Estudante</option>
+                                        <option value="professor" selected>Professor</option>
+                                        <option value="funcionario" selected>Funcionário</option>
+                                        <option value="comunidade" selected>Comunidade</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label for="categoriaLivro" class="form-label">Categoria de Livro</label>
                                     <select class="form-select" id="categoriaLivro">
-                                        <option value="">Todas</option>
-                                        <option value="literatura">Literatura</option>
-                                        <option value="ciencias">Ciências</option>
-                                        <option value="historia">História</option>
-                                        <option value="tecnologia">Tecnologia</option>
-                                        <option value="artes">Artes</option>
+                                        <option value="" selected>Todas</option>
+                                        <option value="literatura" selected>Literatura</option>
+                                        <option value="ciencias" selected>Ciências</option>
+                                        <option value="historia" selected>História</option>
+                                        <option value="tecnologia" selected>Tecnologia</option>
+                                        <option value="artes" selected>Artes</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label for="formatoRelatorio" class="form-label">Formato</label>
                                     <select class="form-select" id="formatoRelatorio">
-                                        <option value="detalhado">Detalhado</option>
-                                        <option value="resumido">Resumido</option>
-                                        <option value="grafico">Gráfico</option>
+                                        <option value="detalhado" selected>Detalhado</option>
+                                        <option value="resumido" selected>Resumido</option>
+                                        <option value="grafico" selected>Gráfico</option>
                                     </select>
                                 </div>
                                 <div class="col-12 text-end">
@@ -193,6 +193,9 @@
                     </div>
                 </div>
                 
+                <!-- Resultado do relatório -->
+                <div id="relatorioResultado" class="mb-4"></div>
+
                 <!-- Relatórios Rápidos -->
                 <div class="row mb-4">
                     <div class="col-12">
@@ -226,7 +229,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Atrasos Pendentes</h6>
-                                        <a href="#" class="btn btn-sm btn-outline-danger mt-2">Gerar</a>
+                                        <button id="btnAtrasosPendentes" class="btn btn-sm btn-outline-danger mt-2">Gerar</button>
                                     </div>
                                 </div>
                             </div>
@@ -243,7 +246,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Livros Populares</h6>
-                                        <a href="#" class="btn btn-sm btn-outline-success mt-2">Gerar</a>
+                                        <button id="btnLivrosPopulares" class="btn btn-sm btn-outline-success mt-2">Gerar</button>
                                     </div>
                                 </div>
                             </div>
@@ -260,7 +263,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Usuários Ativos</h6>
-                                        <a href="#" class="btn btn-sm btn-outline-info mt-2">Gerar</a>
+                                        <button id="btnUsuariosAtivos" class="btn btn-sm btn-outline-info mt-2">Gerar</button>
                                     </div>
                                 </div>
                             </div>
@@ -530,6 +533,68 @@
     const db = getFirestore(app);
 
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Relatórios rápidos: ativar botões e buscar dados reais
+            const relatorioDiv = document.getElementById('relatorioResultado');
+            document.getElementById('btnEmprestimosMes').addEventListener('click', async function() {
+                relatorioDiv.innerHTML = 'Carregando...';
+                try {
+                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                    const mesAtual = new Date().toISOString().slice(0,7); // yyyy-mm
+                    let dados = [];
+                    emprestimosSnap.forEach(doc => {
+                        const d = doc.data();
+                        if ((d.dataEmprestimo||'').slice(0,7) === mesAtual) dados.push({ ...d, id: doc.id });
+                    });
+                    relatorioDiv.innerHTML = `<b>Empréstimos do mês:</b> ${dados.length}<br>` + '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                } catch (e) {
+                    relatorioDiv.innerHTML = 'Erro ao buscar dados: ' + e.message;
+                }
+            });
+            document.getElementById('btnAtrasosPendentes').addEventListener('click', async function() {
+                relatorioDiv.innerHTML = 'Carregando...';
+                try {
+                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                    let dados = [];
+                    emprestimosSnap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.status === 'atrasado') dados.push({ ...d, id: doc.id });
+                    });
+                    relatorioDiv.innerHTML = `<b>Atrasos pendentes:</b> ${dados.length}<br>` + '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                } catch (e) {
+                    relatorioDiv.innerHTML = 'Erro ao buscar dados: ' + e.message;
+                }
+            });
+            document.getElementById('btnLivrosPopulares').addEventListener('click', async function() {
+                relatorioDiv.innerHTML = 'Carregando...';
+                try {
+                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                    const livrosCount = {};
+                    emprestimosSnap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.livro) livrosCount[d.livro] = (livrosCount[d.livro]||0)+1;
+                    });
+                    const populares = Object.entries(livrosCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                    relatorioDiv.innerHTML = `<b>Livros mais populares:</b><br>` + '<ol>' + populares.map(([livro, qtd]) => `<li>${livro} (${qtd} empréstimos)</li>`).join('') + '</ol>';
+                } catch (e) {
+                    relatorioDiv.innerHTML = 'Erro ao buscar dados: ' + e.message;
+                }
+            });
+            document.getElementById('btnUsuariosAtivos').addEventListener('click', async function() {
+                relatorioDiv.innerHTML = 'Carregando...';
+                try {
+                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                    const usuariosCount = {};
+                    emprestimosSnap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.usuario) usuariosCount[d.usuario] = (usuariosCount[d.usuario]||0)+1;
+                    });
+                    const ativos = Object.entries(usuariosCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                    relatorioDiv.innerHTML = `<b>Usuários mais ativos:</b><br>` + '<ol>' + ativos.map(([usuario, qtd]) => `<li>${usuario} (${qtd} empréstimos)</li>`).join('') + '</ol>';
+                } catch (e) {
+                    relatorioDiv.innerHTML = 'Erro ao buscar dados: ' + e.message;
+                }
+            });
             // Verificar autenticação
             onAuthStateChanged(auth, function(user) {
                 if (user) {
@@ -549,21 +614,93 @@
                 });
             });
 
+
             // Ativar todos os botões principais
             document.querySelectorAll('button').forEach(btn => btn.disabled = false);
 
-            // Botão Gerar Relatório: busca dados reais do Firestore
+            // Ativar todas as opções dos filtros ao carregar
+            document.getElementById('tipoRelatorio').selectedIndex = 0;
+            document.getElementById('categoriaUsuario').selectedIndex = 0;
+            document.getElementById('categoriaLivro').selectedIndex = 0;
+            document.getElementById('formatoRelatorio').selectedIndex = 0;
+
+            // Botão Gerar Relatório: busca dados reais do Firestore conforme filtros
             document.getElementById('btnGerarRelatorio').addEventListener('click', async function() {
                 const relatorioDiv = document.getElementById('relatorioResultado');
                 relatorioDiv.innerHTML = 'Carregando...';
+                // Obter filtros
+                const tipo = document.getElementById('tipoRelatorio').value;
+                const dataInicio = document.getElementById('periodoInicio').value;
+                const dataFim = document.getElementById('periodoFim').value;
+                const catUsuario = document.getElementById('categoriaUsuario').value;
+                const catLivro = document.getElementById('categoriaLivro').value;
+                const formato = document.getElementById('formatoRelatorio').value;
+
                 try {
-                    const usuariosSnap = await getDocs(collection(db, 'usuarios'));
-                    const livrosSnap = await getDocs(collection(db, 'livros'));
-                    const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-                    relatorioDiv.innerHTML =
-                        `<b>Usuários:</b> ${usuariosSnap.size}<br>`+
-                        `<b>Livros:</b> ${livrosSnap.size}<br>`+
-                        `<b>Empréstimos:</b> ${emprestimosSnap.size}`;
+                    let html = '';
+                    if (tipo === 'emprestimos') {
+                        const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                        let dados = [];
+                        emprestimosSnap.forEach(doc => {
+                            const d = doc.data();
+                            // Filtros
+                            let ok = true;
+                            if (dataInicio && d.dataEmprestimo < dataInicio) ok = false;
+                            if (dataFim && d.dataEmprestimo > dataFim) ok = false;
+                            if (catUsuario && d.categoriaUsuario !== catUsuario) ok = false;
+                            if (catLivro && d.categoriaLivro !== catLivro) ok = false;
+                            if (ok) dados.push({ ...d, id: doc.id });
+                        });
+                        html = `<b>Total de empréstimos encontrados:</b> ${dados.length}<br>`;
+                        html += '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                    } else if (tipo === 'usuarios') {
+                        const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+                        let dados = [];
+                        usuariosSnap.forEach(doc => {
+                            const d = doc.data();
+                            let ok = true;
+                            if (catUsuario && d.categoria !== catUsuario) ok = false;
+                            if (ok) dados.push({ ...d, id: doc.id });
+                        });
+                        html = `<b>Total de usuários encontrados:</b> ${dados.length}<br>`;
+                        html += '<ul>' + dados.map(e => `<li>${e.nome || e.email || ''} (${e.categoria || ''})</li>`).join('') + '</ul>';
+                    } else if (tipo === 'acervo') {
+                        const livrosSnap = await getDocs(collection(db, 'livros'));
+                        let dados = [];
+                        livrosSnap.forEach(doc => {
+                            const d = doc.data();
+                            let ok = true;
+                            if (catLivro && d.categoria !== catLivro) ok = false;
+                            if (ok) dados.push({ ...d, id: doc.id });
+                        });
+                        html = `<b>Total de livros encontrados:</b> ${dados.length}<br>`;
+                        html += '<ul>' + dados.map(e => `<li>${e.titulo || ''} (${e.categoria || ''})</li>`).join('') + '</ul>';
+                    } else if (tipo === 'atrasos') {
+                        const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                        let dados = [];
+                        const hoje = new Date().toISOString().slice(0,10);
+                        emprestimosSnap.forEach(doc => {
+                            const d = doc.data();
+                            let ok = true;
+                            if (d.status !== 'atrasado') ok = false;
+                            if (dataInicio && d.dataEmprestimo < dataInicio) ok = false;
+                            if (dataFim && d.dataEmprestimo > dataFim) ok = false;
+                            if (catUsuario && d.categoriaUsuario !== catUsuario) ok = false;
+                            if (catLivro && d.categoriaLivro !== catLivro) ok = false;
+                            if (ok) dados.push({ ...d, id: doc.id });
+                        });
+                        html = `<b>Total de empréstimos em atraso:</b> ${dados.length}<br>`;
+                        html += '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                    } else if (tipo === 'estatisticas') {
+                        // Exemplo simples
+                        const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+                        const livrosSnap = await getDocs(collection(db, 'livros'));
+                        const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                        html = `<b>Usuários:</b> ${usuariosSnap.size}<br>`+
+                            `<b>Livros:</b> ${livrosSnap.size}<br>`+
+                            `<b>Empréstimos:</b> ${emprestimosSnap.size}`;
+                    }
+                    relatorioDiv.innerHTML = html;
                 } catch (e) {
                     relatorioDiv.innerHTML = 'Erro ao buscar dados do relatório: ' + e.message;
                 }
