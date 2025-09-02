@@ -637,13 +637,14 @@
                 const formato = document.getElementById('formatoRelatorio').value;
 
                 try {
-                    let html = '';
+                    let dados = [];
+                    let head = [];
+                    let body = [];
+                    let titulo = '';
                     if (tipo === 'emprestimos') {
                         const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-                        let dados = [];
                         emprestimosSnap.forEach(doc => {
                             const d = doc.data();
-                            // Filtros
                             let ok = true;
                             if (dataInicio && d.dataEmprestimo < dataInicio) ok = false;
                             if (dataFim && d.dataEmprestimo > dataFim) ok = false;
@@ -651,34 +652,33 @@
                             if (catLivro && d.categoriaLivro !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        html = `<b>Total de empréstimos encontrados:</b> ${dados.length}<br>`;
-                        html += '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                        head = [['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status']];
+                        body = dados.map(e => [e.id, e.livro || '', e.usuario || '', formatarData(e.dataEmprestimo), formatarData(e.dataDevolucao), e.status || '']);
+                        titulo = 'Relatório de Empréstimos';
                     } else if (tipo === 'usuarios') {
                         const usuariosSnap = await getDocs(collection(db, 'usuarios'));
-                        let dados = [];
                         usuariosSnap.forEach(doc => {
                             const d = doc.data();
                             let ok = true;
                             if (catUsuario && d.categoria !== catUsuario) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        html = `<b>Total de usuários encontrados:</b> ${dados.length}<br>`;
-                        html += '<ul>' + dados.map(e => `<li>${e.nome || e.email || ''} (${e.categoria || ''})</li>`).join('') + '</ul>';
+                        head = [['ID', 'Nome', 'Email', 'Categoria']];
+                        body = dados.map(e => [e.id, e.nome || '', e.email || '', e.categoria || '']);
+                        titulo = 'Relatório de Usuários';
                     } else if (tipo === 'acervo') {
                         const livrosSnap = await getDocs(collection(db, 'livros'));
-                        let dados = [];
                         livrosSnap.forEach(doc => {
                             const d = doc.data();
                             let ok = true;
                             if (catLivro && d.categoria !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        html = `<b>Total de livros encontrados:</b> ${dados.length}<br>`;
-                        html += '<ul>' + dados.map(e => `<li>${e.titulo || ''} (${e.categoria || ''})</li>`).join('') + '</ul>';
+                        head = [['ID', 'Título', 'Autor', 'Categoria']];
+                        body = dados.map(e => [e.id, e.titulo || '', e.autor || '', e.categoria || '']);
+                        titulo = 'Relatório de Acervo';
                     } else if (tipo === 'atrasos') {
                         const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-                        let dados = [];
-                        const hoje = new Date().toISOString().slice(0,10);
                         emprestimosSnap.forEach(doc => {
                             const d = doc.data();
                             let ok = true;
@@ -689,18 +689,40 @@
                             if (catLivro && d.categoriaLivro !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        html = `<b>Total de empréstimos em atraso:</b> ${dados.length}<br>`;
-                        html += '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
+                        head = [['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status']];
+                        body = dados.map(e => [e.id, e.livro || '', e.usuario || '', formatarData(e.dataEmprestimo), formatarData(e.dataDevolucao), e.status || '']);
+                        titulo = 'Relatório de Atrasos';
                     } else if (tipo === 'estatisticas') {
-                        // Exemplo simples
                         const usuariosSnap = await getDocs(collection(db, 'usuarios'));
                         const livrosSnap = await getDocs(collection(db, 'livros'));
                         const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-                        html = `<b>Usuários:</b> ${usuariosSnap.size}<br>`+
-                            `<b>Livros:</b> ${livrosSnap.size}<br>`+
-                            `<b>Empréstimos:</b> ${emprestimosSnap.size}`;
+                        head = [['Tipo', 'Quantidade']];
+                        body = [
+                            ['Usuários', usuariosSnap.size],
+                            ['Livros', livrosSnap.size],
+                            ['Empréstimos', emprestimosSnap.size]
+                        ];
+                        titulo = 'Relatório de Estatísticas Gerais';
                     }
-                    relatorioDiv.innerHTML = html;
+
+                    // Gera PDF
+                    if (body.length) {
+                        const [{ jsPDF }, autoTable] = await Promise.all([
+                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+                        ]);
+                        const doc = new jsPDF();
+                        doc.text(titulo, 14, 16);
+                        autoTable.default(doc, {
+                            head: head,
+                            body: body,
+                            startY: 22
+                        });
+                        doc.save(titulo.replace(/\s+/g, '_').toLowerCase() + '.pdf');
+                        relatorioDiv.innerHTML = `<div class='alert alert-success'>PDF gerado e baixado com sucesso!</div>`;
+                    } else {
+                        relatorioDiv.innerHTML = `<div class='alert alert-info'>Nenhum dado encontrado para o filtro.</div>`;
+                    }
                 } catch (e) {
                     relatorioDiv.innerHTML = 'Erro ao buscar dados do relatório: ' + e.message;
                 }
