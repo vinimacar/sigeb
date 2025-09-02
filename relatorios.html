@@ -440,6 +440,11 @@
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
     
     <script type="module">
+    // Utilitário para criar spinner
+    function showSpinner(el) {
+        el.innerHTML = '<div class="d-flex justify-content-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+    }
+
     // Função utilitária para formatar data
     function formatarData(dt) {
         if (!dt) return '';
@@ -534,6 +539,30 @@
 
         document.addEventListener('DOMContentLoaded', function() {
 
+        // 1. Preencher filtros de categoria de usuário/livro dinamicamente
+        (async () => {
+            // Usuários
+            const catUsuarioSel = document.getElementById('categoriaUsuario');
+            const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+            const categoriasUsuario = new Set();
+            usuariosSnap.forEach(doc => {
+                const cat = (doc.data().categoria || '').trim();
+                if (cat) categoriasUsuario.add(cat);
+            });
+            catUsuarioSel.innerHTML = '<option value="">Todas</option>' + Array.from(categoriasUsuario).map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
+
+            // Livros
+            const catLivroSel = document.getElementById('categoriaLivro');
+            const livrosSnap = await getDocs(collection(db, 'livros'));
+            const categoriasLivro = new Set();
+            livrosSnap.forEach(doc => {
+                const cat = (doc.data().categoria || '').trim();
+                if (cat) categoriasLivro.add(cat);
+            });
+            catLivroSel.innerHTML = '<option value="">Todas</option>' + Array.from(categoriasLivro).map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
+        })();
+
+
             // Relatórios rápidos: ativar botões e buscar dados reais
             const relatorioDiv = document.getElementById('relatorioResultado');
             document.getElementById('btnEmprestimosMes').addEventListener('click', async function() {
@@ -627,7 +656,7 @@
             // Botão Gerar Relatório: busca dados reais do Firestore conforme filtros
             document.getElementById('btnGerarRelatorio').addEventListener('click', async function() {
                 const relatorioDiv = document.getElementById('relatorioResultado');
-                relatorioDiv.innerHTML = 'Carregando...';
+                showSpinner(relatorioDiv);
                 // Obter filtros
                 const tipo = document.getElementById('tipoRelatorio').value;
                 const dataInicio = document.getElementById('periodoInicio').value;
@@ -652,9 +681,11 @@
                             if (catLivro && d.categoriaLivro !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        head = [['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status']];
+                        head = ['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status'];
                         body = dados.map(e => [e.id, e.livro || '', e.usuario || '', formatarData(e.dataEmprestimo), formatarData(e.dataDevolucao), e.status || '']);
                         titulo = 'Relatório de Empréstimos';
+                        // Atualiza gráficos
+                        atualizarGraficosEmprestimos(dados);
                     } else if (tipo === 'usuarios') {
                         const usuariosSnap = await getDocs(collection(db, 'usuarios'));
                         usuariosSnap.forEach(doc => {
@@ -663,9 +694,10 @@
                             if (catUsuario && d.categoria !== catUsuario) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        head = [['ID', 'Nome', 'Email', 'Categoria']];
+                        head = ['ID', 'Nome', 'Email', 'Categoria'];
                         body = dados.map(e => [e.id, e.nome || '', e.email || '', e.categoria || '']);
                         titulo = 'Relatório de Usuários';
+                        atualizarGraficosUsuarios(dados);
                     } else if (tipo === 'acervo') {
                         const livrosSnap = await getDocs(collection(db, 'livros'));
                         livrosSnap.forEach(doc => {
@@ -674,9 +706,10 @@
                             if (catLivro && d.categoria !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        head = [['ID', 'Título', 'Autor', 'Categoria']];
+                        head = ['ID', 'Título', 'Autor', 'Categoria'];
                         body = dados.map(e => [e.id, e.titulo || '', e.autor || '', e.categoria || '']);
                         titulo = 'Relatório de Acervo';
+                        atualizarGraficosLivros(dados);
                     } else if (tipo === 'atrasos') {
                         const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
                         emprestimosSnap.forEach(doc => {
@@ -689,14 +722,15 @@
                             if (catLivro && d.categoriaLivro !== catLivro) ok = false;
                             if (ok) dados.push({ ...d, id: doc.id });
                         });
-                        head = [['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status']];
+                        head = ['ID', 'Livro', 'Usuário', 'Data Empréstimo', 'Data Devolução', 'Status'];
                         body = dados.map(e => [e.id, e.livro || '', e.usuario || '', formatarData(e.dataEmprestimo), formatarData(e.dataDevolucao), e.status || '']);
                         titulo = 'Relatório de Atrasos';
+                        atualizarGraficosEmprestimos(dados);
                     } else if (tipo === 'estatisticas') {
                         const usuariosSnap = await getDocs(collection(db, 'usuarios'));
                         const livrosSnap = await getDocs(collection(db, 'livros'));
                         const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-                        head = [['Tipo', 'Quantidade']];
+                        head = ['Tipo', 'Quantidade'];
                         body = [
                             ['Usuários', usuariosSnap.size],
                             ['Livros', livrosSnap.size],
@@ -705,21 +739,76 @@
                         titulo = 'Relatório de Estatísticas Gerais';
                     }
 
-                    // Gera PDF
+                    // Filtro ao digitar
+                    let filtroInput = '';
                     if (body.length) {
-                        const [{ jsPDF }, autoTable] = await Promise.all([
-                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
-                        ]);
-                        const doc = new jsPDF();
-                        doc.text(titulo, 14, 16);
-                        autoTable.default(doc, {
-                            head: head,
-                            body: body,
-                            startY: 22
+                        let tableHtml = `<input type='text' id='filtroTabela' class='form-control mb-2' placeholder='Filtrar resultados...'>`;
+                        let page = 1;
+                        let perPage = 10;
+                        let filteredBody = body.slice();
+                        function renderTable() {
+                            let start = (page-1)*perPage;
+                            let end = start+perPage;
+                            let paginados = filteredBody.slice(start, end);
+                            let html = '<div class="table-responsive"><table class="table table-bordered table-hover"><thead><tr>';
+                            head.forEach(h => html += `<th>${h}</th>`);
+                            html += '</tr></thead><tbody>';
+                            paginados.forEach(row => {
+                                html += '<tr>' + row.map(col => `<td>${col}</td>`).join('') + '</tr>';
+                            });
+                            html += '</tbody></table></div>';
+                            // Paginação
+                            let totalPages = Math.ceil(filteredBody.length/perPage);
+                            html += `<nav><ul class='pagination'>`;
+                            for(let i=1;i<=totalPages;i++) {
+                                html += `<li class='page-item${i===page?' active':''}'><a class='page-link' href='#' data-pg='${i}'>${i}</a></li>`;
+                            }
+                            html += `</ul></nav>`;
+                            // Botões exportar
+                            html += `<button id='btnExportarCSV' class='btn btn-success my-2'><i class='fas fa-file-csv me-1'></i>Exportar CSV</button>`;
+                            html += `<button id='btnExportarPDFRel' class='btn btn-danger my-2 ms-2'><i class='fas fa-file-pdf me-1'></i>Exportar PDF</button>`;
+                            relatorioDiv.innerHTML = tableHtml + html;
+                            // Paginação click
+                            relatorioDiv.querySelectorAll('.page-link').forEach(a=>{
+                                a.onclick = function(e){e.preventDefault();page=Number(this.dataset.pg);renderTable();};
+                            });
+                            // Exportar CSV
+                            document.getElementById('btnExportarCSV').onclick = function() {
+                                let csv = head.join(';') + '\n';
+                                filteredBody.forEach(row => { csv += row.map(col => '"'+String(col).replace(/"/g,'""')+'"').join(';') + '\n'; });
+                                const blob = new Blob([csv], {type: 'text/csv'});
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = titulo.replace(/\s+/g,'_').toLowerCase()+'.csv';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            };
+                            // Exportar PDF
+                            document.getElementById('btnExportarPDFRel').onclick = async function() {
+                                const [{ jsPDF }, autoTable] = await Promise.all([
+                                    import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                                    import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+                                ]);
+                                const doc = new jsPDF();
+                                doc.text(titulo, 14, 16);
+                                autoTable.default(doc, {
+                                    head: [head],
+                                    body: filteredBody,
+                                    startY: 22
+                                });
+                                doc.save(titulo.replace(/\s+/g, '_').toLowerCase() + '.pdf');
+                            };
+                        }
+                        renderTable();
+                        // Filtro ao digitar
+                        relatorioDiv.querySelector('#filtroTabela').addEventListener('input', function() {
+                            const val = this.value.toLowerCase();
+                            filtroInput = val;
+                            filteredBody = body.filter(row => row.some(col => String(col).toLowerCase().includes(val)));
+                            page = 1;
+                            renderTable();
                         });
-                        doc.save(titulo.replace(/\s+/g, '_').toLowerCase() + '.pdf');
-                        relatorioDiv.innerHTML = `<div class='alert alert-success'>PDF gerado e baixado com sucesso!</div>`;
                     } else {
                         relatorioDiv.innerHTML = `<div class='alert alert-info'>Nenhum dado encontrado para o filtro.</div>`;
                     }
@@ -727,6 +816,77 @@
                     relatorioDiv.innerHTML = 'Erro ao buscar dados do relatório: ' + e.message;
                 }
             });
+
+        // Atualização dos gráficos conforme filtros
+        let chartUsuarios, chartLivros, chartTendencia;
+        function atualizarGraficosEmprestimos(dados) {
+            // Usuários
+            let catUsu = {};
+            let catLiv = {};
+            let tendencia = {};
+            dados.forEach(e => {
+                catUsu[e.categoriaUsuario||'Outro'] = (catUsu[e.categoriaUsuario||'Outro']||0)+1;
+                catLiv[e.categoriaLivro||'Outro'] = (catLiv[e.categoriaLivro||'Outro']||0)+1;
+                let data = e.dataEmprestimo;
+                let d = data && data.seconds ? new Date(data.seconds*1000) : (data ? new Date(data) : null);
+                if (d) {
+                    let key = d.toLocaleDateString('pt-BR');
+                    tendencia[key] = (tendencia[key]||0)+1;
+                }
+            });
+            // Gráfico usuários
+            if (chartUsuarios) chartUsuarios.destroy();
+            chartUsuarios = new Chart(document.getElementById('graficoUsuarios').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(catUsu),
+                    datasets: [{ data: Object.values(catUsu), backgroundColor: ['#36a2eb','#ff6384','#ffce56','#4bc0c0','#9966ff','#c9cbcf'] }]
+                },
+                options: { responsive:true, plugins:{legend:{position:'right'}} }
+            });
+            // Gráfico livros
+            if (chartLivros) chartLivros.destroy();
+            chartLivros = new Chart(document.getElementById('graficoLivros').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(catLiv),
+                    datasets: [{ data: Object.values(catLiv), backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#c9cbcf'] }]
+                },
+                options: { responsive:true, plugins:{legend:{position:'right'}} }
+            });
+            // Gráfico tendência
+            if (chartTendencia) chartTendencia.destroy();
+            chartTendencia = new Chart(document.getElementById('graficoTendencia').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(tendencia),
+                    datasets: [{ label:'Empréstimos', data: Object.values(tendencia), borderColor:'#36a2eb', backgroundColor:'rgba(54,162,235,0.1)', tension:0.4, fill:true }]
+                },
+                options: { responsive:true, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true}} }
+            });
+        }
+        function atualizarGraficosUsuarios(dados) {
+            // Exemplo: gráfico de categorias de usuário
+            let catUsu = {};
+            dados.forEach(e => { catUsu[e.categoria||'Outro'] = (catUsu[e.categoria||'Outro']||0)+1; });
+            if (chartUsuarios) chartUsuarios.destroy();
+            chartUsuarios = new Chart(document.getElementById('graficoUsuarios').getContext('2d'), {
+                type: 'pie',
+                data: { labels: Object.keys(catUsu), datasets: [{ data: Object.values(catUsu), backgroundColor: ['#36a2eb','#ff6384','#ffce56','#4bc0c0','#9966ff','#c9cbcf'] }] },
+                options: { responsive:true, plugins:{legend:{position:'right'}} }
+            });
+        }
+        function atualizarGraficosLivros(dados) {
+            // Exemplo: gráfico de categorias de livro
+            let catLiv = {};
+            dados.forEach(e => { catLiv[e.categoria||'Outro'] = (catLiv[e.categoria||'Outro']||0)+1; });
+            if (chartLivros) chartLivros.destroy();
+            chartLivros = new Chart(document.getElementById('graficoLivros').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(catLiv), datasets: [{ data: Object.values(catLiv), backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#c9cbcf'] }] },
+                options: { responsive:true, plugins:{legend:{position:'right'}} }
+            });
+        }
 
             // Botão Limpar Filtros
             document.getElementById('btnLimparFiltros').addEventListener('click', function() {
