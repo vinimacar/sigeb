@@ -514,10 +514,11 @@
 
     // Listener para exportar PDF
     document.getElementById('btnExportarPDF').addEventListener('click', async function() {
-        const [{ jsPDF }, autoTable] = await Promise.all([
+        const [jsPDFModule, autoTable] = await Promise.all([
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
         ]);
+        const { jsPDF } = jsPDFModule;
         const doc = new jsPDF();
         const dados = window.__dadosEmprestimosMes || [];
         autoTable.default(doc, {
@@ -573,7 +574,8 @@
                     let dados = [];
                     emprestimosSnap.forEach(doc => {
                         const d = doc.data();
-                        if ((d.dataEmprestimo||'').slice(0,7) === mesAtual) dados.push({ ...d, id: doc.id });
+                        const dataEmprestimo = d.dataEmprestimo ? String(d.dataEmprestimo) : '';
+                        if (dataEmprestimo.slice(0,7) === mesAtual) dados.push({ ...d, id: doc.id });
                     });
                     relatorioDiv.innerHTML = `<b>Empréstimos do mês:</b> ${dados.length}<br>` + '<ul>' + dados.map(e => `<li>${e.usuario || ''} - ${e.livro || ''} (${e.dataEmprestimo || ''})</li>`).join('') + '</ul>';
                 } catch (e) {
@@ -786,10 +788,11 @@
                             };
                             // Exportar PDF
                             document.getElementById('btnExportarPDFRel').onclick = async function() {
-                                const [{ jsPDF }, autoTable] = await Promise.all([
+                                const [jsPDFModule, autoTable] = await Promise.all([
                                     import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
                                     import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
                                 ]);
+                                const { jsPDF } = jsPDFModule;
                                 const doc = new jsPDF();
                                 doc.text(titulo, 14, 16);
                                 autoTable.default(doc, {
