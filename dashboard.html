@@ -225,52 +225,8 @@
                             <div class="card-header">
                                 <h5 class="mb-0">Categorias Populares</h5>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Ficção</span>
-                                        <span>65%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Não-Ficção</span>
-                                        <span>45%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Didáticos</span>
-                                        <span>30%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: 30%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Infantil</span>
-                                        <span>25%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Referência</span>
-                                        <span>15%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 15%;" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
+                            <div class="card-body" id="categoriasPopulares">
+                                <!-- Dados carregados dinamicamente -->
                             </div>
                         </div>
                     </div>
@@ -548,6 +504,13 @@
                 const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
                 const livrosSnap = await getDocs(collection(db, 'livros'));
                 
+                // Criar mapa de livros para busca rápida
+                const livrosMap = new Map();
+                livrosSnap.forEach(doc => {
+                    const livroData = doc.data();
+                    livrosMap.set(doc.id, livroData.categoria || 'Outros');
+                });
+                
                 // Dados para gráfico de empréstimos por mês
                 const dadosMensais = new Array(12).fill(0);
                 const categorias = {};
@@ -557,12 +520,9 @@
                     const dataEmp = data.dataEmprestimo?.toDate ? data.dataEmprestimo.toDate() : new Date(data.dataEmprestimo);
                     const mes = dataEmp.getMonth();
                     dadosMensais[mes]++;
-                });
-                
-                // Contar categorias de livros
-                livrosSnap.forEach(doc => {
-                    const data = doc.data();
-                    const categoria = data.categoria || 'Outros';
+                    
+                    // Contar categorias baseado nos empréstimos
+                    const categoria = livrosMap.get(data.livroId) || 'Outros';
                     categorias[categoria] = (categorias[categoria] || 0) + 1;
                 });
                 
@@ -631,26 +591,45 @@
         
         // Função para atualizar categorias populares
         function atualizarCategoriasPopulares(categorias) {
+            const container = document.getElementById('categoriasPopulares');
+            if (!container) return;
+            
             const total = Object.values(categorias).reduce((sum, count) => sum + count, 0);
+            if (total === 0) {
+                container.innerHTML = '<p class="text-muted text-center">Nenhuma categoria encontrada</p>';
+                return;
+            }
+            
             const categoriasOrdenadas = Object.entries(categorias)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, 5);
             
-            // Atualizar as barras de progresso das categorias
             const cores = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger'];
-            const container = document.querySelector('.card-body');
-            const progressBars = container.querySelectorAll('.progress-bar');
-            const labels = container.querySelectorAll('.d-flex.justify-content-between span:first-child');
-            const percentages = container.querySelectorAll('.d-flex.justify-content-between span:last-child');
+            
+            container.innerHTML = '';
             
             categoriasOrdenadas.forEach(([categoria, count], index) => {
-                if (labels[index] && percentages[index] && progressBars[index]) {
-                    const percentage = Math.round((count / total) * 100);
-                    labels[index].textContent = categoria;
-                    percentages[index].textContent = `${percentage}%`;
-                    progressBars[index].style.width = `${percentage}%`;
-                    progressBars[index].className = `progress-bar ${cores[index]}`;
-                }
+                const percentage = Math.round((count / total) * 100);
+                const isLast = index === categoriasOrdenadas.length - 1;
+                
+                const categoriaDiv = document.createElement('div');
+                categoriaDiv.className = isLast ? '' : 'mb-3';
+                
+                categoriaDiv.innerHTML = `
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>${categoria}</span>
+                        <span>${percentage}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar ${cores[index]}" role="progressbar" 
+                             style="width: ${percentage}%;" 
+                             aria-valuenow="${percentage}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100"></div>
+                    </div>
+                `;
+                
+                container.appendChild(categoriaDiv);
             });
         }
         
