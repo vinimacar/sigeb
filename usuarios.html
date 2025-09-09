@@ -1342,7 +1342,7 @@ document.addEventListener('DOMContentLoaded', function() {
     docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
     docPDF.setFontSize(12);
     docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
-    autoTableModule.default(docPDF, {
+    docPDF.autoTable({
         head: [columns.map(c => c.header)],
         body: rows.map(r => columns.map(c => r[c.dataKey])),
         startY: 40,
