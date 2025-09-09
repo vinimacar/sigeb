@@ -816,16 +816,20 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+        import { getFirestore, collection, getDocs, query, where, addDoc, orderBy } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
         import { firebaseConfig } from './firebase-config.js';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.db = db;
 
         document.addEventListener('DOMContentLoaded', function() {
             onAuthStateChanged(auth, function(user) {
                 if (user) {
                     document.getElementById('userName').textContent = user.displayName || user.email;
-                    // carregarDadosInventario();
+                    carregarDadosInventario();
+                    implementarFiltros();
                 } else {
                     window.location.href = 'index.html';
                 }
@@ -849,21 +853,416 @@
             document.getElementById('btnConfirmarInventario').addEventListener('click', function() {
                 const form = document.getElementById('formIniciarInventario');
                 if (form.checkValidity()) {
-                    alert('Inventário iniciado com sucesso!');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('iniciarInventarioModal'));
-                    modal.hide();
-                    document.querySelector('.h5.mb-0.fw-bold:nth-of-type(2)').textContent = 'Em andamento';
+                    salvarNovoInventario();
                 } else {
                     form.reportValidity();
                 }
             });
+
+            // Event listener para carregar histórico quando modal for aberto
+            document.getElementById('historicoInventarioModal').addEventListener('show.bs.modal', function() {
+                carregarHistoricoInventarios();
+            });
         });
 
         // Função para carregar dados do inventário do Firestore
-        function carregarDadosInventario() {
-            // Aqui você implementaria a lógica para carregar os dados do inventário do Firestore
-            // e preencher as tabelas dinamicamente
-        }
-    </script>
+        async function carregarDadosInventario() {
+            try {
+                // Buscar todos os livros
+                const livrosRef = collection(db, 'livros');
+                const snapshot = await getDocs(livrosRef);
+                
+                let totalItens = 0;
+                let disponiveis = 0;
+                let emprestados = 0;
+                let naoLocalizados = 0;
+                
+                snapshot.forEach(doc => {
+                    const livro = doc.data();
+                    totalItens++;
+                    
+                    const status = (livro.status || 'disponivel').toLowerCase();
+                    
+                    switch(status) {
+                        case 'disponivel':
+                            disponiveis++;
+                            break;
+                        case 'emprestado':
+                            emprestados++;
+                            break;
+                        case 'nao_localizado':
+                        case 'perdido':
+                            naoLocalizados++;
+                            break;
+                        default:
+                            disponiveis++;
+                    }
+                });
+                
+                // Atualizar os cards de estatísticas
+                document.querySelector('.card.border-start-primary .h5').textContent = totalItens;
+                document.querySelector('.card.border-start-success .h5').textContent = disponiveis;
+                document.querySelector('.card.border-start-warning .h5').textContent = emprestados;
+                document.querySelector('.card.border-start-danger .h5').textContent = naoLocalizados;
+                
+                // Carregar dados da tabela
+                carregarTabelaItens(snapshot);
+                
+            } catch (error) {
+                 console.error('Erro ao carregar dados do inventário:', error);
+                 // Manter valores padrão em caso de erro
+             }
+         }
+
+         // Função para carregar dados da tabela de itens
+         function carregarTabelaItens(snapshot) {
+             const tbody = document.querySelector('#itens tbody');
+             tbody.innerHTML = '';
+             
+             snapshot.forEach(doc => {
+                 const livro = doc.data();
+                 const id = doc.id;
+                 
+                 const status = (livro.status || 'disponivel').toLowerCase();
+                 let statusBadge = '';
+                 let statusClass = '';
+                 
+                 switch(status) {
+                     case 'disponivel':
+                         statusBadge = 'Disponível';
+                         statusClass = 'bg-success';
+                         break;
+                     case 'emprestado':
+                         statusBadge = 'Emprestado';
+                         statusClass = 'bg-warning';
+                         break;
+                     case 'reservado':
+                         statusBadge = 'Reservado';
+                         statusClass = 'bg-info';
+                         break;
+                     case 'manutencao':
+                         statusBadge = 'Em Manutenção';
+                         statusClass = 'bg-secondary';
+                         break;
+                     case 'nao_localizado':
+                     case 'perdido':
+                         statusBadge = 'Não Localizado';
+                         statusClass = 'bg-danger';
+                         break;
+                     default:
+                         statusBadge = 'Disponível';
+                         statusClass = 'bg-success';
+                 }
+                 
+                 const dataVerificacao = livro.ultimaVerificacao ? 
+                     new Date(livro.ultimaVerificacao.seconds * 1000).toLocaleDateString('pt-BR') : 
+                     'Nunca verificado';
+                 
+                 const row = `
+                     <tr>
+                         <td>
+                             <div class="form-check">
+                                 <input class="form-check-input" type="checkbox" data-id="${id}">
+                             </div>
+                         </td>
+                         <td>${livro.codigo || id}</td>
+                         <td>${livro.titulo || 'Título não informado'}</td>
+                         <td>${livro.autor || 'Autor não informado'}</td>
+                         <td>${livro.localizacao || 'Não informada'}</td>
+                         <td><span class="badge ${statusClass}">${statusBadge}</span></td>
+                         <td>${dataVerificacao}</td>
+                         <td>
+                             <div class="dropdown">
+                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                     Ações
+                                 </button>
+                                 <ul class="dropdown-menu">
+                                     <li><a class="dropdown-item" href="#" onclick="verDetalhes('${id}')"><i class="fas fa-eye me-2"></i> Detalhes</a></li>
+                                     <li><a class="dropdown-item" href="#" onclick="marcarVerificado('${id}')"><i class="fas fa-check-circle me-2"></i> Marcar como verificado</a></li>
+                                     <li><a class="dropdown-item" href="#" onclick="enviarManutencao('${id}')"><i class="fas fa-tools me-2"></i> Enviar para manutenção</a></li>
+                                     <li><hr class="dropdown-divider"></li>
+                                     <li><a class="dropdown-item text-danger" href="#" onclick="marcarNaoLocalizado('${id}')"><i class="fas fa-exclamation-triangle me-2"></i> Marcar como não localizado</a></li>
+                                 </ul>
+                             </div>
+                         </td>
+                     </tr>
+                 `;
+                 
+                 tbody.innerHTML += row;
+              });
+          }
+
+          // Funções de ação para os itens da tabela
+          function verDetalhes(id) {
+              // Implementar modal de detalhes do item
+              console.log('Ver detalhes do item:', id);
+          }
+
+          async function marcarVerificado(id) {
+              try {
+                  await window.db.collection('livros').doc(id).update({
+                      ultimaVerificacao: new Date(),
+                      verificadoPor: window.currentUser?.email || 'Sistema'
+                  });
+                  
+                  // Recarregar dados
+                  carregarDadosInventario();
+                  
+                  // Mostrar feedback
+                  const toast = new bootstrap.Toast(document.createElement('div'));
+                  toast.show();
+              } catch (error) {
+                  console.error('Erro ao marcar como verificado:', error);
+                  alert('Erro ao marcar item como verificado. Tente novamente.');
+              }
+          }
+
+          async function enviarManutencao(id) {
+              try {
+                  await window.db.collection('livros').doc(id).update({
+                      status: 'manutencao',
+                      dataEnvioManutencao: new Date(),
+                      enviadoPor: window.currentUser?.email || 'Sistema'
+                  });
+                  
+                  // Recarregar dados
+                  carregarDadosInventario();
+                  
+                  alert('Item enviado para manutenção com sucesso!');
+              } catch (error) {
+                  console.error('Erro ao enviar para manutenção:', error);
+                  alert('Erro ao enviar item para manutenção. Tente novamente.');
+              }
+          }
+
+          async function marcarNaoLocalizado(id) {
+              if (confirm('Tem certeza que deseja marcar este item como não localizado?')) {
+                  try {
+                      await window.db.collection('livros').doc(id).update({
+                          status: 'nao_localizado',
+                          dataNaoLocalizado: new Date(),
+                          marcadoPor: window.currentUser?.email || 'Sistema'
+                      });
+                      
+                      // Recarregar dados
+                      carregarDadosInventario();
+                      
+                      alert('Item marcado como não localizado.');
+                  } catch (error) {
+                      console.error('Erro ao marcar como não localizado:', error);
+                      alert('Erro ao marcar item como não localizado. Tente novamente.');
+                  }
+              }
+           }
+
+           // Implementar funcionalidade de pesquisa e filtros
+           function implementarFiltros() {
+               const searchInput = document.getElementById('searchInput');
+               const categoryFilter = document.getElementById('categoryFilter');
+               const statusFilter = document.getElementById('statusFilter');
+
+               // Debounce para pesquisa
+               let searchTimeout;
+               
+               searchInput.addEventListener('input', function() {
+                   clearTimeout(searchTimeout);
+                   searchTimeout = setTimeout(() => {
+                       aplicarFiltros();
+                   }, 300);
+               });
+
+               categoryFilter.addEventListener('change', aplicarFiltros);
+               statusFilter.addEventListener('change', aplicarFiltros);
+           }
+
+           async function aplicarFiltros() {
+               try {
+                   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+                   const categoryFilter = document.getElementById('categoryFilter').value;
+                   const statusFilter = document.getElementById('statusFilter').value;
+
+                   let query = window.db.collection('livros');
+
+                   // Aplicar filtro de categoria se selecionado
+                   if (categoryFilter && categoryFilter !== '') {
+                       query = query.where('categoria', '==', categoryFilter);
+                   }
+
+                   // Aplicar filtro de status se selecionado
+                   if (statusFilter && statusFilter !== '') {
+                       query = query.where('status', '==', statusFilter);
+                   }
+
+                   const snapshot = await query.get();
+                   
+                   // Se há termo de pesquisa, filtrar localmente
+                   let filteredDocs = snapshot.docs;
+                   if (searchTerm) {
+                       filteredDocs = snapshot.docs.filter(doc => {
+                           const data = doc.data();
+                           const titulo = (data.titulo || '').toLowerCase();
+                           const autor = (data.autor || '').toLowerCase();
+                           const codigo = (data.codigo || doc.id).toLowerCase();
+                           
+                           return titulo.includes(searchTerm) || 
+                                  autor.includes(searchTerm) || 
+                                  codigo.includes(searchTerm);
+                       });
+                   }
+
+                   // Criar um snapshot simulado com os documentos filtrados
+                   const filteredSnapshot = {
+                       forEach: function(callback) {
+                           filteredDocs.forEach(callback);
+                       }
+                   };
+
+                   carregarTabelaItens(filteredSnapshot);
+                   
+                   // Atualizar contador de resultados
+                   const resultCount = filteredDocs.length;
+                   const totalCount = snapshot.docs.length;
+                   
+                   // Atualizar interface com contador (se existir elemento para isso)
+                   const resultInfo = document.querySelector('.result-info');
+                   if (resultInfo) {
+                       resultInfo.textContent = `Mostrando ${resultCount} de ${totalCount} itens`;
+                   }
+
+               } catch (error) {
+                   console.error('Erro ao aplicar filtros:', error);
+                   // Em caso de erro, carregar todos os dados
+                   carregarDadosInventario();
+               }
+           }
+
+           // Função para limpar filtros
+            function limparFiltros() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('categoryFilter').value = '';
+                document.getElementById('statusFilter').value = '';
+                carregarDadosInventario();
+            }
+
+            // Função para carregar histórico de inventários
+            async function carregarHistoricoInventarios() {
+                try {
+                    const inventariosRef = collection(db, 'inventarios');
+                    const q = query(inventariosRef, orderBy('dataInicio', 'desc'));
+                    const snapshot = await getDocs(q);
+                    
+                    const tbody = document.querySelector('#historicoInventarioModal tbody');
+                    tbody.innerHTML = '';
+                    
+                    snapshot.forEach(doc => {
+                        const inventario = doc.data();
+                        const id = doc.id;
+                        
+                        const dataInicio = inventario.dataInicio ? 
+                            new Date(inventario.dataInicio.seconds * 1000).toLocaleDateString('pt-BR') : 
+                            'Não informado';
+                        
+                        const dataTermino = inventario.dataTermino ? 
+                            new Date(inventario.dataTermino.seconds * 1000).toLocaleDateString('pt-BR') : 
+                            'Em andamento';
+                        
+                        const row = `
+                            <tr>
+                                <td>${inventario.codigo || id}</td>
+                                <td>${inventario.tipo || 'Não informado'}</td>
+                                <td>${dataInicio}</td>
+                                <td>${dataTermino}</td>
+                                <td>${inventario.responsavel || 'Não informado'}</td>
+                                <td>${inventario.itensVerificados || 0}</td>
+                                <td>${inventario.naoLocalizados || 0}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="gerarRelatorioInventario('${id}')">
+                                        <i class="fas fa-file-alt me-1"></i> Relatório
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        tbody.innerHTML += row;
+                    });
+                    
+                    // Se não há inventários, mostrar mensagem
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                    Nenhum inventário encontrado
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro ao carregar histórico de inventários:', error);
+                    const tbody = document.querySelector('#historicoInventarioModal tbody');
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
+                                Erro ao carregar histórico de inventários
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // Função para gerar relatório de inventário
+            function gerarRelatorioInventario(inventarioId) {
+                // Implementar geração de relatório
+                console.log('Gerar relatório para inventário:', inventarioId);
+                alert('Funcionalidade de relatório será implementada em breve.');
+            }
+
+            // Função para salvar novo inventário
+            async function salvarNovoInventario() {
+                try {
+                    const tipoInventario = document.getElementById('tipoInventario').value;
+                    const dataInicio = document.getElementById('dataInicio').value;
+                    const responsavel = document.getElementById('responsavel').value;
+                    const previsaoTermino = document.getElementById('previsaoTermino').value;
+                    const observacoes = document.getElementById('observacoes').value;
+                    const bloquearEmprestimos = document.getElementById('bloquearEmprestimos').checked;
+                    
+                    if (!tipoInventario || !dataInicio || !responsavel || !previsaoTermino) {
+                        alert('Por favor, preencha todos os campos obrigatórios.');
+                        return;
+                    }
+                    
+                    const novoInventario = {
+                        tipo: tipoInventario,
+                        dataInicio: new Date(dataInicio),
+                        previsaoTermino: new Date(previsaoTermino),
+                        responsavel: responsavel,
+                        observacoes: observacoes,
+                        bloquearEmprestimos: bloquearEmprestimos,
+                        status: 'em_andamento',
+                        itensVerificados: 0,
+                        naoLocalizados: 0,
+                        criadoPor: window.currentUser?.email || 'Sistema',
+                        dataCriacao: new Date(),
+                        codigo: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
+                    };
+                    
+                    await addDoc(collection(db, 'inventarios'), novoInventario);
+                    
+                    alert('Inventário iniciado com sucesso!');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('iniciarInventarioModal'));
+                    modal.hide();
+                    
+                    // Limpar formulário
+                    document.getElementById('formIniciarInventario').reset();
+                    
+                } catch (error) {
+                    console.error('Erro ao salvar inventário:', error);
+                    alert('Erro ao iniciar inventário. Tente novamente.');
+                }
+            }
+        </script>
 </body>
 </html>
