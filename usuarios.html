@@ -1317,6 +1317,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ativar botão Imprimir para gerar PDF dos usuários
     document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
     try {
+         // Verificar se jsPDF está disponível
+         if (!window.jspdf) {
+             alert('Biblioteca jsPDF não carregada. Recarregue a página e tente novamente.');
+             return;
+         }
+         
+         // Verificar se window.db está disponível
+         if (!window.db) {
+             alert('Banco de dados não inicializado. Recarregue a página e tente novamente.');
+             return;
+         }
+         
          // Usar jsPDF global carregado via CDN
          const { jsPDF } = window.jspdf;
          const docPDF = new jsPDF();
@@ -1338,10 +1350,23 @@ document.addEventListener('DOMContentLoaded', function() {
         categoria: u.categoria || '',
         id: u.id
     }));
+    // Verificar se há usuários para gerar o relatório
+    if (usuarios.length === 0) {
+        alert('Nenhum usuário encontrado para gerar o relatório.');
+        return;
+    }
+    
     docPDF.setFontSize(16);
     docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
     docPDF.setFontSize(12);
     docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
+    
+    // Verificar se autoTable está disponível
+    if (typeof docPDF.autoTable !== 'function') {
+        alert('Plugin autoTable não carregado. Recarregue a página e tente novamente.');
+        return;
+    }
+    
     docPDF.autoTable({
         head: [columns.map(c => c.header)],
         body: rows.map(r => columns.map(c => r[c.dataKey])),
@@ -1349,6 +1374,8 @@ document.addEventListener('DOMContentLoaded', function() {
         styles: { fontSize: 10 }
     });
     docPDF.save('relatorio-usuarios.pdf');
+    
+    alert('Relatório PDF gerado com sucesso!');
     
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
