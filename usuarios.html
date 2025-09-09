@@ -255,7 +255,7 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="btnImprimirUsuarios">
                                 <i class="fas fa-print me-1"></i> Imprimir
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnExportarUsuarios">
                                 <i class="fas fa-file-export me-1"></i> Exportar
                             </button>
                         </div>
@@ -1312,42 +1312,86 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Ativar botão Imprimir para gerar PDF dos usuários
     document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
-        // Carregar jsPDF e autoTable
-        const [{ jsPDF }, autoTable] = await Promise.all([
-            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
-        ]);
-        // jsPDF está no objeto .jsPDF, então precisa ser chamado como new jsPDF.jsPDF()
-        const docPDF = new jsPDF.jsPDF();
-        // Buscar usuários do Firestore usando a instância global db
-        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
-        const usuariosRef = collection(window.db, 'usuarios');
-        const querySnapshot = await getDocs(usuariosRef);
-        const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Montar dados da tabela
-        const columns = [
-            { header: 'Nome', dataKey: 'nome' },
-            { header: 'Email', dataKey: 'email' },
-            { header: 'Categoria', dataKey: 'categoria' },
-            { header: 'ID', dataKey: 'id' }
-        ];
-        const rows = usuarios.map(u => ({
-            nome: u.nome || '',
-            email: u.email || '',
-            categoria: u.categoria || '',
-            id: u.id
-        }));
-        docPDF.setFontSize(16);
-        docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
-        docPDF.setFontSize(12);
-        docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
-        autoTable.default(docPDF, {
-            head: [columns.map(c => c.header)],
-            body: rows.map(r => columns.map(c => r[c.dataKey])),
-            startY: 40,
-            styles: { fontSize: 10 }
-        });
-        docPDF.save('relatorio-usuarios.pdf');
+    // Carregar jsPDF e autoTable
+    const jsPDFModule = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const autoTableModule = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js');
+    // jsPDF está em jsPDFModule.jsPDF
+    const docPDF = new jsPDFModule.jsPDF();
+    // Buscar usuários do Firestore usando a instância global db
+    const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+    const usuariosRef = collection(window.db, 'usuarios');
+    const querySnapshot = await getDocs(usuariosRef);
+    const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Montar dados da tabela
+    const columns = [
+        { header: 'Nome', dataKey: 'nome' },
+        { header: 'Email', dataKey: 'email' },
+        { header: 'Categoria', dataKey: 'categoria' },
+        { header: 'ID', dataKey: 'id' }
+    ];
+    const rows = usuarios.map(u => ({
+        nome: u.nome || '',
+        email: u.email || '',
+        categoria: u.categoria || '',
+        id: u.id
+    }));
+    docPDF.setFontSize(16);
+    docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
+    docPDF.setFontSize(12);
+    docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
+    autoTableModule.default(docPDF, {
+        head: [columns.map(c => c.header)],
+        body: rows.map(r => columns.map(c => r[c.dataKey])),
+        startY: 40,
+        styles: { fontSize: 10 }
+    });
+    docPDF.save('relatorio-usuarios.pdf');
+    });
+
+    // Ativar botão Exportar para gerar CSV dos usuários
+    document.getElementById('btnExportarUsuarios').addEventListener('click', async function() {
+        try {
+            // Buscar usuários do Firestore usando a instância global db
+            const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+            const usuariosRef = collection(window.db, 'usuarios');
+            const querySnapshot = await getDocs(usuariosRef);
+            const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Criar cabeçalho CSV
+            const csvHeaders = ['ID', 'Nome', 'Email', 'Categoria', 'WhatsApp', 'Endereço', 'Status', 'Data Cadastro'];
+            
+            // Converter dados para CSV
+            const csvRows = usuarios.map(usuario => [
+                usuario.id || '',
+                usuario.nome || '',
+                usuario.email || '',
+                usuario.categoria || '',
+                usuario.whatsapp || '',
+                usuario.endereco || '',
+                usuario.status || 'ativo',
+                usuario.dataCadastro ? new Date(usuario.dataCadastro).toLocaleDateString('pt-BR') : ''
+            ]);
+            
+            // Combinar cabeçalho e dados
+            const csvContent = [csvHeaders, ...csvRows]
+                .map(row => row.map(field => `"${field}"`).join(','))
+                .join('\n');
+            
+            // Criar e baixar arquivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `usuarios-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch (error) {
+            console.error('Erro ao exportar usuários:', error);
+            alert('Erro ao exportar usuários. Tente novamente.');
+        }
     });
 
     // Atualização em tempo real dos cards de estatísticas rápidas
