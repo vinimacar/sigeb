@@ -1313,11 +1313,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ativar botão Imprimir para gerar PDF dos usuários
     document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
         // Carregar jsPDF e autoTable
-        const [jsPDFModule, autoTable] = await Promise.all([
+        const [{ jsPDF }, autoTable] = await Promise.all([
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
         ]);
-        const jsPDF = jsPDFModule.jsPDF;
         // Buscar usuários do Firestore usando a instância global db
         const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
         const usuariosRef = collection(window.db, 'usuarios');
