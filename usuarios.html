@@ -20,6 +20,10 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="icone.png" type="image/png">
     
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <!-- Firebase -->
     <!-- Removido Firebase v8 para evitar conflito com SDK modular -->
     <!-- CSS para garantir que o dropdown do menu Ações sempre apareça para cima -->
@@ -1313,13 +1317,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ativar botão Imprimir para gerar PDF dos usuários
     document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
     try {
-        // Carregar jsPDF e autoTable
-        const jsPDFModule = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-        const autoTableModule = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js');
-        
-        // Acessar jsPDF corretamente do módulo UMD
-        const { jsPDF } = jsPDFModule.default || jsPDFModule;
-        const docPDF = new jsPDF();
+         // Usar jsPDF global carregado via CDN
+         const { jsPDF } = window.jspdf;
+         const docPDF = new jsPDF();
     // Buscar usuários do Firestore usando a instância global db
     const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
     const usuariosRef = collection(window.db, 'usuarios');
