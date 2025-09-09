@@ -1317,20 +1317,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ativar botão Imprimir para gerar PDF dos usuários
     document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
     try {
-         // Verificar se jsPDF está disponível
-         if (!window.jspdf) {
-             alert('Biblioteca jsPDF não carregada. Recarregue a página e tente novamente.');
-             return;
-         }
-         
          // Verificar se window.db está disponível
          if (!window.db) {
              alert('Banco de dados não inicializado. Recarregue a página e tente novamente.');
              return;
          }
          
-         // Usar jsPDF global carregado via CDN
-         const { jsPDF } = window.jspdf;
+         // Carregar jsPDF e autoTable dinamicamente
+         const [{ jsPDF }, autoTable] = await Promise.all([
+             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+         ]);
+         
          const docPDF = new jsPDF();
     // Buscar usuários do Firestore usando a instância global db
     const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
@@ -1361,13 +1359,8 @@ document.addEventListener('DOMContentLoaded', function() {
     docPDF.setFontSize(12);
     docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
     
-    // Verificar se autoTable está disponível
-    if (typeof docPDF.autoTable !== 'function') {
-        alert('Plugin autoTable não carregado. Recarregue a página e tente novamente.');
-        return;
-    }
-    
-    docPDF.autoTable({
+    // Usar autoTable importado dinamicamente
+    autoTable.default(docPDF, {
         head: [columns.map(c => c.header)],
         body: rows.map(r => columns.map(c => r[c.dataKey])),
         startY: 40,
