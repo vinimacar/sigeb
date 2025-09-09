@@ -205,10 +205,10 @@
                                         Este Ano
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chartOptions">
-                                        <li><a class="dropdown-item" href="#">Este Ano</a></li>
-                                        <li><a class="dropdown-item" href="#">Último Ano</a></li>
-                                        <li><a class="dropdown-item" href="#">Últimos 6 Meses</a></li>
-                                    </ul>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="este-ano">Este Ano</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="ultimo-ano">Último Ano</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="6-meses">Últimos 6 Meses</a></li>
+                    </ul>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -504,6 +504,12 @@
                 const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
                 const livrosSnap = await getDocs(collection(db, 'livros'));
                 
+                // Armazenar dados completos dos empréstimos para filtros
+                dadosEmprestimosCompletos = [];
+                emprestimosSnap.forEach(doc => {
+                    dadosEmprestimosCompletos.push(doc.data());
+                });
+                
                 // Criar mapa de livros para busca rápida
                 const livrosMap = new Map();
                 livrosSnap.forEach(doc => {
@@ -511,7 +517,7 @@
                     livrosMap.set(doc.id, livroData.categoria || 'Outros');
                 });
                 
-                // Dados para gráfico de empréstimos por mês
+                // Dados para gráfico de empréstimos por mês (ano atual por padrão)
                 const dadosMensais = new Array(12).fill(0);
                 const categorias = {};
                 
@@ -528,6 +534,9 @@
                 
                 // Atualizar gráfico
                 atualizarGraficoEmprestimos(dadosMensais);
+                
+                // Inicializar filtros do gráfico
+                inicializarFiltrosGrafico();
                 atualizarCategoriasPopulares(categorias);
                 
             } catch (error) {
@@ -796,6 +805,67 @@
                 await carregarDadosDashboard();
                 await implementarNotificacoes();
             }, 5 * 60 * 1000);
+        }
+        
+        // Variável global para armazenar todos os dados de empréstimos
+        let dadosEmprestimosCompletos = [];
+        
+        // Função para filtrar dados do gráfico por período
+        function filtrarDadosGrafico(filtro) {
+            const agora = new Date();
+            let dataInicio;
+            
+            switch(filtro) {
+                case 'este-ano':
+                    dataInicio = new Date(agora.getFullYear(), 0, 1);
+                    break;
+                case 'ultimo-ano':
+                    dataInicio = new Date(agora.getFullYear() - 1, 0, 1);
+                    break;
+                case '6-meses':
+                    dataInicio = new Date(agora.getFullYear(), agora.getMonth() - 6, 1);
+                    break;
+                default:
+                    dataInicio = new Date(agora.getFullYear(), 0, 1);
+            }
+            
+            // Filtrar empréstimos por período
+            const emprestimosFiltrados = dadosEmprestimosCompletos.filter(emprestimo => {
+                const dataEmprestimo = emprestimo.dataEmprestimo.toDate();
+                return dataEmprestimo >= dataInicio;
+            });
+            
+            // Contar empréstimos por mês
+            const dadosMensais = new Array(12).fill(0);
+            emprestimosFiltrados.forEach(emprestimo => {
+                const dataEmprestimo = emprestimo.dataEmprestimo.toDate();
+                const mes = dataEmprestimo.getMonth();
+                dadosMensais[mes]++;
+            });
+            
+            // Atualizar gráfico
+            atualizarGraficoEmprestimos(dadosMensais);
+        }
+        
+        // Função para inicializar filtros do gráfico
+        function inicializarFiltrosGrafico() {
+            const filterOptions = document.querySelectorAll('.filter-option');
+            const chartOptionsButton = document.getElementById('chartOptions');
+            
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const filtro = this.getAttribute('data-filter');
+                    const textoFiltro = this.textContent;
+                    
+                    // Atualizar texto do botão
+                    chartOptionsButton.textContent = textoFiltro;
+                    
+                    // Aplicar filtro
+                    filtrarDadosGrafico(filtro);
+                });
+            });
         }
     </script>
 </body>
