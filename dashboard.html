@@ -298,34 +298,7 @@
                                             </tr>
                                         </thead>
                                         <tbody id="emprestimosRecentes">
-                                            <tr>
-                                                <td>Maria Silva</td>
-                                                <td>Dom Casmurro</td>
-                                                <td>10/05/2023</td>
-                                                <td>24/05/2023</td>
-                                                <td><span class="badge bg-success">Em dia</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>João Santos</td>
-                                                <td>O Pequeno Príncipe</td>
-                                                <td>08/05/2023</td>
-                                                <td>22/05/2023</td>
-                                                <td><span class="badge bg-success">Em dia</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Ana Oliveira</td>
-                                                <td>1984</td>
-                                                <td>05/05/2023</td>
-                                                <td>19/05/2023</td>
-                                                <td><span class="badge bg-warning">Próximo do vencimento</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Carlos Pereira</td>
-                                                <td>A Revolução dos Bichos</td>
-                                                <td>01/05/2023</td>
-                                                <td>15/05/2023</td>
-                                                <td><span class="badge bg-danger">Atrasado</span></td>
-                                            </tr>
+                                            <!-- Dados carregados dinamicamente -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -437,6 +410,8 @@
                     document.getElementById('userName').textContent = user.displayName || user.email;
                     carregarDadosDashboard();
                     inicializarGraficos();
+                    implementarFiltros();
+                    implementarNotificacoes();
                 } else {
                     window.location.href = 'index.html';
                 }
@@ -454,42 +429,139 @@
 
         // Função para carregar dados do dashboard
         async function carregarDadosDashboard() {
-            // Buscar total de livros
-            const livrosSnap = await getDocs(collection(db, 'livros'));
-            document.getElementById('totalLivros').textContent = livrosSnap.size;
+            try {
+                // Buscar total de livros
+                const livrosSnap = await getDocs(collection(db, 'livros'));
+                document.getElementById('totalLivros').textContent = livrosSnap.size;
 
-            // Buscar total de usuários
-            const usuariosSnap = await getDocs(collection(db, 'usuarios'));
-            document.getElementById('totalUsuarios').textContent = usuariosSnap.size;
+                // Buscar total de usuários
+                const usuariosSnap = await getDocs(collection(db, 'usuarios'));
+                document.getElementById('totalUsuarios').textContent = usuariosSnap.size;
 
-            // Buscar empréstimos ativos e atrasados
-            const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
-            let ativos = 0;
-            let atrasados = 0;
-            const hoje = new Date();
-            emprestimosSnap.forEach(doc => {
-                const data = doc.data();
-                if (data.status === 'ativo') ativos++;
-                if (data.dataDevolucao) {
-                    const dataDev = new Date(data.dataDevolucao);
-                    if (data.status === 'ativo' && dataDev < hoje) atrasados++;
-                }
-            });
-            document.getElementById('emprestimosAtivos').textContent = ativos;
-            document.getElementById('livrosAtrasados').textContent = atrasados;
+                // Buscar empréstimos ativos e atrasados
+                const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                let ativos = 0;
+                let atrasados = 0;
+                const hoje = new Date();
+                const emprestimosRecentes = [];
+                
+                emprestimosSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === 'ativo') ativos++;
+                    if (data.dataDevolucao) {
+                        const dataDev = new Date(data.dataDevolucao);
+                        if (data.status === 'ativo' && dataDev < hoje) atrasados++;
+                    }
+                    
+                    // Adicionar aos empréstimos recentes
+                    emprestimosRecentes.push({
+                        id: doc.id,
+                        ...data,
+                        dataEmprestimo: data.dataEmprestimo?.toDate ? data.dataEmprestimo.toDate() : new Date(data.dataEmprestimo),
+                        dataDevolucao: data.dataDevolucao?.toDate ? data.dataDevolucao.toDate() : new Date(data.dataDevolucao)
+                    });
+                });
+                
+                document.getElementById('emprestimosAtivos').textContent = ativos;
+                document.getElementById('livrosAtrasados').textContent = atrasados;
+                
+                // Carregar empréstimos recentes na tabela
+                carregarEmprestimosRecentes(emprestimosRecentes);
+                
+                // Carregar dados dos gráficos
+                await carregarDadosGraficos();
+                
+                // Carregar livros populares
+                await carregarLivrosPopulares();
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados do dashboard:', error);
+            }
         }
 
+        // Função para carregar empréstimos recentes
+        function carregarEmprestimosRecentes(emprestimos) {
+            const tbody = document.getElementById('emprestimosRecentes');
+            tbody.innerHTML = '';
+            
+            // Ordenar por data de empréstimo (mais recentes primeiro)
+            emprestimos.sort((a, b) => b.dataEmprestimo - a.dataEmprestimo);
+            
+            // Mostrar apenas os 5 mais recentes
+            const recentesLimitados = emprestimos.slice(0, 5);
+            
+            recentesLimitados.forEach(emprestimo => {
+                const tr = document.createElement('tr');
+                const hoje = new Date();
+                const dataDev = emprestimo.dataDevolucao;
+                const diasRestantes = Math.ceil((dataDev - hoje) / (1000 * 60 * 60 * 24));
+                
+                let statusBadge = '';
+                if (emprestimo.status === 'devolvido') {
+                    statusBadge = '<span class="badge bg-success">Devolvido</span>';
+                } else if (diasRestantes < 0) {
+                    statusBadge = '<span class="badge bg-danger">Atrasado</span>';
+                } else if (diasRestantes <= 3) {
+                    statusBadge = '<span class="badge bg-warning">Próximo do vencimento</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-success">Em dia</span>';
+                }
+                
+                tr.innerHTML = `
+                    <td>${emprestimo.nomeUsuario || 'N/A'}</td>
+                    <td>${emprestimo.tituloLivro || 'N/A'}</td>
+                    <td>${emprestimo.dataEmprestimo.toLocaleDateString('pt-BR')}</td>
+                    <td>${emprestimo.dataDevolucao.toLocaleDateString('pt-BR')}</td>
+                    <td>${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // Função para carregar dados dos gráficos
+        async function carregarDadosGraficos() {
+            try {
+                const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                const livrosSnap = await getDocs(collection(db, 'livros'));
+                
+                // Dados para gráfico de empréstimos por mês
+                const dadosMensais = new Array(12).fill(0);
+                const categorias = {};
+                
+                emprestimosSnap.forEach(doc => {
+                    const data = doc.data();
+                    const dataEmp = data.dataEmprestimo?.toDate ? data.dataEmprestimo.toDate() : new Date(data.dataEmprestimo);
+                    const mes = dataEmp.getMonth();
+                    dadosMensais[mes]++;
+                });
+                
+                // Contar categorias de livros
+                livrosSnap.forEach(doc => {
+                    const data = doc.data();
+                    const categoria = data.categoria || 'Outros';
+                    categorias[categoria] = (categorias[categoria] || 0) + 1;
+                });
+                
+                // Atualizar gráfico
+                atualizarGraficoEmprestimos(dadosMensais);
+                atualizarCategoriasPopulares(categorias);
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados dos gráficos:', error);
+            }
+        }
+        
         // Função para inicializar gráficos
         function inicializarGraficos() {
             // Gráfico de empréstimos por mês
             const ctx = document.getElementById('emprestimosChart').getContext('2d');
-            const emprestimosChart = new Chart(ctx, {
+            window.emprestimosChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
                     datasets: [{
                         label: 'Empréstimos',
-                        data: [65, 59, 80, 81, 56, 55, 40, 45, 60, 70, 75, 80],
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         backgroundColor: 'rgba(52, 152, 219, 0.2)',
                         borderColor: 'rgba(52, 152, 219, 1)',
                         borderWidth: 2,
@@ -523,6 +595,204 @@
                     }
                 }
             });
+        }
+        
+        // Função para atualizar gráfico de empréstimos
+        function atualizarGraficoEmprestimos(dados) {
+            if (window.emprestimosChart) {
+                window.emprestimosChart.data.datasets[0].data = dados;
+                window.emprestimosChart.update();
+            }
+        }
+        
+        // Função para atualizar categorias populares
+        function atualizarCategoriasPopulares(categorias) {
+            const total = Object.values(categorias).reduce((sum, count) => sum + count, 0);
+            const categoriasOrdenadas = Object.entries(categorias)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            // Atualizar as barras de progresso das categorias
+            const cores = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger'];
+            const container = document.querySelector('.card-body');
+            const progressBars = container.querySelectorAll('.progress-bar');
+            const labels = container.querySelectorAll('.d-flex.justify-content-between span:first-child');
+            const percentages = container.querySelectorAll('.d-flex.justify-content-between span:last-child');
+            
+            categoriasOrdenadas.forEach(([categoria, count], index) => {
+                if (labels[index] && percentages[index] && progressBars[index]) {
+                    const percentage = Math.round((count / total) * 100);
+                    labels[index].textContent = categoria;
+                    percentages[index].textContent = `${percentage}%`;
+                    progressBars[index].style.width = `${percentage}%`;
+                    progressBars[index].className = `progress-bar ${cores[index]}`;
+                }
+            });
+        }
+        
+        // Função para carregar livros mais populares
+        async function carregarLivrosPopulares() {
+            try {
+                const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                const livrosSnap = await getDocs(collection(db, 'livros'));
+                
+                // Contar empréstimos por livro
+                const contadorLivros = {};
+                
+                emprestimosSnap.forEach(doc => {
+                    const data = doc.data();
+                    const livroId = data.livroId;
+                    if (livroId) {
+                        contadorLivros[livroId] = (contadorLivros[livroId] || 0) + 1;
+                    }
+                });
+                
+                // Criar mapa de livros
+                const livrosMap = {};
+                livrosSnap.forEach(doc => {
+                    livrosMap[doc.id] = doc.data();
+                });
+                
+                // Ordenar livros por popularidade
+                const livrosPopulares = Object.entries(contadorLivros)
+                    .map(([livroId, count]) => ({
+                        ...livrosMap[livroId],
+                        id: livroId,
+                        emprestimos: count
+                    }))
+                    .filter(livro => livro.titulo) // Filtrar livros válidos
+                    .sort((a, b) => b.emprestimos - a.emprestimos)
+                    .slice(0, 4);
+                
+                // Atualizar a seção de livros populares
+                const livrosPopularesContainer = document.querySelector('.col-lg-5 .card-body');
+                if (livrosPopularesContainer && livrosPopulares.length > 0) {
+                    livrosPopularesContainer.innerHTML = '';
+                    
+                    livrosPopulares.forEach(livro => {
+                        const div = document.createElement('div');
+                        div.className = 'd-flex align-items-center mb-3';
+                        div.innerHTML = `
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                    <i class="fas fa-book text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">${livro.titulo}</h6>
+                                <small class="text-muted">${livro.autor || 'Autor não informado'}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary">${livro.emprestimos} empréstimos</span>
+                            </div>
+                        `;
+                        livrosPopularesContainer.appendChild(div);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar livros populares:', error);
+            }
+        }
+        
+        // Função para implementar filtros de período no gráfico
+        function implementarFiltros() {
+            const dropdownItems = document.querySelectorAll('#chartOptions + ul .dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const periodo = this.textContent;
+                    document.getElementById('chartOptions').textContent = periodo;
+                    // Recarregar dados do gráfico baseado no período selecionado
+                    await carregarDadosGraficos(periodo);
+                });
+            });
+        }
+        
+        // Função para implementar sistema de notificações
+        async function implementarNotificacoes() {
+            try {
+                const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
+                const hoje = new Date();
+                let notificacoes = [];
+                
+                emprestimosSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status !== 'devolvido') {
+                        const dataDev = data.dataDevolucao?.toDate ? data.dataDevolucao.toDate() : new Date(data.dataDevolucao);
+                        const diasRestantes = Math.ceil((dataDev - hoje) / (1000 * 60 * 60 * 24));
+                        
+                        if (diasRestantes < 0) {
+                            notificacoes.push({
+                                tipo: 'danger',
+                                titulo: 'Empréstimo Atrasado',
+                                mensagem: `${data.nomeUsuario} - ${data.tituloLivro} (${Math.abs(diasRestantes)} dias de atraso)`,
+                                prioridade: 1
+                            });
+                        } else if (diasRestantes <= 3) {
+                            notificacoes.push({
+                                tipo: 'warning',
+                                titulo: 'Vencimento Próximo',
+                                mensagem: `${data.nomeUsuario} - ${data.tituloLivro} (vence em ${diasRestantes} dias)`,
+                                prioridade: 2
+                            });
+                        }
+                    }
+                });
+                
+                // Ordenar por prioridade
+                notificacoes.sort((a, b) => a.prioridade - b.prioridade);
+                
+                // Mostrar notificações importantes
+                if (notificacoes.length > 0) {
+                    mostrarNotificacoes(notificacoes.slice(0, 3)); // Mostrar apenas as 3 mais importantes
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar notificações:', error);
+            }
+        }
+        
+        // Função para mostrar notificações
+        function mostrarNotificacoes(notificacoes) {
+            const container = document.querySelector('.container-fluid');
+            
+            notificacoes.forEach((notif, index) => {
+                setTimeout(() => {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert alert-${notif.tipo} alert-dismissible fade show position-fixed`;
+                    alertDiv.style.cssText = `
+                        top: ${20 + (index * 70)}px;
+                        right: 20px;
+                        z-index: 1050;
+                        min-width: 300px;
+                        max-width: 400px;
+                    `;
+                    
+                    alertDiv.innerHTML = `
+                        <strong>${notif.titulo}:</strong> ${notif.mensagem}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    container.appendChild(alertDiv);
+                    
+                    // Auto-remover após 10 segundos
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 10000);
+                }, index * 500); // Delay entre notificações
+            });
+        }
+        
+        // Função para atualizar dados em tempo real (opcional)
+        function iniciarAtualizacaoAutomatica() {
+            // Atualizar dados a cada 5 minutos
+            setInterval(async () => {
+                await carregarDadosDashboard();
+                await implementarNotificacoes();
+            }, 5 * 60 * 1000);
         }
     </script>
 </body>
