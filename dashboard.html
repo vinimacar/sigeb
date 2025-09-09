@@ -438,6 +438,20 @@
                 const usuariosSnap = await getDocs(collection(db, 'usuarios'));
                 document.getElementById('totalUsuarios').textContent = usuariosSnap.size;
 
+                // Criar mapas para busca rápida de usuários e livros
+                const usuariosMap = new Map();
+                const livrosMap = new Map();
+                
+                usuariosSnap.forEach(doc => {
+                    const userData = doc.data();
+                    usuariosMap.set(doc.id, userData.nome || userData.nomeCompleto || 'Usuário não encontrado');
+                });
+                
+                livrosSnap.forEach(doc => {
+                    const livroData = doc.data();
+                    livrosMap.set(doc.id, livroData.titulo || 'Livro não encontrado');
+                });
+
                 // Buscar empréstimos ativos e atrasados
                 const emprestimosSnap = await getDocs(collection(db, 'emprestimos'));
                 let ativos = 0;
@@ -461,10 +475,12 @@
                         }
                     }
                     
-                    // Adicionar aos empréstimos recentes
+                    // Adicionar aos empréstimos recentes com nomes dos usuários e livros
                     emprestimosRecentes.push({
                         id: doc.id,
                         ...data,
+                        nomeUsuario: usuariosMap.get(data.usuarioId) || data.nomeUsuario || 'Usuário não encontrado',
+                        tituloLivro: livrosMap.get(data.livroId) || data.tituloLivro || 'Livro não encontrado',
                         dataEmprestimo: data.dataEmprestimo?.toDate ? data.dataEmprestimo.toDate() : new Date(data.dataEmprestimo),
                         dataDevolucao: data.dataDevolucao?.toDate ? data.dataDevolucao.toDate() : new Date(data.dataDevolucao)
                     });
