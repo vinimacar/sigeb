@@ -1057,9 +1057,9 @@
 
            // Implementar funcionalidade de pesquisa e filtros
            function implementarFiltros() {
-               const searchInput = document.getElementById('searchInput');
-               const categoryFilter = document.getElementById('categoryFilter');
-               const statusFilter = document.getElementById('statusFilter');
+               const searchInput = document.getElementById('pesquisaItem');
+               const categoryFilter = document.getElementById('filtroCategoria');
+               const statusFilter = document.getElementById('filtroStatus');
 
                // Debounce para pesquisa
                let searchTimeout;
@@ -1077,9 +1077,9 @@
 
            async function aplicarFiltros() {
                try {
-                   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-                   const categoryFilter = document.getElementById('categoryFilter').value;
-                   const statusFilter = document.getElementById('statusFilter').value;
+                   const searchTerm = document.getElementById('pesquisaItem').value.toLowerCase().trim();
+                   const categoryFilter = document.getElementById('filtroCategoria').value;
+                   const statusFilter = document.getElementById('filtroStatus').value;
 
                    let query = window.db.collection('livros');
 
@@ -1138,9 +1138,9 @@
 
            // Função para limpar filtros
             function limparFiltros() {
-                document.getElementById('searchInput').value = '';
-                document.getElementById('categoryFilter').value = '';
-                document.getElementById('statusFilter').value = '';
+                document.getElementById('pesquisaItem').value = '';
+                document.getElementById('filtroCategoria').value = '';
+                document.getElementById('filtroStatus').value = '';
                 carregarDadosInventario();
             }
 
