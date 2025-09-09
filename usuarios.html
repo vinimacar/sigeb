@@ -252,7 +252,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Usuários Cadastrados</h5>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnImprimirUsuarios">
                                 <i class="fas fa-print me-1"></i> Imprimir
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary">
@@ -1307,79 +1307,50 @@
                 bsModal.show();
         }
         window.mostrarSobreComponentes = mostrarSobreComponentes;
-        </script>
+    </script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-            // Ativar botão Imprimir para gerar PDF dos usuários
-            document.querySelectorAll('button, .btn, [data-bs-target]').forEach(btn => {
-                if (btn.textContent && btn.textContent.toLowerCase().includes('imprimir')) {
-                    btn.addEventListener('click', async function() {
-                        // Carregar jsPDF e autoTable
-                        const [jsPDFModule, autoTable] = await Promise.all([
-                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-                            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
-                        ]);
-                        const jsPDF = jsPDFModule.jsPDF;
-                        // Buscar usuários do Firestore usando a instância global db
-                        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
-                        let dbInstance = window.db;
-                        if (!dbInstance || typeof dbInstance !== 'object' || !('type' in dbInstance) || dbInstance.type !== 'firestore') {
-                            alert('Erro: O banco de dados não foi inicializado corretamente. Recarregue a página e tente novamente.');
-                            return;
-                        }
-                        const usuariosRef = collection(dbInstance, 'usuarios');
-                        const querySnapshot = await getDocs(usuariosRef);
-                        const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        // Montar dados da tabela
-                        const columns = [
-                            { header: 'Nome', dataKey: 'nome' },
-                            { header: 'Email', dataKey: 'email' },
-                            { header: 'Categoria', dataKey: 'categoria' },
-                            { header: 'ID', dataKey: 'id' }
-                        ];
-                        const rows = querySnapshot.docs.map(doc => ({
-                            nome: doc.data().nome || '',
-                            email: doc.data().email || '',
-                            categoria: doc.data().categoria || '',
-                            id: doc.id
-                        }));
-                        // Criar PDF
-                        const docPDF = new jsPDF();
-                        // Adicionar logo
-                        const logoUrl = 'SIGEB.png';
-                        const logoImg = new Image();
-                        logoImg.src = logoUrl;
-                        logoImg.onload = function() {
-                            docPDF.addImage(logoImg, 'PNG', 10, 10, 25, 25);
-                            docPDF.setFontSize(16);
-                            docPDF.text('Escola Estadual Governador Bias Fortes', 40, 20);
-                            docPDF.setFontSize(12);
-                            docPDF.text('Lista de Usuários do Sistema', 40, 28);
-                            autoTable.default(docPDF, {
-                                head: [columns.map(c => c.header)],
-                                body: rows.map(r => columns.map(c => r[c.dataKey])),
-                                startY: 40,
-                                styles: { fontSize: 10 }
-                            });
-                            docPDF.save('usuarios-sigeb.pdf');
-                        };
-                        logoImg.onerror = function() {
-                            // Se não carregar logo, gerar sem logo
-                            docPDF.setFontSize(16);
-                            docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
-                            docPDF.setFontSize(12);
-                            docPDF.text('Lista de Usuários do Sistema', 10, 28);
-                            autoTable.default(docPDF, {
-                                head: [columns.map(c => c.header)],
-                                body: rows.map(r => columns.map(c => r[c.dataKey])),
-                                startY: 40,
-                                styles: { fontSize: 10 }
-                            });
-                            docPDF.save('usuarios-sigeb.pdf');
-                        };
-                    });
-                }
-            });
+    // Ativar botão Imprimir para gerar PDF dos usuários
+    document.getElementById('btnImprimirUsuarios').addEventListener('click', async function() {
+        // Carregar jsPDF e autoTable
+        const [jsPDFModule, autoTable] = await Promise.all([
+            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+            import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
+        ]);
+        const jsPDF = jsPDFModule.jsPDF;
+        // Buscar usuários do Firestore usando a instância global db
+        const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
+        const usuariosRef = collection(window.db, 'usuarios');
+        const querySnapshot = await getDocs(usuariosRef);
+        const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Montar dados da tabela
+        const columns = [
+            { header: 'Nome', dataKey: 'nome' },
+            { header: 'Email', dataKey: 'email' },
+            { header: 'Categoria', dataKey: 'categoria' },
+            { header: 'ID', dataKey: 'id' }
+        ];
+        const rows = usuarios.map(u => ({
+            nome: u.nome || '',
+            email: u.email || '',
+            categoria: u.categoria || '',
+            id: u.id
+        }));
+        // Criar PDF
+        const docPDF = new jsPDF();
+        docPDF.setFontSize(16);
+        docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
+        docPDF.setFontSize(12);
+        docPDF.text('Relatório de Usuários Cadastrados', 10, 28);
+        autoTable.default(docPDF, {
+            head: [columns.map(c => c.header)],
+            body: rows.map(r => columns.map(c => r[c.dataKey])),
+            startY: 40,
+            styles: { fontSize: 10 }
+        });
+        docPDF.save('relatorio-usuarios.pdf');
+    });
+
     // Atualização em tempo real dos cards de estatísticas rápidas
     (async () => {
         const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
