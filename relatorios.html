@@ -518,7 +518,7 @@
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
         ]);
-        const { jsPDF } = jsPDFModule;
+        const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
         const doc = new jsPDF();
         const dados = window.__dadosEmprestimosMes || [];
         autoTable.default(doc, {
@@ -792,7 +792,7 @@
                                     import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
                                     import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
                                 ]);
-                                const { jsPDF } = jsPDFModule;
+                                const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
                                 const doc = new jsPDF();
                                 doc.text(titulo, 14, 16);
                                 autoTable.default(doc, {
