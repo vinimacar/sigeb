@@ -447,10 +447,18 @@
                 
                 emprestimosSnap.forEach(doc => {
                     const data = doc.data();
-                    if (data.status === 'ativo') ativos++;
-                    if (data.dataDevolucao) {
-                        const dataDev = new Date(data.dataDevolucao);
-                        if (data.status === 'ativo' && dataDev < hoje) atrasados++;
+                    
+                    // Contar empréstimos ativos (não devolvidos)
+                    if (data.status !== 'devolvido' && data.status !== 'cancelado') {
+                        ativos++;
+                    }
+                    
+                    // Contar empréstimos atrasados
+                    if (data.dataDevolucao && data.status !== 'devolvido' && data.status !== 'cancelado') {
+                        const dataDev = data.dataDevolucao?.toDate ? data.dataDevolucao.toDate() : new Date(data.dataDevolucao);
+                        if (dataDev < hoje) {
+                            atrasados++;
+                        }
                     }
                     
                     // Adicionar aos empréstimos recentes
