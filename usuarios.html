@@ -1317,6 +1317,8 @@ document.addEventListener('DOMContentLoaded', function() {
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
             import('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js')
         ]);
+        // jsPDF está no objeto .jsPDF, então precisa ser chamado como new jsPDF.jsPDF()
+        const docPDF = new jsPDF.jsPDF();
         // Buscar usuários do Firestore usando a instância global db
         const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js');
         const usuariosRef = collection(window.db, 'usuarios');
@@ -1335,8 +1337,6 @@ document.addEventListener('DOMContentLoaded', function() {
             categoria: u.categoria || '',
             id: u.id
         }));
-        // Criar PDF
-        const docPDF = new jsPDF();
         docPDF.setFontSize(16);
         docPDF.text('Escola Estadual Governador Bias Fortes', 10, 20);
         docPDF.setFontSize(12);
